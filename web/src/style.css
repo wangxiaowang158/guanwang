@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* Element Plus 变量覆盖 */
+:root {
+  --el-color-primary: var(--brand-primary, #0ea5e9);
+  --el-border-radius-base: 8px;
+  --el-font-size-base: 14px;
+}
+
+/* ============================================================
+   全局品牌主题色（可由后台 SiteConfig 通过 JS 动态覆盖）
+   默认：天蓝科技色 #0ea5e9
+   ============================================================ */
+:root {
+  --brand-primary:        #0ea5e9;
+  --brand-primary-dark:   #0284c7;
+  --brand-primary-light:  #38bdf8;
+  --brand-primary-glow:   rgba(14, 165, 233, 0.20);
+  --brand-primary-subtle: rgba(14, 165, 233, 0.08);
+}
+
+/* ============================================================
+   样式一 · 亮色现代科技风 token
+   ============================================================ */
+:root {
+  /* 背景层次 */
+  --zrh-bg-page:       #f8fafc;
+  --zrh-bg-white:      #ffffff;
+  --zrh-bg-surface:    #f1f5f9;
+  --zrh-bg-dark:       #0f172a;
+  --zrh-bg-dark-soft:  #1e293b;
+
+  /* 文字 */
+  --zrh-text-h:        #0f172a;
+  --zrh-text-body:     #334155;
+  --zrh-text-muted:    #64748b;
+  --zrh-text-light:    #94a3b8;
+
+  /* 边框 */
+  --zrh-border:        #e2e8f0;
+  --zrh-border-light:  #f1f5f9;
+
+  /* 板块节奏 */
+  --zrh-section-py:    96px;
+  --zrh-content-max:   1200px;
+  --zrh-content-px:    24px;
+  --zrh-card-radius:   16px;
+  --zrh-nav-height:    68px;
+
+  /* 字号（流体排版） */
+  --zrh-text-hero:     clamp(38px, 5.5vw, 68px);
+  --zrh-text-h2:       clamp(26px, 3vw, 38px);
+  --zrh-text-h3:       clamp(18px, 2vw, 22px);
+}
+
+/* ============================================================
+   样式二 · 集团品牌风 token（红色系，保留不变）
+   ============================================================ */
+:root {
+  --rs-primary:        #c8161d;
+  --rs-primary-dark:   #9e1117;
+  --rs-primary-light:  #e23a40;
+  --rs-bg-cream:       #f7f4ef;
+  --rs-bg-white:       #ffffff;
+  --rs-bg-dark:        #1a1a1a;
+  --rs-bg-dark-soft:   #232323;
+  --rs-text-dark:      #1a1a1a;
+  --rs-text-body:      #4a4a4a;
+  --rs-text-muted:     #8a8a8a;
+  --rs-text-light:     #ffffff;
+  --rs-text-light-sub: #b8b8b8;
+  --rs-border:         #e6e2db;
+  --rs-border-dark:    #333333;
+  --rs-section-py:     96px;
+  --rs-content-max:    1280px;
+  --rs-content-px:     32px;
+  --rs-text-hero:      clamp(40px, 6vw, 72px);
+  --rs-text-h1:        clamp(30px, 4vw, 52px);
+  --rs-text-h2:        clamp(22px, 3vw, 34px);
+}
+
+/* ============================================================
+   基础重置
+   ============================================================ */
+html {
+  font-size: 16px;
+  line-height: 1.6;
+  height: 100%;
+  scroll-padding-top: var(--zrh-nav-height);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+               'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--zrh-text-body);
+  background-color: var(--zrh-bg-page);
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+#app { min-height: 100%; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ============================================================
+   进入视口淡入动画工具类
+   ============================================================ */
+.fade-up {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 延迟梯队 */
+.delay-100 { transition-delay: 0.1s; }
+.delay-200 { transition-delay: 0.2s; }
+.delay-300 { transition-delay: 0.3s; }
+.delay-400 { transition-delay: 0.4s; }
+.delay-500 { transition-delay: 0.5s; }
+
+/* ============================================================
+   尊重减少动效偏好
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .fade-up { opacity: 1; transform: none; }
+}

@@ -1,0 +1,94 @@
+// CSS Reset
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.85);
+  background-color: #f0f2f5;
+  overscroll-behavior: none; // 禁用橡皮条滚动效果
+}
+
+html {
+  overscroll-behavior: none; // 禁用橡皮条滚动效果
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+// 滚动条样式
+// Chrome/Safari/Edge：用 -webkit-scrollbar 精确控制宽度
+// Firefox：用 @supports 降级到 scrollbar-width: thin
+// 注意：scrollbar-color 和 -webkit-scrollbar 不能同时用，Chrome 110+ 会忽略后者
+
+@supports not selector(::-webkit-scrollbar) {
+  // Firefox 不支持 -webkit-scrollbar，用标准属性降级
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}

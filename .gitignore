@@ -1,0 +1,55 @@
+# ============ 依赖与构建产物 ============
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# TS 编译出的中间产物（源文件为同名 .ts，勿提交）
+admin/vite.config.js
+admin/vite.config.d.ts
+admin/build/*.js
+admin/build/*.d.ts
+
+# ============ 密钥与本机环境 ============
+# server/.env 含 JWT 密钥与数据库密码，严禁提交
+server/.env
+.env.local
+.env.*.local
+
+# ============ 运行时数据 ============
+server/data/
+*.sqlite
+*.sqlite-journal
+*.db
+
+# ============ 日志与临时文件 ============
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.local
+
+# ============ 系统与编辑器 ============
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.swp
+*.sw?
+
+# ============ AI 工具配置与文档（不影响项目运行） ============
+.claude/
+.kiro/
+.trae/
+.agents/
+.cursor/
+.codex/
+.gemini/
+.windsurfrules
+CLAUDE.md
+docs/
+admin/references/
+
+# admin 已用 npm（package-lock.json），避免双 lock 冲突
+admin/pnpm-lock.yaml

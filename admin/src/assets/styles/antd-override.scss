@@ -1,0 +1,62 @@
+/**
+ * Ant Design Vue 全局样式覆盖
+ * 用于统一定制 Ant Design 组件的默认样式
+ */
+
+// Card 卡片 - 去掉边框
+.ant-card {
+  border: none;
+
+  .ant-card-body {
+    padding: 16px;
+  }
+}
+
+// Modal 弹窗 - 垂直居中显示，内容超高时可滚动
+.ant-modal-root {
+  .ant-modal-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ant-modal {
+    top: auto;
+    padding-bottom: 0;
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+
+    .ant-modal-content {
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 48px);
+      overflow: hidden;
+    }
+
+    .ant-modal-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+  }
+}
+
+// 弹窗内滚动条
+.ant-modal-body {
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+}

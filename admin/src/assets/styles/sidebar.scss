@@ -1,0 +1,9 @@
+/**
+ * 侧边栏菜单样式
+ * 覆盖 Ant Design Menu 组件在侧边栏场景下的默认样式
+ */
+
+// 子菜单展开区域背景改为白色（默认是 #fafafa 浅灰）
+.ant-menu-light .ant-menu-sub {
+  background: #fff !important;
+}

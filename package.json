@@ -1,0 +1,19 @@
+{
+  "name": "zrh-website-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "中瑞恒官网 + 后台管理 一键启动（前端 Mock 内置，无需单独启动后端）",
+  "scripts": {
+    "dev": "concurrently -n admin,web -c blue,green \"npm run dev --prefix admin\" \"npm run dev --prefix web\"",
+    "dev:admin": "npm run dev --prefix admin",
+    "dev:web": "npm run dev --prefix web",
+    "build": "npm run build --prefix admin && npm run build --prefix web",
+    "build:admin": "npm run build --prefix admin",
+    "build:web": "npm run build --prefix web",
+    "type-check": "npm run type-check --prefix admin && npm run type-check --prefix web",
+    "install:all": "npm install && npm install --prefix admin && npm install --prefix web && npm install --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

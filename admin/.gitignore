@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+
+# 本机环境覆盖（.env 为默认配置，随仓库提交）
+.env.local
+.env.*.local
