@@ -1,0 +1,109 @@
+name: CI
+
+# 推送到 main 或开 PR 时自动跑类型检查与构建，产物归档供下载
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # 支持在 Actions 页面手动触发
+
+# 最小权限：CI 只读代码，产物上传走独立的 runtime token，不需要写权限
+permissions:
+  contents: read
+
+# 同一分支上新推送时取消仍在跑的旧任务，避免排队浪费额度
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin:
+    name: 后台管理端（admin）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: 安装依赖
+        working-directory: admin
+        run: npm ci
+
+      - name: 类型检查
+        working-directory: admin
+        run: npm run type-check
+
+      - name: 构建
+        working-directory: admin
+        run: npm run build
+
+      - name: 归档产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: admin/dist
+          retention-days: 14
+  web:
+    name: 官网前台（web）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 安装依赖
+        working-directory: web
+        run: npm ci
+
+      # web 的 build 脚本本身是 vue-tsc -b && vite build，已含类型检查
+      - name: 构建（含类型检查）
+        working-directory: web
+        run: npm run build
+
+      - name: 归档产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 14
+
+  server:
+    name: 后端接口（server）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: 安装依赖
+        working-directory: server
+        run: npm ci
+
+      - name: 类型检查
+        working-directory: server
+        run: npm run type-check
+
+      - name: 构建
+        working-directory: server
+        run: npm run build
+
+      - name: 归档产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-dist
+          path: server/dist
+          retention-days: 14
+
