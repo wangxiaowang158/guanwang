@@ -1,0 +1,116 @@
+# 中瑞恒官网 —— 四容器编排：mysql / redis / backend / gateway
+# 端口只绑 127.0.0.1，公网流量统一经宿主机宝塔 Nginx 反代进来
+# 数据落在命名卷，容器重建不丢
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: zrh-mysql
+    restart: unless-stopped
+    command:
+      # utf8mb4 保证中文与 emoji 正常；后端实体用 datetime，时区统一为 UTC
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?必须在 .env 中设置}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-zrh_website}
+      MYSQL_USER: ${MYSQL_USER:-zrh}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?必须在 .env 中设置}
+    ports:
+      # 只绑回环，公网连不上；Navicat 等客户端经 SSH 隧道访问
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # 用应用账号而非 root 探活，顺带验证授权是否正确
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1",
+             "-u", "${MYSQL_USER:-zrh}", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks:
+      - zrh-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: zrh-redis
+    restart: unless-stopped
+    # 密码通过命令行传入；requirepass 为空会导致未授权访问
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?必须在 .env 中设置}",
+              "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks:
+      - zrh-net
+
+  backend:
+    # 默认拉 GHCR 上由 CI 构建好的镜像；服务器不参与构建，2G 内存也够跑
+    image: ghcr.io/${IMAGE_OWNER:-wangxiaowang158}/zrh-website-server:${IMAGE_TAG:-latest}
+    # build 段保留：需要离线/本地构建时执行 docker compose up -d --build 即可回退
+    build:
+      context: .
+      dockerfile: docker/server.Dockerfile
+    container_name: zrh-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_TYPE: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${MYSQL_USER:-zrh}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_DATABASE: ${MYSQL_DATABASE:-zrh_website}
+      # 项目无迁移脚本，表结构靠启动时自动同步。
+      # 首次部署置 true 建表，建成后改 false 再重启，避免后续启动改动线上表结构。
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
+      JWT_MEMBER_SECRET: ${JWT_MEMBER_SECRET:?必须在 .env 中设置}
+      JWT_MEMBER_EXPIRES_IN: ${JWT_MEMBER_EXPIRES_IN:-2h}
+      MGMT_DEV_TOKEN: ${MGMT_DEV_TOKEN:?必须在 .env 中设置}
+      THROTTLE_TTL: ${THROTTLE_TTL:-60}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-60}
+      # 留空即不启用跨域：两个前端都经 gateway 同源访问 /api，本就无跨域
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    networks:
+      - zrh-net
+
+  gateway:
+    image: ghcr.io/${IMAGE_OWNER:-wangxiaowang158}/zrh-website-gateway:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/gateway.Dockerfile
+      args:
+        # Vite 在构建期把变量写死进产物，故 token 必须在此传入；
+        # 改动此值需重新 build gateway，单纯重启不生效
+        VITE_MGMT_DEV_TOKEN: ${MGMT_DEV_TOKEN}
+    container_name: zrh-gateway
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # 只监听回环地址，杜绝绕过宝塔直连容器
+      - "127.0.0.1:8080:8080"   # admin 管理后台
+      - "127.0.0.1:8081:8081"   # web  官网前台
+    networks:
+      - zrh-net
+
+networks:
+  zrh-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:

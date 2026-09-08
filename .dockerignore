@@ -1,0 +1,47 @@
+# 构建上下文排除 —— 依赖与产物在容器内重新生成，传上去只会拖慢构建
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+*.tsbuildinfo
+
+# 密钥：server/.env 由 compose 的 environment 注入，绝不进镜像
+server/.env
+.env
+.env.local
+.env.*.local
+
+# 运行时数据（SQLite 文件等）
+server/data/
+*.sqlite
+*.sqlite-journal
+*.db
+
+# 版本控制与日志
+.git/
+.github/
+logs/
+*.log
+
+# 系统与编辑器
+.DS_Store
+.idea/
+.vscode/
+
+# AI 工具配置与文档，不参与运行
+.claude/
+.kiro/
+.trae/
+.agents/
+.cursor/
+.codex/
+.gemini/
+CLAUDE.md
+docs/
+admin/references/
+
+# admin 的 TS 编译中间产物
+admin/vite.config.js
+admin/vite.config.d.ts
+admin/build/*.js
+admin/build/*.d.ts

@@ -13,6 +13,9 @@ admin/build/*.d.ts
 # ============ 密钥与本机环境 ============
 # server/.env 含 JWT 密钥与数据库密码，严禁提交
 server/.env
+# 根目录 .env 为 Docker 部署所用，含 MySQL/Redis 密码与 JWT 密钥，严禁提交
+# （.env.example 与 .env.docker.example 是模板，不含真实值，正常提交）
+.env
 .env.local
 .env.*.local
 
