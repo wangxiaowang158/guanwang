@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-/** .env 中可用的自定义环境变量（新增变量需同步此处与 .env.example） */
+/** .env 中可用的自定义环境变量（新增变量需同步此处与仓库根 .env.example 的 admin 段） */
 interface ImportMetaEnv {
   /** 部署基础路径 */
   readonly VITE_BASE_URL?: string
