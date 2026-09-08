@@ -22,6 +22,7 @@ import { ref, watch, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { SettingOutlined, DashboardOutlined, BarChartOutlined } from '@ant-design/icons-vue'
 import { useChannels, channelPath } from '@/composables/useChannels'
+import { TOP_MENUS, BOTTOM_MENUS, FIXED_MENU_PATHS } from '@/constants/menu'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,23 +33,24 @@ const selectedKeys = ref<string[]>([])
 const openKeys = ref<string[]>([])
 const menuItems = ref<any[]>([])
 
-// 顶部固定菜单项：仪表盘 / 访问统计（独立路由，不走栏目配置）
-const TOP_ITEMS = [
-  { key: '/dashboard', label: '数据仪表盘', title: '数据仪表盘', icon: () => h(DashboardOutlined) },
-  { key: '/visit-stats', label: '访问统计', title: '访问统计', icon: () => h(BarChartOutlined) }
-]
+// 固定菜单项的图标，按路径取用
+const FIXED_ICONS: Record<string, () => ReturnType<typeof h>> = {
+  '/dashboard': () => h(DashboardOutlined),
+  '/visit-stats': () => h(BarChartOutlined),
+  '/channel-manage': () => h(SettingOutlined)
+}
 
-// 底部固定菜单项：栏目管理（可视化配置入口）
-const FIXED_ITEMS = [
-  { key: '/channel-manage', label: '栏目管理', title: '栏目管理', icon: () => h(SettingOutlined) }
-]
+// 由共享常量补充图标，生成 a-menu 所需的菜单项
+const toMenuItems = (metas: readonly { path: string; name: string }[]) =>
+  metas.map(m => ({ key: m.path, label: m.name, title: m.name, icon: FIXED_ICONS[m.path] }))
 
-// 非栏目的固定路由路径集合
-const FIXED_PATHS = ['/dashboard', '/visit-stats', '/channel-manage']
+// 顶部固定项：仪表盘 / 访问统计；底部固定项：栏目管理（均为独立路由，不走栏目配置）
+const TOP_ITEMS = toMenuItems(TOP_MENUS)
+const FIXED_ITEMS = toMenuItems(BOTTOM_MENUS)
 
 // 根据当前路由同步高亮项与展开的父菜单
 const syncActive = () => {
-  if (FIXED_PATHS.includes(route.path)) {
+  if (FIXED_MENU_PATHS.includes(route.path)) {
     selectedKeys.value = [route.path]
     return
   }
@@ -69,7 +71,7 @@ onMounted(async () => {
 watch(() => route.fullPath, syncActive)
 
 const handleMenuClick = ({ key }: { key: string }) => {
-  if (FIXED_PATHS.includes(key)) {
+  if (FIXED_MENU_PATHS.includes(key)) {
     router.push(key)
     return
   }

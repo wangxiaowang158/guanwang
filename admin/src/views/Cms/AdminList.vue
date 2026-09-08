@@ -96,6 +96,7 @@ import type { Rule } from 'ant-design-vue/es/form'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import { getAdminList, saveAdmin, deleteAdmin, type AdminItem } from '@/api/admin'
 import { useChannels } from '@/composables/useChannels'
+import { TOP_MENUS, BOTTOM_MENUS, NON_GRANTABLE_CHANNEL_TYPES } from '@/constants/menu'
 
 const { load, channels } = useChannels()
 
@@ -112,13 +113,16 @@ const loading = ref(false)
 const rows = ref<AdminItem[]>([])
 const keyword = ref('')
 
-// 权限项：顶层菜单（排除基本信息、管理员自身）
-const permOptions = computed(() =>
-  channels.value
-    .filter(c => c.parentId === null && c.type !== 'siteconfig' && c.type !== 'admins')
+// 权限项：与侧边栏一级菜单同序 —— 固定顶部项 + 栏目顶层项 + 固定底部项
+// 基本信息与管理员管理属系统级模块，固定排除在授权范围外
+const permOptions = computed(() => {
+  const channelPerms = channels.value
+    .filter(c => c.parentId === null && !NON_GRANTABLE_CHANNEL_TYPES.includes(c.type))
     .sort((a, b) => a.sort - b.sort)
-    .map(c => ({ label: c.name, value: c.name }))
-)
+    .map(c => c.name)
+  return [...TOP_MENUS.map(m => m.name), ...channelPerms, ...BOTTOM_MENUS.map(m => m.name)]
+    .map(name => ({ label: name, value: name }))
+})
 
 const formRef = ref()
 const editVisible = ref(false)
