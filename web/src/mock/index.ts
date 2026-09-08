@@ -9,6 +9,7 @@ import {
 import { menuTree } from './menu'
 import { pageContents } from './pageData'
 import { homeBackgrounds, pageHeroBackgrounds } from './backgrounds'
+import { seoConfigs } from './seoData'
 
 /** 注册 fetch 拦截与全部 mock 路由（由 setup.ts 在开关开启时调用） */
 export function registerMocks() {
@@ -39,6 +40,8 @@ export function registerMocks() {
       }),
       // 前台导航菜单（对外栏目树）
       '/api/web/menu': () => ({ code: 0, message: 'ok', data: menuTree }),
+      // 栏目页 SEO 配置（后台按栏目录入，前台一次取全量后按路由取用）
+      '/api/web/seo': () => ({ code: 0, message: 'ok', data: seoConfigs }),
       // 栏目页内容（按 key 取数，key 为一级栏目标识）；按需注入演示背景图
       '/api/page': (_body, query) => {
         const key = query?.key || ''

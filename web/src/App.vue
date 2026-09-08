@@ -6,12 +6,17 @@
 
 <script setup lang="ts">
 // 根容器：用 el-scrollbar 承载整页滚动，向子组件提供滚动位置与回顶/锚点定位能力
+// 并在此输出页面 SEO 信息 —— 挂在根组件才能覆盖官网壳之外的会员认证页
 import { ref, provide, watch, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import type { ScrollbarInstance } from 'element-plus'
 import { useThemeStore } from '@/stores/theme'
+import { useSeo } from '@/composables/useSeo'
 
 const route = useRoute()
+
+// 页面标题与搜索引擎信息：栏目页取后台栏目配置，其余页取路由标题
+useSeo()
 const scrollbarRef = ref<ScrollbarInstance>()
 const scrollY = ref(0)
 provide('scrollY', scrollY)
