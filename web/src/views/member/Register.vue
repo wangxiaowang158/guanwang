@@ -143,10 +143,7 @@ async function onSubmit() {
 }
 
 onMounted(async () => {
-  if (memberStore.isLoggedIn) {
-    await router.replace('/member/center')
-    return
-  }
+  // 已登录的拦截在路由守卫（meta.guestOnly）完成，此处只拉配置
   try {
     const res = await fetchAuthConfig()
     if (res.code === REAL_API_SUCCESS_CODE && res.data) config.value = res.data

@@ -2,13 +2,13 @@
   <!-- 顶栏会员入口：未登录显示登录/注册，已登录显示昵称与下拉 -->
   <div class="me">
     <template v-if="!memberStore.isLoggedIn">
-      <RouterLink to="/member/login" class="me-link" :class="linkClass">登录</RouterLink>
-      <span class="me-sep" :class="linkClass">/</span>
-      <RouterLink to="/member/register" class="me-link" :class="linkClass">注册</RouterLink>
+      <RouterLink to="/member/login" class="me-link">登录</RouterLink>
+      <span class="me-sep">/</span>
+      <RouterLink to="/member/register" class="me-link">注册</RouterLink>
     </template>
 
     <el-dropdown v-else trigger="click" @command="onCommand">
-      <span class="me-user" :class="linkClass">
+      <span class="me-user">
         <span class="me-avatar">{{ avatarText }}</span>
         {{ memberStore.displayName }}
       </span>
@@ -23,16 +23,12 @@
 </template>
 
 <script setup lang="ts">
-// 顶栏会员入口，样式一/样式二两套顶栏共用；文字色由外部传入以适配深浅底
+// 顶栏会员入口，样式一/样式二两套顶栏共用；文字色由外部 class 传入，子元素以 inherit 继承
 import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMemberStore } from '@/stores/member'
 
-defineProps<{
-  /** 外部传入的文字颜色类，用于适配顶栏深浅底 */
-  linkClass?: string
-}>()
-
+const route = useRoute()
 const router = useRouter()
 const memberStore = useMemberStore()
 
@@ -45,7 +41,11 @@ async function onCommand(command: string) {
     return
   }
   memberStore.logout()
-  // 退出后停留在当前页，仅刷新登录态展示
+  // 当前页需登录时必须离开：清空登录态不触发导航，守卫不会重跑，
+  // 留在原页会出现"已退出仍显示会员内容"，且后续请求无令牌
+  if (route.meta.requiresMember) {
+    await router.replace('/')
+  }
 }
 
 // 顶栏常驻，挂载时用本地令牌恢复登录态（store 内部已做去重）

@@ -23,17 +23,29 @@
         <form class="space-y-5" @submit.prevent="handleSubmit">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1.5">姓名 <span class="text-red-400">*</span></label>
+              <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                姓名 <span v-if="!memberStore.isLoggedIn" class="text-red-400">*</span>
+              </label>
+              <!-- 已登录时以会员身份提交，姓名取账号昵称，故只读展示 -->
               <input
-                v-model="form.name"
+                v-if="memberStore.isLoggedIn"
+                :value="memberStore.displayName"
                 type="text"
-                maxlength="20"
-                placeholder="请输入您的姓名"
-                class="w-full px-3.5 py-2.5 rounded-xl border text-sm text-gray-900 placeholder-gray-300 outline-none transition-all"
-                :class="errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-50'"
-                @blur="validate('name')"
+                readonly
+                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-500 outline-none"
               />
-              <p v-if="errors.name" class="text-xs text-red-400 mt-1">{{ errors.name }}</p>
+              <template v-else>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  maxlength="20"
+                  placeholder="请输入您的姓名"
+                  class="w-full px-3.5 py-2.5 rounded-xl border text-sm text-gray-900 placeholder-gray-300 outline-none transition-all"
+                  :class="errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-50'"
+                  @blur="validate('name')"
+                />
+                <p v-if="errors.name" class="text-xs text-red-400 mt-1">{{ errors.name }}</p>
+              </template>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-700 mb-1.5">手机号 <span class="text-red-400">*</span></label>
@@ -104,10 +116,11 @@ const submitError = ref(false)
 const form = reactive({ name: '', phone: '', content: '' })
 const errors = reactive({ name: '', phone: '', content: '' })
 
-// 单字段校验：姓名/留言必填，电话校验中国手机或座机格式
+// 单字段校验：留言必填，手机号须为中国大陆号码；姓名仅未登录时必填
 function validate(field: keyof typeof form) {
   if (field === 'name') {
-    errors.name = form.name.trim() ? '' : '请输入姓名'
+    // 已登录时姓名由账号昵称提供，不参与校验
+    errors.name = memberStore.isLoggedIn || form.name.trim() ? '' : '请输入姓名'
   } else if (field === 'phone') {
     // 后端反馈接口只接受中国大陆手机号，故不再放行座机
     if (!form.phone.trim()) errors.phone = '请输入手机号'
@@ -134,8 +147,8 @@ async function handleSubmit() {
     const res = memberStore.isLoggedIn
       ? await submitMemberFeedback({
           content,
-          // 座机号不合后端手机号规则，此时不传，由后端取账号手机号
-          phone: /^1[3-9]\d{9}$/.test(phone) ? phone : undefined,
+          // 已过手机号校验，可直接传；姓名由后端按令牌身份取
+          phone,
           sourcePage: '首页-联系我们',
         })
       : await submitAnonymousFeedback({
