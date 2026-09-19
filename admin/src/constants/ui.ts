@@ -24,3 +24,6 @@ export const SORT_SUCCESS = '排序已更新'
 
 /** 排序更新失败 */
 export const SORT_FAILED = '排序更新失败'
+
+/** 导出失败 */
+export const EXPORT_FAILED = '导出失败，请稍后重试'

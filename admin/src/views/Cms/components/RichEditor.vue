@@ -11,35 +11,41 @@
       <button type="button" :class="btn('orderedList')" @click="editor.chain().focus().toggleOrderedList().run()">1. 列表</button>
       <button type="button" :class="btn('blockquote')" @click="editor.chain().focus().toggleBlockquote().run()">引用</button>
       <span class="sep" />
-      <button type="button" class="tb-btn" @click="addImage">图片</button>
+      <button type="button" class="tb-btn" :disabled="uploading" @click="addImage">
+        {{ uploading ? '上传中…' : '图片' }}
+      </button>
+      <button type="button" class="tb-btn" :disabled="videoUploading" @click="addVideo">
+        {{ videoUploading ? `上传中 ${videoProgress}%` : '视频' }}
+      </button>
       <button type="button" class="tb-btn" @click="editor.chain().focus().undo().run()">撤销</button>
       <button type="button" class="tb-btn" @click="editor.chain().focus().redo().run()">重做</button>
     </div>
     <editor-content :editor="editor" class="editor-body" />
     <input ref="imgRef" type="file" :accept="UPLOAD_ACCEPT" style="display: none" @change="onImage" />
+    <input ref="videoRef" type="file" :accept="UPLOAD_VIDEO_ACCEPT" style="display: none" @change="onVideo" />
   </div>
 </template>
 
 <script setup lang="ts">
-// 富文本编辑器：基于 tiptap，图片以 base64 内联（mock 阶段无后端）
+// 富文本编辑器：基于 tiptap，插图上传到后端后以地址内联
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-import { message } from 'ant-design-vue'
-import {
-  UPLOAD_ACCEPT, UPLOAD_MAX_MB, UPLOAD_MAX_BYTES,
-  UPLOAD_IMAGE_MIMES, UPLOAD_IMAGE_LABEL
-} from '@/config'
+import { UPLOAD_ACCEPT, UPLOAD_VIDEO_ACCEPT } from '@/config'
+import { useImageUpload } from '@/composables/useImageUpload'
+import { useVideoUpload } from '@/composables/useVideoUpload'
+import { Video } from './videoNode'
 
 const props = defineProps<{ modelValue?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const imgRef = ref<HTMLInputElement>()
+const videoRef = ref<HTMLInputElement>()
 
 const editor = useEditor({
   content: props.modelValue || '',
-  extensions: [StarterKit, Image],
+  extensions: [StarterKit, Image, Video],
   onUpdate: ({ editor }) => {
     emit('update:modelValue', editor.getHTML())
   }
@@ -58,30 +64,33 @@ const btn = (name: string, attrs?: Record<string, unknown>) => [
   { active: editor.value?.isActive(name, attrs) }
 ]
 
-const addImage = () => imgRef.value?.click()
+const { uploading, pickAndUpload } = useImageUpload()
 
-// 插入图片：校验类型与大小后转 base64；限制取自 config，与 ImageUpload 一致
-// 类型必须校验：accept 只约束选择框，用户仍可拖拽或改筛选条件绕过
-const onImage = (e: Event) => {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  if (!(UPLOAD_IMAGE_MIMES as readonly string[]).includes(file.type)) {
-    message.error(`请上传 ${UPLOAD_IMAGE_LABEL} 格式图片`)
-    input.value = ''
-    return
-  }
-  if (file.size > UPLOAD_MAX_BYTES) {
-    message.error(`图片大小不能超过 ${UPLOAD_MAX_MB}MB`)
-    input.value = ''
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = () => {
-    editor.value?.chain().focus().setImage({ src: String(reader.result) }).run()
-  }
-  reader.readAsDataURL(file)
-  input.value = ''
+const addImage = () => {
+  if (uploading.value) return
+  imgRef.value?.click()
+}
+
+// 校验与上传由 composable 统一处理，此处只负责把地址插入正文
+const onImage = async (e: Event) => {
+  const url = await pickAndUpload(e.target as HTMLInputElement)
+  if (url) editor.value?.chain().focus().setImage({ src: url }).run()
+}
+
+const {
+  uploading: videoUploading,
+  progress: videoProgress,
+  pickAndUpload: pickAndUploadVideo,
+} = useVideoUpload()
+
+const addVideo = () => {
+  if (videoUploading.value) return
+  videoRef.value?.click()
+}
+
+const onVideo = async (e: Event) => {
+  const url = await pickAndUploadVideo(e.target as HTMLInputElement)
+  if (url) editor.value?.chain().focus().setVideo({ src: url }).run()
 }
 
 onBeforeUnmount(() => editor.value?.destroy())
@@ -127,6 +136,14 @@ onBeforeUnmount(() => editor.value?.destroy())
   border-color: #2f7cff;
 }
 
+/* 上传中禁用，需覆盖 hover 态否则鼠标移上去仍显示可点 */
+.tb-btn:disabled,
+.tb-btn:disabled:hover {
+  cursor: not-allowed;
+  color: #bfbfbf;
+  border-color: #d9d9d9;
+}
+
 .sep {
   width: 1px;
   height: 18px;
@@ -146,6 +163,17 @@ onBeforeUnmount(() => editor.value?.destroy())
 
 :deep(.ProseMirror img) {
   max-width: 100%;
+}
+
+:deep(.ProseMirror video) {
+  max-width: 100%;
+  display: block;
+  background: #000;
+}
+
+/* 选中的视频节点给出边框提示，否则原子节点被选中时没有任何视觉反馈 */
+:deep(.ProseMirror video.ProseMirror-selectednode) {
+  outline: 2px solid #2f7cff;
 }
 
 :deep(.ProseMirror p.is-editor-empty:first-child::before) {

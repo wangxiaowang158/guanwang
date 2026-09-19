@@ -36,6 +36,12 @@
         v-model="model[key]"
         :tip="defOf(key).tip"
       />
+      <!-- 视频 -->
+      <VideoUpload
+        v-else-if="defOf(key).widget === 'video'"
+        v-model="model[key]"
+        :tip="defOf(key).tip"
+      />
       <!-- 文件 -->
       <div v-else-if="defOf(key).widget === 'file'" class="file-row">
         <a-input v-model:value="model[key]" placeholder="文件地址" readonly />
@@ -71,6 +77,7 @@ import type { Rule } from 'ant-design-vue/es/form'
 import { getFieldDef } from './fieldDefs'
 import RichEditor from './components/RichEditor.vue'
 import ImageUpload from './components/ImageUpload.vue'
+import VideoUpload from './components/VideoUpload.vue'
 
 const props = defineProps<{
   fields: string[]

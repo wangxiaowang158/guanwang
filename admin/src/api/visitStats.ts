@@ -1,4 +1,4 @@
-// 访问统计接口层 —— 按日期范围聚合访问趋势与板块关注度（只读）
+// 访问统计接口层 —— 走真实后端 /api/mgmt/visit-stats/*，按日期范围聚合访问趋势与板块关注度（只读）
 import axios from 'axios'
 import type { ApiResult } from './auth'
 
@@ -26,4 +26,4 @@ export interface VisitQuery {
 
 /** 获取访问统计聚合数据 */
 export const getVisitSummary = (params: VisitQuery) =>
-  axios.get<ApiResult<VisitSummary>>('/api/visit-stats/summary', { params })
+  axios.get<ApiResult<VisitSummary>>('/api/mgmt/visit-stats/summary', { params })

@@ -29,10 +29,10 @@
           <a-empty v-else description="暂无数据" style="margin: 60px 0" />
         </div>
 
-        <!-- 最新留言概览 -->
+        <!-- 最新反馈概览 -->
         <div class="panel">
           <div class="panel-head">
-            <span class="panel-title">最新留言概览</span>
+            <span class="panel-title">最新反馈概览</span>
           </div>
           <a-table
             v-if="recent.length"
@@ -45,8 +45,8 @@
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'status'">
-                <a-tag :color="record.status === 'unread' ? 'red' : 'green'">
-                  {{ record.status === 'unread' ? '未读' : '已处理' }}
+                <a-tag :color="FEEDBACK_STATUS_COLOR[record.status as FeedbackStatus]">
+                  {{ FEEDBACK_STATUS_LABEL[record.status as FeedbackStatus] }}
                 </a-tag>
               </template>
             </template>
@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-// 数据仪表盘：聚合访问量/留言/新闻案例指标（只读），点击卡片/留言跳转对应模块
+// 数据仪表盘：聚合访问量/反馈/新闻案例指标（只读），点击卡片/反馈跳转对应模块
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
@@ -67,9 +67,14 @@ import PageContainer from '@/components/PageContainer/index.vue'
 import EChart from '@/components/EChart/index.vue'
 import type { EChartsOption } from 'echarts'
 import {
-  getDashboardMetrics, getDashboardTrend, getRecentMessages,
-  type DashboardMetrics, type TrendData, type RecentMessage
+  getDashboardMetrics, getDashboardTrend, getRecentFeedback,
+  type DashboardMetrics, type TrendData, type RecentFeedback
 } from '@/api/dashboard'
+import {
+  FEEDBACK_STATUS_LABEL, FEEDBACK_STATUS_COLOR, type FeedbackStatus,
+} from '@/api/feedback'
+import { toAxisDateLabels } from '@/utils/chart'
+import { LIST_LOAD_FAILED } from '@/constants/ui'
 
 const router = useRouter()
 
@@ -77,44 +82,44 @@ const loading = ref(false)
 const metrics = ref<DashboardMetrics | null>(null)
 const trend = reactive<TrendData>({ dates: [], values: [] })
 const trendRange = ref<7 | 30>(7)
-const recent = ref<RecentMessage[]>([])
+const recent = ref<RecentFeedback[]>([])
 // 趋势请求序号，用于丢弃过期响应
 let trendSeq = 0
 
-// 跳转留言管理（带未读筛选）/ 新闻案例管理
-const goMessages = (unread = false) =>
-  router.push({ path: '/cms/message', query: unread ? { status: 'unread' } : {} })
+// 跳转意见反馈（带待处理筛选）/ 新闻案例管理
+const goFeedback = (pending = false) =>
+  router.push({ path: '/cms/feedback', query: pending ? { status: 'pending' } : {} })
 const goNews = () => router.push('/cms/news-company')
 
-// 指标卡定义（未读留言、新闻案例可点击跳转）
+// 指标卡定义（待处理反馈、新闻案例可点击跳转）
 const metricCards = computed(() => {
   const m = metrics.value
   return [
     { key: 'total', label: '累计访问量', value: m?.totalVisits ?? 0, span: 5, color: '#2f7cff' },
     { key: 'today', label: '今日访问量', value: m?.todayVisits ?? 0, span: 5, color: '#2f7cff' },
-    { key: 'msg', label: '留言总数', value: m?.messageTotal ?? 0, span: 4, color: '#262626' },
-    { key: 'unread', label: '未读留言数', value: m?.messageUnread ?? 0, span: 5, color: '#fa541c', onClick: () => goMessages(true) },
+    { key: 'feedback', label: '反馈总数', value: m?.feedbackTotal ?? 0, span: 4, color: '#262626' },
+    { key: 'pending', label: '待处理反馈数', value: m?.feedbackPending ?? 0, span: 5, color: '#fa541c', onClick: () => goFeedback(true) },
     { key: 'news', label: '新闻案例数', value: m?.newsCount ?? 0, span: 5, color: '#262626', onClick: goNews }
   ]
 })
 
 const recentColumns = [
-  { title: '姓名', dataIndex: 'name', key: 'name' },
+  { title: '留言人', dataIndex: 'name', key: 'name' },
   { title: '提交时间', dataIndex: 'submitTime', key: 'submitTime', width: 200 },
   { title: '处理状态', key: 'status', width: 120 }
 ]
 
-// 点击留言行跳转留言管理
-const recentRow = (record: RecentMessage) => ({
+// 点击反馈行跳转意见反馈，待处理的带上状态筛选
+const recentRow = (record: RecentFeedback) => ({
   style: { cursor: 'pointer' },
-  onClick: () => goMessages(record.status === 'unread')
+  onClick: () => goFeedback(record.status === 'pending')
 })
 
 // 趋势折线图配置
 const trendOption = computed<EChartsOption>(() => ({
   tooltip: { trigger: 'axis' },
   grid: { left: 48, right: 24, top: 24, bottom: 32 },
-  xAxis: { type: 'category', data: trend.dates, boundaryGap: false },
+  xAxis: { type: 'category', data: toAxisDateLabels(trend.dates), boundaryGap: false },
   yAxis: { type: 'value' },
   series: [{
     name: '访问量', type: 'line', smooth: true, data: trend.values,
@@ -133,19 +138,19 @@ const fetchTrend = async () => {
       trend.values = res.data.data.values
     }
   } catch {
-    if (seq === trendSeq) message.error('数据加载失败，请刷新重试')
+    if (seq === trendSeq) message.error(LIST_LOAD_FAILED)
   }
 }
 
 const fetchAll = async () => {
   loading.value = true
   try {
-    const [mRes, rRes] = await Promise.all([getDashboardMetrics(), getRecentMessages()])
+    const [mRes, rRes] = await Promise.all([getDashboardMetrics(), getRecentFeedback()])
     if (mRes.data.code === 200) metrics.value = mRes.data.data
     if (rRes.data.code === 200) recent.value = rRes.data.data
     await fetchTrend()
   } catch {
-    message.error('数据加载失败，请刷新重试')
+    message.error(LIST_LOAD_FAILED)
   } finally {
     loading.value = false
   }

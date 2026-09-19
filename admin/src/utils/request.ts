@@ -2,14 +2,8 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 import router from '@/router'
-import {
-  API_BASE_URL,
-  API_PREFIX,
-  DECLARED_API_PREFIX,
-  MGMT_DEV_TOKEN,
-  MGMT_SUBPREFIX,
-  MGMT_TOKEN_HEADER,
-} from '@/config'
+import { API_BASE_URL, API_PREFIX, DECLARED_API_PREFIX, LOGIN_SUBPATH } from '@/config'
+import { useUserStore } from '@/store'
 
 let redirecting = false
 
@@ -24,18 +18,20 @@ function rewritePrefix(url: string | undefined): string | undefined {
 }
 
 /**
- * 判断是否为走真实后端的管理端接口
+ * 判断是否为登录接口自身
+ * 登录返回的 401 表示账号密码错误，须留在登录页提示，不能当作登录态失效去跳转；
  * 需在前缀改写「之后」调用，故按实际生效的 API_PREFIX 匹配
  */
-function isMgmtPath(url: string | undefined): boolean {
+function isLoginPath(url: string | undefined): boolean {
   if (!url) return false
-  const mgmtPrefix = `${API_PREFIX}${MGMT_SUBPREFIX}`
-  return url === mgmtPrefix || url.startsWith(`${mgmtPrefix}/`)
+  // 去掉查询串再比对，避免带参调用漏判
+  const path = url.split('?')[0]
+  return path === `${API_PREFIX}${LOGIN_SUBPATH}`
 }
 
 /** 安装 axios 基础地址与拦截器（在应用启动时调用一次） */
 export function setupAxios() {
-  // 基础地址：留空即同源相对路径（走 Mock 或开发代理）
+  // 基础地址：留空即同源相对路径（走开发代理或同源部署）
   if (API_BASE_URL) {
     axios.defaults.baseURL = API_BASE_URL
   }
@@ -48,26 +44,25 @@ export function setupAxios() {
       config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${token}`
     }
-    // 管理端真实后端接口额外带占位令牌头；管理员登录仍走 Mock，故后端不认 Authorization
-    if (MGMT_DEV_TOKEN && isMgmtPath(config.url)) {
-      config.headers = config.headers || {}
-      config.headers[MGMT_TOKEN_HEADER] = MGMT_DEV_TOKEN
-    }
     return config
   })
 
-  // 响应拦截：401/鉴权失效时清理凭证并跳转登录
+  // 响应拦截：401 表示管理员令牌缺失或已过期，清理凭证并跳转登录
+  // 后端异常统一包装为 HTTP 200 + 响应体 code，故两种失效都命中此分支
   axios.interceptors.response.use(
-    // 管理端真实后端接口的 401 表示占位令牌配错，与管理员登录态无关，不触发跳登录
     (response) => {
       const code = response.data?.code
-      if (code === 401 && !isMgmtPath(response.config?.url)) {
+      if (code === 401 && !isLoginPath(response.config?.url)) {
         handleUnauthorized()
+      }
+      // 403 为后端菜单级权限拦截；页面只判 code:200 会静默空白，故在此统一提示
+      if (code === 403) {
+        message.error(response.data?.message || '无访问权限')
       }
       return response
     },
     (error) => {
-      if (error.response?.status === 401 && !isMgmtPath(error.config?.url)) {
+      if (error.response?.status === 401 && !isLoginPath(error.config?.url)) {
         handleUnauthorized()
       }
       return Promise.reject(error)
@@ -76,11 +71,11 @@ export function setupAxios() {
 }
 
 // 凭证失效：清理并跳转登录（防重复跳转）
+// 复用 store 的 clearUser，让「登录态失效」只有一个清理出口，避免内存 userInfo 残留
 function handleUnauthorized() {
   if (redirecting) return
   redirecting = true
-  localStorage.removeItem('token')
-  localStorage.removeItem('username')
+  useUserStore().clearUser()
   message.warning('登录已过期，请重新登录')
   router.push('/login').finally(() => {
     redirecting = false

@@ -55,10 +55,10 @@
                 </a-button>
               </a-form-item>
             </a-form>
-            <!-- 默认账号提示仅开发环境展示，生产构建不渲染，防凭证泄露 -->
+            <!-- 开发期提示仅开发环境展示，生产构建不渲染；不写死密码，防凭证泄露 -->
             <a-alert
               v-if="isDev"
-              message="默认账号：admin / 123456"
+              message="账号由后端首次启动时按 ADMIN_SEED_ACCOUNT / ADMIN_SEED_PASSWORD 创建"
               type="info"
               show-icon
               style="margin-top: 20px"
@@ -172,9 +172,10 @@ const handleLogin = async () => {
   try {
     const { data: res } = await login({ username: form.username, password: form.password })
     if (res.code === 200 && res.data) {
-      // 成功：保存凭证，无提示跳转（仪表盘 F14 完成后默认改为 /dashboard）
+      // 成功：保存凭证与身份权限，无提示跳转
       userStore.setToken(res.data.token)
       userStore.setUsername(res.data.username)
+      userStore.setUserInfo(res.data.profile)
       failCount.value = 0
       // 优先回跳拦截前的目标页；用同源校验防开放重定向（拦截 //evil.com、/\evil.com）
       const redirect = route.query.redirect

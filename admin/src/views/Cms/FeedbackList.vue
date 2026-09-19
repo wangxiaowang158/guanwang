@@ -42,6 +42,10 @@
           @search="search"
         />
       </a-space>
+      <a-button :loading="exporting" @click="onExport">
+        <template #icon><DownloadOutlined /></template>
+        导出
+      </a-button>
     </div>
     <div v-if="selectedKeys.length" class="batch-bar">
       <span>已选 {{ selectedKeys.length }} 条</span>
@@ -173,19 +177,23 @@
 // 意见反馈：访客咨询与会员反馈合并管理，含回复线程、状态流转、单条与批量删除
 import { computed, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { DownloadOutlined } from '@ant-design/icons-vue'
 import {
   getFeedbackList, getFeedbackDetail, replyFeedback, updateFeedbackStatus,
-  deleteFeedback, batchDeleteFeedback,
+  deleteFeedback, batchDeleteFeedback, exportFeedback,
   FEEDBACK_SOURCE_LABEL, FEEDBACK_TYPE_LABEL, FEEDBACK_STATUS_LABEL,
   FEEDBACK_STATUS_COLOR, FEEDBACK_STATUS_FLOW,
   type FeedbackDetail, type FeedbackListItem,
   type FeedbackSource, type FeedbackStatus, type FeedbackType,
 } from '@/api/feedback'
+import { useRoute } from 'vue-router'
 import { useServerListPage } from '@/composables/useServerListPage'
 import { useUserStore } from '@/store/modules/user'
-import { DELETE_SUCCESS, DELETE_FAILED, SAVE_SUCCESS, SAVE_FAILED } from '@/constants/ui'
+import { readBlobError, parseFileName, saveBlob } from '@/utils/download'
+import { DELETE_SUCCESS, DELETE_FAILED, SAVE_SUCCESS, SAVE_FAILED, EXPORT_FAILED } from '@/constants/ui'
 
 const userStore = useUserStore()
+const route = useRoute()
 
 /** 时间展示：空值补占位，避免表格出现空白单元格 */
 const formatTime = (value: string | null) =>
@@ -198,6 +206,13 @@ const typeLabel = (value: FeedbackType | null) =>
 /** 把 Record 转成下拉选项 */
 const toOptions = <T extends string>(labels: Record<T, string>) =>
   (Object.keys(labels) as T[]).map((value) => ({ value, label: labels[value] }))
+
+/** 解析路由带入的状态筛选，非法值忽略（query 来自 URL，属外部输入） */
+function resolveInitialStatus(): FeedbackStatus | undefined {
+  const raw = route.query.status
+  if (typeof raw !== 'string') return undefined
+  return raw in FEEDBACK_STATUS_LABEL ? (raw as FeedbackStatus) : undefined
+}
 
 const sourceOptions = toOptions(FEEDBACK_SOURCE_LABEL)
 const typeOptions = toOptions(FEEDBACK_TYPE_LABEL)
@@ -219,7 +234,8 @@ const columns = [
 const keyword = ref('')
 const source = ref<FeedbackSource>()
 const feedbackType = ref<FeedbackType>()
-const status = ref<FeedbackStatus>()
+// 状态初值取自路由 query：数据仪表盘点「待处理反馈数」跳转时带 status=pending
+const status = ref<FeedbackStatus | undefined>(resolveInitialStatus())
 const dateRange = ref<[string, string]>()
 
 const detailOpen = ref(false)
@@ -228,22 +244,54 @@ const replyContent = ref('')
 const visibleToMember = ref(true)
 const submitting = ref(false)
 const statusUpdating = ref(false)
+const exporting = ref(false)
+
+/**
+ * 收集当前筛选条件
+ * 列表与导出共用，避免两处各写一份而导致导出口径与列表不一致
+ */
+const currentFilters = () => ({
+  keyword: keyword.value || undefined,
+  source: source.value,
+  feedbackType: feedbackType.value,
+  status: status.value,
+  startDate: dateRange.value?.[0],
+  endDate: dateRange.value?.[1],
+})
 
 const {
   loading, rows, selectedKeys, page, pageSize, total,
   fetchList, search, onPageChange, onSelectChange, refreshAfterRemove,
 } = useServerListPage<FeedbackListItem>((query) =>
   getFeedbackList({
-    keyword: keyword.value || undefined,
-    source: source.value,
-    feedbackType: feedbackType.value,
-    status: status.value,
-    startDate: dateRange.value?.[0],
-    endDate: dateRange.value?.[1],
+    ...currentFilters(),
     page: query.page,
     pageSize: query.pageSize,
   }),
 )
+
+/**
+ * 按当前筛选条件导出 xlsx
+ * 无数据时后端回业务 JSON 而非文件流，需先判别再决定是保存还是提示
+ */
+const onExport = async () => {
+  exporting.value = true
+  try {
+    const res = await exportFeedback(currentFilters())
+    const failure = await readBlobError(res.data)
+    if (failure) {
+      message.warning(failure.message || EXPORT_FAILED)
+      return
+    }
+    // 跨域部署时 Content-Disposition 可能不可读，用本地时间兜底命名
+    const fileName = parseFileName(res.headers['content-disposition'] as string | undefined)
+    saveBlob(res.data, fileName || `意见反馈-${Date.now()}.xlsx`)
+  } catch {
+    message.error(EXPORT_FAILED)
+  } finally {
+    exporting.value = false
+  }
+}
 
 /** 表格分页变更 */
 const onTableChange = (pag: { current?: number; pageSize?: number }) =>
@@ -370,7 +418,12 @@ const onBatchDelete = async () => {
   font-weight: 600;
 }
 
+/* 筛选条件占左侧，导出按钮靠右，与内容列表页工具栏一致 */
 .toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 16px;
 }
 

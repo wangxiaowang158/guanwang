@@ -1,4 +1,4 @@
-// 意见反馈接口层 —— 走真实后端 /api/mgmt/feedback/*（非 Mock）
+// 意见反馈接口层 —— /api/mgmt/feedback/*
 // 一张表两种来源：anonymous 为前台访客咨询（原留言），member 为登录会员反馈
 import axios from 'axios'
 import type { ApiResult } from './auth'
@@ -113,6 +113,14 @@ export interface FeedbackQuery {
  */
 export const getFeedbackList = (params: FeedbackQuery) =>
   axios.get<ApiResult<PageResult<FeedbackListItem>>>('/api/mgmt/feedback/list', { params })
+
+/**
+ * 导出反馈为 xlsx，筛选口径与列表一致（不含分页）
+ * 响应体可能是文件流，也可能是无数据时的业务 JSON，故统一按 blob 接收后再判别
+ * @param params 与列表相同的筛选条件，分页参数会被忽略
+ */
+export const exportFeedback = (params: Omit<FeedbackQuery, 'page' | 'pageSize'>) =>
+  axios.get<Blob>('/api/mgmt/feedback/export', { params, responseType: 'blob' })
 
 /**
  * 获取反馈详情

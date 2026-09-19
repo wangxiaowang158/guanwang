@@ -56,6 +56,14 @@
           <a-form-item label="版权信息" name="copyright">
             <a-textarea v-model:value="form.copyright" :rows="3" />
           </a-form-item>
+          <a-form-item label="ICP 备案号" name="icpCode">
+            <a-input v-model:value="form.icpCode" :maxlength="100" placeholder="如 京ICP备12345678号" />
+            <div class="field-tip">留空时前台页脚不展示该备案项</div>
+          </a-form-item>
+          <a-form-item label="公安备案号" name="policeCode">
+            <a-input v-model:value="form.policeCode" :maxlength="100" placeholder="如 京公网安备11010502000000号" />
+            <div class="field-tip">留空时前台页脚不展示该备案项</div>
+          </a-form-item>
           <a-form-item label="LOGO" name="logo">
             <ImageUpload v-model="form.logo" tip="建议尺寸：180*50px" />
           </a-form-item>
@@ -69,8 +77,11 @@
             <ImageUpload v-model="form.heroImage" tip="首页 Hero 背景图，建议 1920*1080px；若同时配了背景视频则视频优先" />
           </a-form-item>
           <a-form-item label="首页背景视频" name="heroVideo">
-            <a-input v-model:value="form.heroVideo" placeholder="视频地址（mp4），留空则用背景图或默认渐变" />
-            <div class="field-tip">填写视频直链（.mp4）。视频优先级高于背景图，自动静音循环播放</div>
+            <VideoUpload v-model="form.heroVideo" tip="留空则用背景图或默认渐变" />
+            <div class="field-tip">
+              可上传本地视频，也可直接填外链地址。视频优先级高于背景图，自动静音循环播放；
+              手机端为省流量仍显示背景图
+            </div>
           </a-form-item>
           <a-form-item :wrapper-col="{ offset: 0 }" class="form-actions">
             <a-button type="primary" :loading="saving" @click="onSave">保存</a-button>
@@ -93,6 +104,7 @@ import { HomeOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import { getSiteInfo, saveSiteInfo, type SiteInfo } from '@/api/cms'
 import { sanitizeHtml } from '@/utils/sanitize'
 import ImageUpload from './components/ImageUpload.vue'
+import VideoUpload from './components/VideoUpload.vue'
 import TemplatePreview from './components/TemplatePreview.vue'
 
 const formRef = ref()
@@ -103,7 +115,8 @@ const previewOpen = ref(false)
 const form = reactive<SiteInfo>({
   webTitle: '', keywords: '', description: '', phone: '', website: '',
   recruitEmail: '', contactEmail: '', address: '', mapLng: '', mapLat: '',
-  mapLink: '', copyright: '', logo: '', footerLogo: '', wechatQr: '', template: '1',
+  mapLink: '', copyright: '', icpCode: '', policeCode: '',
+  logo: '', footerLogo: '', wechatQr: '', template: '1',
   heroImage: '', heroVideo: ''
 })
 
@@ -112,10 +125,11 @@ const rules: Record<string, Rule[]> = {
   phone: [{ required: true, message: '请填写电话', trigger: 'blur' }],
   contactEmail: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }],
   recruitEmail: [{ type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }],
-  // 背景视频限定 http/https 的 .mp4 直链，拦截 javascript:/data: 等非法协议
+  // 背景视频限定 http/https 外链或 / 开头的站内上传地址，拦截 javascript:/data: 等非法协议
+  // 站内地址必须放行：上传接口返回的是 /uploads/YYYYMM/xxx.mp4 这种相对路径
   heroVideo: [{
-    pattern: /^https?:\/\/.+\.mp4(\?.*)?$/i,
-    message: '请填写以 http(s):// 开头的 .mp4 视频地址',
+    pattern: /^(https?:\/\/[^\s]+|\/[^\s]*)\.(mp4|webm|ogv|ogg)(\?[^\s]*)?$/i,
+    message: '请上传视频，或填写 http(s):// 开头的 MP4 / WebM / Ogg 地址',
     trigger: 'blur'
   }]
 }

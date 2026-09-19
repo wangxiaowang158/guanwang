@@ -10,7 +10,6 @@
 - Vue Router 4
 - Vite 5
 - Axios
-- vite-plugin-mock
 
 ## 目录结构
 

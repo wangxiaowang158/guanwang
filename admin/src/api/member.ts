@@ -1,4 +1,4 @@
-// 会员管理接口层 —— 走真实后端 /api/mgmt/member/*（非 Mock）
+// 会员管理接口层 —— /api/mgmt/member/*
 // 会员由前台注册产生，后台只做查询、启用禁用、解锁、重置密码、删除
 import axios from 'axios'
 import type { ApiResult } from './auth'

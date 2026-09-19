@@ -76,6 +76,27 @@
             <a-form-item v-if="form.type === 'list'" label="列表列">
               <a-checkbox-group v-model:value="form.listColumns" :options="columnOptions" />
             </a-form-item>
+            <!-- 前台区块配置：子栏目会作为父页面的一个内容区块呈现 -->
+            <template v-if="showBlockConfig">
+              <a-divider style="margin: 4px 0 16px">前台区块</a-divider>
+              <a-form-item label="区块锚点">
+                <a-input
+                  v-model:value="form.anchor"
+                  placeholder="小写字母、数字与连字符，如 company-video"
+                  :maxlength="64"
+                />
+                <div class="field-tip">留空则该栏目内容不在前台页面上呈现</div>
+              </a-form-item>
+              <a-form-item label="区块副标题">
+                <a-input v-model:value="form.subheading" placeholder="选填，显示在区块标题下方" :maxlength="300" />
+              </a-form-item>
+              <a-form-item label="展示形态">
+                <a-select v-model:value="form.layout" :options="layoutOptions" placeholder="默认图标卡片" allow-clear />
+                <div class="field-tip">
+                  选「视频」时，内容的视频字段作为播放源、封面图片作为播放前首帧
+                </div>
+              </a-form-item>
+            </template>
             <!-- SEO 信息（TDK）：仅顶级板块页可填，用于前台页面搜索引擎优化 -->
             <template v-if="showSeo">
               <a-divider style="margin: 4px 0 16px">SEO 信息（TDK）</a-divider>
@@ -109,7 +130,8 @@ import { message, Modal } from 'ant-design-vue'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ControlOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/PageContainer/index.vue'
 import {
-  getChannelList, addChannel, updateChannel, deleteChannel, type Channel
+  getChannelList, addChannel, updateChannel, deleteChannel,
+  BLOCK_LAYOUT_OPTIONS, type BlockLayout, type Channel
 } from '@/api/cms'
 import { useChannels } from '@/composables/useChannels'
 import { FIELD_DEFS, COLUMN_LABELS } from './fieldDefs'
@@ -134,6 +156,7 @@ const typeOptions = [
 ]
 const fieldOptions = Object.keys(FIELD_DEFS).map(k => ({ label: FIELD_DEFS[k].label, value: k }))
 const columnOptions = Object.keys(COLUMN_LABELS).map(k => ({ label: COLUMN_LABELS[k], value: k }))
+const layoutOptions = BLOCK_LAYOUT_OPTIONS
 
 const defaultForm = () => ({
   id: undefined as number | undefined,
@@ -141,6 +164,7 @@ const defaultForm = () => ({
   key: '', name: '', type: 'list', icon: '', sort: 0,
   formFields: ['title', 'content', 'updateTime', 'isTop'] as string[],
   listColumns: ['title', 'createTime', 'isTop'] as string[],
+  anchor: '', subheading: '', layout: undefined as BlockLayout | undefined,
   seoTitle: '', seoKeywords: '', seoDescription: ''
 })
 const form = reactive(defaultForm())
@@ -155,6 +179,13 @@ const showSeo = computed(() =>
   form.parentId === null &&
   !SEO_EXCLUDE_TYPES.includes(form.type) &&
   !SEO_EXCLUDE_KEYS.includes(form.key)
+)
+
+// 区块配置只对「挂在某个页面下的内容栏目」开放：
+// 顶级栏目本身是页面而非区块，系统类栏目不进前台
+const showBlockConfig = computed(() =>
+  form.parentId !== null &&
+  (form.type === 'list' || form.type === 'single')
 )
 
 // 扁平 → 树
@@ -265,6 +296,9 @@ const openEdit = (node: Channel) => {
     sort: node.sort,
     formFields: node.formFields ? [...node.formFields] : [],
     listColumns: node.listColumns ? [...node.listColumns] : [],
+    anchor: node.anchor || '',
+    subheading: node.subheading || '',
+    layout: node.layout,
     seoTitle: node.seoTitle || '',
     seoKeywords: node.seoKeywords || '',
     seoDescription: node.seoDescription || ''
@@ -286,6 +320,13 @@ const onSave = async () => {
       delete seoPayload.seoTitle
       delete seoPayload.seoKeywords
       delete seoPayload.seoDescription
+    }
+    // 顶级栏目本身是页面不是区块，不保存区块字段
+    if (!showBlockConfig.value) {
+      const blockPayload = payload as Partial<typeof payload>
+      delete blockPayload.anchor
+      delete blockPayload.subheading
+      delete blockPayload.layout
     }
     const res = payload.id
       ? await updateChannel(payload as Channel)
@@ -418,5 +459,11 @@ onMounted(fetchList)
 
 .node-row:hover .node-ops {
   display: inline-flex;
+}
+
+.field-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8c8c8c;
 }
 </style>

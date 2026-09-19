@@ -1,4 +1,4 @@
-// 会员登录日志接口层 —— 走真实后端 /api/mgmt/login-log/*（非 Mock）
+// 会员登录日志接口层 —— /api/mgmt/login-log/*
 // 只读 + 按日期清理，日志由会员登录行为自动写入
 import axios from 'axios'
 import type { ApiResult } from './auth'

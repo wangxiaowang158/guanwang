@@ -18,20 +18,21 @@
 
 <script setup lang="ts">
 // 侧边栏：菜单由栏目配置动态生成
-import { ref, watch, onMounted, h } from 'vue'
+import { computed, ref, watch, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { SettingOutlined, DashboardOutlined, BarChartOutlined } from '@ant-design/icons-vue'
 import { useChannels, channelPath } from '@/composables/useChannels'
 import { TOP_MENUS, BOTTOM_MENUS, FIXED_MENU_PATHS } from '@/constants/menu'
+import { useUserStore } from '@/store'
 
 const route = useRoute()
 const router = useRouter()
 const { load, buildMenu, findByKey, ancestors } = useChannels()
+const { hasPerm } = useUserStore()
 
 const collapsed = defineModel<boolean>('collapsed', { default: false })
 const selectedKeys = ref<string[]>([])
 const openKeys = ref<string[]>([])
-const menuItems = ref<any[]>([])
 
 // 固定菜单项的图标，按路径取用
 const FIXED_ICONS: Record<string, () => ReturnType<typeof h>> = {
@@ -40,13 +41,18 @@ const FIXED_ICONS: Record<string, () => ReturnType<typeof h>> = {
   '/channel-manage': () => h(SettingOutlined)
 }
 
-// 由共享常量补充图标，生成 a-menu 所需的菜单项
+// 由共享常量补充图标，生成 a-menu 所需的菜单项；无权限的固定项不渲染（非禁用）
 const toMenuItems = (metas: readonly { path: string; name: string }[]) =>
-  metas.map(m => ({ key: m.path, label: m.name, title: m.name, icon: FIXED_ICONS[m.path] }))
+  metas
+    .filter(m => hasPerm(m.name))
+    .map(m => ({ key: m.path, label: m.name, title: m.name, icon: FIXED_ICONS[m.path] }))
 
-// 顶部固定项：仪表盘 / 访问统计；底部固定项：栏目管理（均为独立路由，不走栏目配置）
-const TOP_ITEMS = toMenuItems(TOP_MENUS)
-const FIXED_ITEMS = toMenuItems(BOTTOM_MENUS)
+// 菜单项随栏目数据与权限响应式重算：栏目管理里增删改后 load(true) 即刷新此处
+const menuItems = computed(() => [
+  ...toMenuItems(TOP_MENUS),
+  ...buildMenu(),
+  ...toMenuItems(BOTTOM_MENUS)
+])
 
 // 根据当前路由同步高亮项与展开的父菜单
 const syncActive = () => {
@@ -64,7 +70,6 @@ const syncActive = () => {
 
 onMounted(async () => {
   await load()
-  menuItems.value = [...TOP_ITEMS, ...buildMenu(), ...FIXED_ITEMS]
   syncActive()
 })
 

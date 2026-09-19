@@ -26,9 +26,13 @@
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'perms'">
-          <a-tag v-for="p in record.perms.slice(0, 4)" :key="p" color="blue">{{ p }}</a-tag>
-          <span v-if="record.perms.length > 4">等 {{ record.perms.length }} 项</span>
-          <span v-if="!record.perms.length">-</span>
+          <!-- 超管权限由身份表达，perms 为空数组，不能显示成「无权限」 -->
+          <a-tag v-if="record.isSuper" color="gold">全部权限</a-tag>
+          <template v-else>
+            <a-tag v-for="p in record.perms.slice(0, 4)" :key="p" color="blue">{{ p }}</a-tag>
+            <span v-if="record.perms.length > 4">等 {{ record.perms.length }} 项</span>
+            <span v-if="!record.perms.length">-</span>
+          </template>
         </template>
         <template v-else-if="column.key === 'wechatBound'">
           <a-tag :color="record.wechatBound ? 'green' : 'default'">
@@ -38,14 +42,15 @@
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button type="link" size="small" @click="openEdit(record)">编辑</a-button>
+            <!-- 超管不可删除，与后端约束一致；默认管理员即超管 -->
             <a-popconfirm
+              v-if="!record.isSuper"
               title="确认删除该管理员？"
               ok-text="确定"
               cancel-text="取消"
-              :disabled="record.account === 'admin'"
               @confirm="onDelete(record.id)"
             >
-              <a-button type="link" size="small" danger :disabled="record.account === 'admin'">删除</a-button>
+              <a-button type="link" size="small" danger>删除</a-button>
             </a-popconfirm>
           </a-space>
         </template>
@@ -64,7 +69,13 @@
     >
       <a-form ref="formRef" :model="form" :rules="rules" :label-col="{ style: { width: '90px' } }" style="margin-top: 8px">
         <a-form-item label="账号" name="account">
-          <a-input v-model:value="form.account" :maxlength="50" placeholder="请输入账号" />
+          <!-- 账号创建后不可改：后端更新接口不接受该字段 -->
+          <a-input
+            v-model:value="form.account"
+            :maxlength="50"
+            :disabled="!!form.id"
+            placeholder="请输入账号"
+          />
         </a-form-item>
         <a-form-item label="姓名" name="name">
           <a-input v-model:value="form.name" :maxlength="50" placeholder="请输入姓名" />
@@ -76,7 +87,9 @@
           <a-input-password v-model:value="form.confirmPassword" :maxlength="100" placeholder="再次输入密码" />
         </a-form-item>
         <a-form-item label="权限设置">
-          <a-checkbox-group v-model:value="form.perms" :options="permOptions" />
+          <!-- 超管拥有全部权限且不可调整，后端亦不保存其权限清单 -->
+          <div v-if="form.isSuper" class="super-hint">超级管理员拥有全部功能模块权限，无需分配</div>
+          <a-checkbox-group v-else v-model:value="form.perms" :options="permOptions" />
         </a-form-item>
         <a-form-item label="微信登录">
           <a-button :type="form.wechatBound ? 'default' : 'primary'" ghost @click="toggleWechat">
@@ -94,9 +107,12 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
 import { PlusOutlined } from '@ant-design/icons-vue'
-import { getAdminList, saveAdmin, deleteAdmin, type AdminItem } from '@/api/admin'
+import {
+  getAdminList, addAdmin, updateAdmin, resetAdminPassword, deleteAdmin, type AdminItem
+} from '@/api/admin'
 import { useChannels } from '@/composables/useChannels'
 import { TOP_MENUS, BOTTOM_MENUS, NON_GRANTABLE_CHANNEL_TYPES } from '@/constants/menu'
+import { DELETE_FAILED, DELETE_SUCCESS, LIST_LOAD_FAILED, SAVE_FAILED, SAVE_SUCCESS } from '@/constants/ui'
 
 const { load, channels } = useChannels()
 
@@ -131,13 +147,24 @@ const saving = ref(false)
 const defaultForm = () => ({
   id: undefined as number | undefined,
   account: '', name: '', password: '', confirmPassword: '',
-  perms: [] as string[], wechatBound: false
+  perms: [] as string[], wechatBound: false,
+  /** 编辑超管时置真，用于隐藏权限勾选 */
+  isSuper: false
 })
 const form = reactive(defaultForm())
 
+// 密码规则与后端 DTO 对齐：新增必填且不少于 8 位，编辑时留空表示不改密码
 const rules: Record<string, Rule[]> = {
   account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  password: [{
+    validator: (_r, value: string) => {
+      if (!form.id && !value) return Promise.reject('请输入密码')
+      if (value && value.length < 8) return Promise.reject('密码不得少于 8 位')
+      return Promise.resolve()
+    },
+    trigger: 'blur'
+  }],
   confirmPassword: [{
     validator: (_r, value: string) =>
       value === form.password ? Promise.resolve() : Promise.reject('两次输入的密码不一致'),
@@ -151,7 +178,7 @@ const fetchList = async () => {
     const res = await getAdminList({ keyword: keyword.value || undefined })
     if (res.data.code === 200) rows.value = res.data.data
   } catch {
-    message.error('获取列表失败')
+    message.error(LIST_LOAD_FAILED)
   } finally {
     loading.value = false
   }
@@ -166,6 +193,7 @@ const openEdit = (record?: AdminItem) => {
     form.name = record.name
     form.perms = [...record.perms]
     form.wechatBound = record.wechatBound
+    form.isSuper = record.isSuper
   }
   editVisible.value = true
 }
@@ -182,23 +210,39 @@ const onSave = async () => {
   }
   saving.value = true
   try {
-    const res = await saveAdmin({
-      id: form.id,
-      account: form.account,
-      name: form.name,
-      password: form.password || undefined,
-      perms: form.perms,
-      wechatBound: form.wechatBound
-    })
-    if (res.data.code === 200) {
-      message.success('保存成功')
-      editVisible.value = false
-      fetchList()
-    } else {
-      message.error(res.data.message || '保存失败')
+    // 资料与密码分属两个接口：新增一次提交，编辑时仅填了密码才额外调重置
+    const editingId = form.id
+    const res = editingId
+      ? await updateAdmin({
+          id: editingId,
+          name: form.name,
+          perms: form.perms,
+          wechatBound: form.wechatBound
+        })
+      : await addAdmin({
+          account: form.account,
+          name: form.name,
+          password: form.password,
+          perms: form.perms,
+          wechatBound: form.wechatBound
+        })
+    if (res.data.code !== 200) {
+      message.error(res.data.message || SAVE_FAILED)
+      return
     }
+    if (editingId && form.password) {
+      const pwdRes = await resetAdminPassword(editingId, form.password)
+      if (pwdRes.data.code !== 200) {
+        message.error(pwdRes.data.message || '资料已保存，但密码重置失败')
+        fetchList()
+        return
+      }
+    }
+    message.success(SAVE_SUCCESS)
+    editVisible.value = false
+    fetchList()
   } catch {
-    message.error('保存失败')
+    message.error(SAVE_FAILED)
   } finally {
     saving.value = false
   }
@@ -206,11 +250,15 @@ const onSave = async () => {
 
 const onDelete = async (id: number) => {
   try {
-    await deleteAdmin(id)
-    message.success('删除成功')
+    const res = await deleteAdmin(id)
+    if (res.data.code !== 200) {
+      message.error(res.data.message || DELETE_FAILED)
+      return
+    }
+    message.success(DELETE_SUCCESS)
     fetchList()
   } catch {
-    message.error('删除失败')
+    message.error(DELETE_FAILED)
   }
 }
 
@@ -238,5 +286,10 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.super-hint {
+  color: #8c8c8c;
+  font-size: 13px;
 }
 </style>

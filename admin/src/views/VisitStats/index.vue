@@ -59,6 +59,8 @@ import PageContainer from '@/components/PageContainer/index.vue'
 import EChart from '@/components/EChart/index.vue'
 import type { EChartsOption } from 'echarts'
 import { getVisitSummary, type VisitSummary, type VisitQuery } from '@/api/visitStats'
+import { toAxisDateLabels } from '@/utils/chart'
+import { LIST_LOAD_FAILED } from '@/constants/ui'
 
 const loading = ref(false)
 const range = ref<7 | 30 | 'custom'>(7)
@@ -71,7 +73,11 @@ const hasData = computed(() => !!summary.value && summary.value.values.length > 
 const trendOption = computed<EChartsOption>(() => ({
   tooltip: { trigger: 'axis' },
   grid: { left: 48, right: 24, top: 24, bottom: 32 },
-  xAxis: { type: 'category', data: summary.value?.dates ?? [], boundaryGap: false },
+  xAxis: {
+    type: 'category',
+    data: toAxisDateLabels(summary.value?.dates ?? []),
+    boundaryGap: false,
+  },
   yAxis: { type: 'value' },
   series: [{
     name: '访问量', type: 'line', smooth: true, data: summary.value?.values ?? [],
@@ -110,9 +116,13 @@ const fetchData = async () => {
   loading.value = true
   try {
     const res = await getVisitSummary(buildQuery())
-    if (res.data.code === 200) summary.value = res.data.data
+    if (res.data.code !== 200) {
+      message.error(res.data.message || LIST_LOAD_FAILED)
+      return
+    }
+    summary.value = res.data.data
   } catch {
-    message.error('数据加载失败，请刷新重试')
+    message.error(LIST_LOAD_FAILED)
   } finally {
     loading.value = false
   }

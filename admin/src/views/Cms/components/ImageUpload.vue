@@ -7,7 +7,9 @@
       class="path-input"
     >
       <template #addonAfter>
-        <span class="upload-btn" @click="triggerPick">上传图片</span>
+        <span class="upload-btn" @click="triggerPick">
+          {{ uploading ? '上传中…' : '上传图片' }}
+        </span>
       </template>
     </a-input>
     <a-button class="preview-btn" :disabled="!modelValue" @click="previewVisible = true">
@@ -32,43 +34,28 @@
 </template>
 
 <script setup lang="ts">
-// 图片上传：mock 阶段选本地图片转 base64 预览（无真实后端）
+// 图片上传：选本地图片上传到后端，写回站内访问地址
 import { ref } from 'vue'
-import { message } from 'ant-design-vue'
-import {
-  UPLOAD_ACCEPT, UPLOAD_MAX_MB, UPLOAD_MAX_BYTES,
-  UPLOAD_IMAGE_MIMES, UPLOAD_IMAGE_LABEL
-} from '@/config'
+import { UPLOAD_ACCEPT } from '@/config'
+import { useImageUpload } from '@/composables/useImageUpload'
 
-const props = defineProps<{ modelValue?: string; tip?: string }>()
+defineProps<{ modelValue?: string; tip?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const fileRef = ref<HTMLInputElement>()
 const previewVisible = ref(false)
 
-const triggerPick = () => fileRef.value?.click()
+const { uploading, pickAndUpload } = useImageUpload()
 
-// 选图后校验类型与大小，转 base64 写回；限制取自 config，与富文本编辑器一致
-const onFileChange = (e: Event) => {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  if (!(UPLOAD_IMAGE_MIMES as readonly string[]).includes(file.type)) {
-    message.error(`请上传 ${UPLOAD_IMAGE_LABEL} 格式图片`)
-    input.value = ''
-    return
-  }
-  if (file.size > UPLOAD_MAX_BYTES) {
-    message.error(`图片大小不能超过 ${UPLOAD_MAX_MB}MB`)
-    input.value = ''
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = () => {
-    emit('update:modelValue', String(reader.result))
-  }
-  reader.readAsDataURL(file)
-  input.value = ''
+const triggerPick = () => {
+  if (uploading.value) return
+  fileRef.value?.click()
+}
+
+// 校验与上传由 composable 统一处理，此处只负责把地址写回表单
+const onFileChange = async (e: Event) => {
+  const url = await pickAndUpload(e.target as HTMLInputElement)
+  if (url) emit('update:modelValue', url)
 }
 </script>
 
@@ -88,6 +75,10 @@ const onFileChange = (e: Event) => {
 .upload-btn {
   cursor: pointer;
   user-select: none;
+  /* 上传中文案更长，固定宽度避免输入框宽度跳动 */
+  display: inline-block;
+  min-width: 56px;
+  text-align: center;
 }
 
 .tip {

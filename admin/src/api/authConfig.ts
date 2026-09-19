@@ -1,4 +1,4 @@
-// 注册登录配置接口层 —— 走真实后端 /api/mgmt/auth-config（非 Mock）
+// 注册登录配置接口层 —— /api/mgmt/auth-config
 // 后端为持久化单例，读写整份配置，无新增与删除
 import axios from 'axios'
 import type { ApiResult } from './auth'

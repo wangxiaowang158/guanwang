@@ -133,7 +133,7 @@ const dateRange = ref<[string, string]>()
 const selectedKeys = ref<number[]>([])
 const tableWrap = ref<HTMLElement>()
 
-// 分页（前端分页，mock 返回全量）
+// 分页（前端分页，接口返回该栏目全量内容）
 const page = ref(1)
 const pageSize = ref(10)
 const total = computed(() => rows.value.length)

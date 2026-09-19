@@ -1,4 +1,5 @@
 // CMS 接口层 —— 栏目(channel) / 内容(content) / 站点信息(site)
+// 走真实后端 /api/mgmt/{channel,content,site}/*
 import axios from 'axios'
 import type { ApiResult } from './auth'
 
@@ -16,12 +17,32 @@ export interface Channel {
   sort: number
   formFields: string[]
   listColumns: string[]
+  // 前台区块配置 —— 子栏目作为父页面的一个内容区块时使用
+  /** 区块锚点，小写字母/数字/连字符；为空则该子栏目不在前台成块 */
+  anchor?: string
+  /** 区块副标题 */
+  subheading?: string
+  /** 区块展示形态 */
+  layout?: BlockLayout
   // 栏目页 SEO 元信息（TDK）—— 仅顶级板块页使用
   seoTitle?: string
   seoKeywords?: string
   seoDescription?: string
   updateTime?: string
 }
+
+/** 前台区块展示形态，与后端 BLOCK_LAYOUT 保持一致 */
+export type BlockLayout = 'cards' | 'list' | 'tags' | 'steps' | 'rich' | 'video'
+
+/** 展示形态下拉选项 */
+export const BLOCK_LAYOUT_OPTIONS: { label: string; value: BlockLayout }[] = [
+  { label: '图标卡片', value: 'cards' },
+  { label: '横向列表', value: 'list' },
+  { label: '标签云', value: 'tags' },
+  { label: '编号流程', value: 'steps' },
+  { label: '图文段落', value: 'rich' },
+  { label: '视频', value: 'video' },
+]
 
 /** 内容记录（通用字段，按栏目 formFields 取用） */
 export interface Content {
@@ -35,6 +56,8 @@ export interface Content {
   intro?: string
   content?: string
   cover?: string
+  /** 视频地址，前台视频板块播放源 */
+  video?: string
   whiteCover?: string
   file?: string
   link?: string
@@ -62,6 +85,10 @@ export interface SiteInfo {
   mapLat: string
   mapLink: string
   copyright: string
+  /** ICP 备案号，前台页脚展示；为空时前台不展示该项 */
+  icpCode: string
+  /** 公安联网备案号，前台页脚展示；为空时前台不展示该项 */
+  policeCode: string
   logo: string
   footerLogo: string
   wechatQr: string
@@ -77,23 +104,23 @@ export interface SiteInfo {
 
 /** 获取全部栏目（扁平数组，前端自行组装为树） */
 export const getChannelList = () =>
-  axios.get<ApiResult<Channel[]>>('/api/channel/list')
+  axios.get<ApiResult<Channel[]>>('/api/mgmt/channel/list')
 
 /** 按 key 或 id 获取单个栏目配置 */
 export const getChannelDetail = (params: { key?: string; id?: number }) =>
-  axios.get<ApiResult<Channel>>('/api/channel/detail', { params })
+  axios.get<ApiResult<Channel>>('/api/mgmt/channel/detail', { params })
 
 /** 新增栏目 */
 export const addChannel = (data: Partial<Channel>) =>
-  axios.post<ApiResult<Channel>>('/api/channel/add', data)
+  axios.post<ApiResult<Channel>>('/api/mgmt/channel/add', data)
 
 /** 更新栏目 */
 export const updateChannel = (data: Partial<Channel> & { id: number }) =>
-  axios.put<ApiResult<null>>('/api/channel/update', data)
+  axios.put<ApiResult<null>>('/api/mgmt/channel/update', data)
 
 /** 删除栏目（级联删除子节点） */
 export const deleteChannel = (id: number) =>
-  axios.delete<ApiResult<null>>(`/api/channel/delete?id=${id}`)
+  axios.delete<ApiResult<null>>(`/api/mgmt/channel/delete?id=${id}`)
 
 // ---------------- 内容 ----------------
 
@@ -103,36 +130,36 @@ export const getContentList = (params: {
   keyword?: string
   startDate?: string
   endDate?: string
-}) => axios.get<ApiResult<Content[]>>('/api/content/list', { params })
+}) => axios.get<ApiResult<Content[]>>('/api/mgmt/content/list', { params })
 
 /** 获取单条内容详情 */
 export const getContentDetail = (params: { channelKey: string; id?: number }) =>
-  axios.get<ApiResult<Content | null>>('/api/content/detail', { params })
+  axios.get<ApiResult<Content | null>>('/api/mgmt/content/detail', { params })
 
 /** 保存内容（有 id 为更新，无 id 为新增） */
 export const saveContent = (data: Partial<Content> & { channelKey: string }) =>
-  axios.post<ApiResult<null>>('/api/content/save', data)
+  axios.post<ApiResult<null>>('/api/mgmt/content/save', data)
 
 /** 删除内容（支持批量，ids 逗号分隔） */
 export const deleteContent = (channelKey: string, ids: (number | string)[]) =>
   axios.delete<ApiResult<null>>(
-    `/api/content/delete?channelKey=${channelKey}&ids=${ids.join(',')}`
+    `/api/mgmt/content/delete?channelKey=${encodeURIComponent(channelKey)}&ids=${ids.join(',')}`
   )
 
 /** 切换置顶 */
 export const toggleContentTop = (channelKey: string, id: number) =>
-  axios.put<ApiResult<null>>('/api/content/top', { channelKey, id })
+  axios.put<ApiResult<null>>('/api/mgmt/content/top', { channelKey, id })
 
 /** 修改排序值 */
 export const updateContentSort = (channelKey: string, id: number, sort: number) =>
-  axios.put<ApiResult<null>>('/api/content/sort', { channelKey, id, sort })
+  axios.put<ApiResult<null>>('/api/mgmt/content/sort', { channelKey, id, sort })
 
 // ---------------- 站点信息 ----------------
 
 /** 获取站点基本信息 */
 export const getSiteInfo = () =>
-  axios.get<ApiResult<SiteInfo>>('/api/site/detail')
+  axios.get<ApiResult<SiteInfo>>('/api/mgmt/site/detail')
 
 /** 保存站点基本信息 */
 export const saveSiteInfo = (data: Partial<SiteInfo>) =>
-  axios.post<ApiResult<null>>('/api/site/save', data)
+  axios.post<ApiResult<null>>('/api/mgmt/site/save', data)
