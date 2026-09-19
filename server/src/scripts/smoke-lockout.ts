@@ -64,8 +64,7 @@ async function main(): Promise<void> {
   const { AppModule } = await import('../app.module')
   const { TransformInterceptor } = await import('../common/interceptors/transform.interceptor')
   const { AllExceptionFilter } = await import('../common/filters/all-exception.filter')
-  const { MGMT_DEV_TOKEN } = await import('../config/app.config')
-  const { MGMT_DEV_TOKEN_HEADER } = await import('../common/guards/mgmt-dev.guard')
+  const { ADMIN_SEED } = await import('../config/app.config')
   const { SmsCodeService } = await import('../modules/member/sms-code.service')
   const { CaptchaService } = await import('../modules/member/captcha.service')
 
@@ -78,7 +77,15 @@ async function main(): Promise<void> {
   app.set('trust proxy', true)
   await app.listen(PORT)
 
-  const MGMT_HEADERS = { [MGMT_DEV_TOKEN_HEADER]: MGMT_DEV_TOKEN }
+  // 管理端接口需真实管理员令牌：用种子超管账号登录换取
+  const adminLogin = await call('POST', '/mgmt/auth/login', {
+    username: ADMIN_SEED.account,
+    password: ADMIN_SEED.password,
+  })
+  if (adminLogin.code !== 200) {
+    throw new Error(`管理员登录失败，无法继续：${adminLogin.message}`)
+  }
+  const MGMT_HEADERS = { Authorization: `Bearer ${adminLogin.data.token as string}` }
 
   // 清空历史数据，保证可重复执行。
   // auth_config 是持久化单例，必须一并清除，否则会沿用上一轮残留阈值，

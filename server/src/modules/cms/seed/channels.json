@@ -1,0 +1,1360 @@
+[
+  {
+    "id": 1001,
+    "parentId": null,
+    "sort": 1,
+    "type": "siteconfig",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "siteinfo",
+    "name": "基本信息管理",
+    "icon": "SettingOutlined"
+  },
+  {
+    "id": 1002,
+    "parentId": null,
+    "sort": 2,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "home",
+    "name": "首页",
+    "icon": "HomeOutlined",
+    "seoTitle": "中瑞恒 - 您身边专业的智慧能源提供商",
+    "seoKeywords": "智慧能源,综合能源节能,暖通空调,合同能源管理",
+    "seoDescription": "中瑞恒专注智慧能源综合服务，提供暖通空调、综合能源节能、智慧能源管理一站式解决方案。"
+  },
+  {
+    "id": 1003,
+    "parentId": 1002,
+    "sort": 1,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "cover",
+      "file",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "home-intro",
+    "name": "简介"
+  },
+  {
+    "id": 1004,
+    "parentId": 1002,
+    "sort": 2,
+    "type": "list",
+    "formFields": [
+      "title",
+      "subtitle",
+      "intro",
+      "cover",
+      "whiteCover",
+      "link",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "home-business",
+    "name": "主营业务"
+  },
+  {
+    "id": 1005,
+    "parentId": 1002,
+    "sort": 3,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "home-customer",
+    "name": "典型客户"
+  },
+  {
+    "id": 1006,
+    "parentId": 1002,
+    "sort": 4,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "cover",
+      "file",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "home-view",
+    "name": "我眼中的中瑞恒"
+  },
+  {
+    "id": 1007,
+    "parentId": null,
+    "sort": 3,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "hvac",
+    "name": "暖通空调产品",
+    "icon": "AppstoreOutlined",
+    "seoTitle": "暖通空调产品 - 中瑞恒",
+    "seoKeywords": "暖通空调,多联机,冷水机组,热泵机组,精密空调",
+    "seoDescription": "中瑞恒暖通空调产品涵盖多联机、冷水机组、热泵机组、精密空调等，满足多场景制冷供热需求。"
+  },
+  {
+    "id": 1008,
+    "parentId": 1007,
+    "sort": 1,
+    "type": "list",
+    "formFields": [
+      "name",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "index",
+      "sort",
+      "name",
+      "brand",
+      "createTime",
+      "isTop"
+    ],
+    "key": "hvac-category",
+    "name": "产品类别"
+  },
+  {
+    "id": 1009,
+    "parentId": 1007,
+    "sort": 2,
+    "type": "list",
+    "formFields": [
+      "category",
+      "brand",
+      "title",
+      "keywords",
+      "description",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "hvac-product",
+    "name": "产品管理"
+  },
+  {
+    "id": 1010,
+    "parentId": null,
+    "sort": 4,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy",
+    "name": "综合能源节能",
+    "icon": "ThunderboltOutlined",
+    "seoTitle": "综合能源节能 - 中瑞恒",
+    "seoKeywords": "综合能源节能,合同能源管理,EMC,节能改造",
+    "seoDescription": "中瑞恒提供合同能源管理与综合能源节能服务，以专业方案助力企业降本增效、绿色低碳。"
+  },
+  {
+    "id": 1011,
+    "parentId": 1010,
+    "sort": 1,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-contract",
+    "name": "合同能源管理"
+  },
+  {
+    "id": 1012,
+    "parentId": 1011,
+    "sort": 1,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-intro",
+    "name": "简介"
+  },
+  {
+    "id": 1013,
+    "parentId": 1011,
+    "sort": 2,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-adv",
+    "name": "优势"
+  },
+  {
+    "id": 1014,
+    "parentId": 1011,
+    "sort": 3,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-policy",
+    "name": "相关政策"
+  },
+  {
+    "id": 1015,
+    "parentId": 1011,
+    "sort": 4,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-feature",
+    "name": "优势和特点"
+  },
+  {
+    "id": 1016,
+    "parentId": 1011,
+    "sort": 5,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-value",
+    "name": "前景和价值"
+  },
+  {
+    "id": 1017,
+    "parentId": 1011,
+    "sort": 6,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-trust",
+    "name": "全托管"
+  },
+  {
+    "id": 1018,
+    "parentId": 1011,
+    "sort": 7,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-c-case",
+    "name": "服务案例链接"
+  },
+  {
+    "id": 1019,
+    "parentId": 1010,
+    "sort": 2,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-other",
+    "name": "其他能源节能管理"
+  },
+  {
+    "id": 1020,
+    "parentId": 1019,
+    "sort": 1,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "energy-o-intro",
+    "name": "简介"
+  },
+  {
+    "id": 1021,
+    "parentId": null,
+    "sort": 5,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart",
+    "name": "智慧能源管理",
+    "icon": "ClusterOutlined",
+    "seoTitle": "智慧能源管理 - 中瑞恒",
+    "seoKeywords": "智慧能源管理,千牛卫,数字孪生,智慧设备,数字展厅",
+    "seoDescription": "中瑞恒智慧能源管理依托千牛卫平台与数字孪生技术，实现能源运营数据化、可视化、智能化。"
+  },
+  {
+    "id": 1022,
+    "parentId": 1021,
+    "sort": 1,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-platform",
+    "name": "千牛卫管理平台"
+  },
+  {
+    "id": 1023,
+    "parentId": 1022,
+    "sort": 1,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-story",
+    "name": "千牛卫故事"
+  },
+  {
+    "id": 1024,
+    "parentId": 1022,
+    "sort": 2,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-data",
+    "name": "运营数据"
+  },
+  {
+    "id": 1025,
+    "parentId": 1022,
+    "sort": 3,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-system",
+    "name": "管理系统"
+  },
+  {
+    "id": 1026,
+    "parentId": 1022,
+    "sort": 4,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-tech",
+    "name": "技术方案"
+  },
+  {
+    "id": 1027,
+    "parentId": 1022,
+    "sort": 5,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-deploy",
+    "name": "部署方案"
+  },
+  {
+    "id": 1028,
+    "parentId": 1022,
+    "sort": 6,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-value",
+    "name": "客户价值"
+  },
+  {
+    "id": 1029,
+    "parentId": 1022,
+    "sort": 7,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-p-video",
+    "name": "案例视频"
+  },
+  {
+    "id": 1030,
+    "parentId": 1021,
+    "sort": 2,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-twin",
+    "name": "数字孪生系统"
+  },
+  {
+    "id": 1031,
+    "parentId": 1021,
+    "sort": 3,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-device",
+    "name": "智慧设备"
+  },
+  {
+    "id": 1032,
+    "parentId": 1021,
+    "sort": 4,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "smart-hall",
+    "name": "数字展厅"
+  },
+  {
+    "id": 1033,
+    "parentId": null,
+    "sort": 6,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "household",
+    "name": "智能家居",
+    "icon": "WifiOutlined",
+    "seoTitle": "智能家居 - 中瑞恒",
+    "seoKeywords": "智能家居,智能控制,舒适人居",
+    "seoDescription": "中瑞恒智能家居打造舒适、节能、便捷的未来人居环境，提供一体化智能控制方案。"
+  },
+  {
+    "id": 1034,
+    "parentId": null,
+    "sort": 7,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "case",
+    "name": "项目案例",
+    "icon": "ProjectOutlined",
+    "seoTitle": "项目案例 - 中瑞恒",
+    "seoKeywords": "项目案例,医疗卫生,教育文体,商业办公,节能改造案例",
+    "seoDescription": "中瑞恒服务覆盖医疗卫生、教育文体、政府事业单位、商业办公等多行业，沉淀大量节能与智慧能源标杆案例。"
+  },
+  {
+    "id": 1035,
+    "parentId": 1034,
+    "sort": 1,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "case-industry",
+    "name": "行业分类"
+  },
+  {
+    "id": 1036,
+    "parentId": 1034,
+    "sort": 2,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "case-category",
+    "name": "类别分类"
+  },
+  {
+    "id": 1037,
+    "parentId": 1034,
+    "sort": 3,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "case-content",
+    "name": "案例内容"
+  },
+  {
+    "id": 1038,
+    "parentId": null,
+    "sort": 8,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "news",
+    "name": "新闻资讯",
+    "icon": "ReadOutlined",
+    "seoTitle": "新闻资讯 - 中瑞恒",
+    "seoKeywords": "新闻资讯,公司新闻,政策资讯,行业动态",
+    "seoDescription": "关注中瑞恒最新公司新闻与节能政策资讯，了解智慧能源行业动态与企业发展。"
+  },
+  {
+    "id": 1039,
+    "parentId": 1038,
+    "sort": 1,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "news-company",
+    "name": "公司新闻"
+  },
+  {
+    "id": 1040,
+    "parentId": 1038,
+    "sort": 2,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "news-policy",
+    "name": "政策资讯"
+  },
+  {
+    "id": 1041,
+    "parentId": null,
+    "sort": 9,
+    "type": "list",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "alliance",
+    "name": "生态联盟",
+    "icon": "TeamOutlined",
+    "seoTitle": "生态联盟 - 中瑞恒",
+    "seoKeywords": "生态联盟,合作伙伴,产业生态",
+    "seoDescription": "中瑞恒携手上下游合作伙伴共建智慧能源产业生态，开放协作、合作共赢。"
+  },
+  {
+    "id": 1042,
+    "parentId": null,
+    "sort": 10,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "content",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "about",
+    "name": "关于我们",
+    "icon": "IdcardOutlined",
+    "seoTitle": "关于我们 - 中瑞恒",
+    "seoKeywords": "关于中瑞恒,公司简介,企业介绍",
+    "seoDescription": "了解中瑞恒的发展历程、企业实力与服务理念，专业的智慧能源综合服务提供商。"
+  },
+  {
+    "id": 1043,
+    "parentId": null,
+    "sort": 11,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner",
+    "name": "Banner管理",
+    "icon": "PictureOutlined"
+  },
+  {
+    "id": 1044,
+    "parentId": 1043,
+    "sort": 1,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-home",
+    "name": "首页 Banner"
+  },
+  {
+    "id": 1045,
+    "parentId": 1043,
+    "sort": 2,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-hvac",
+    "name": "暖通空调产品 Banner"
+  },
+  {
+    "id": 1046,
+    "parentId": 1043,
+    "sort": 3,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-energy",
+    "name": "综合能源节能 Banner"
+  },
+  {
+    "id": 1047,
+    "parentId": 1043,
+    "sort": 4,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-smart",
+    "name": "智慧能源管理 Banner"
+  },
+  {
+    "id": 1048,
+    "parentId": 1047,
+    "sort": 1,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-s-platform",
+    "name": "千牛卫管理平台 Banner"
+  },
+  {
+    "id": 1049,
+    "parentId": 1047,
+    "sort": 2,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-s-twin",
+    "name": "数字孪生系统 Banner"
+  },
+  {
+    "id": 1050,
+    "parentId": 1047,
+    "sort": 3,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-s-device",
+    "name": "智能设备 Banner"
+  },
+  {
+    "id": 1051,
+    "parentId": 1043,
+    "sort": 5,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-case",
+    "name": "项目案例 Banner"
+  },
+  {
+    "id": 1052,
+    "parentId": 1043,
+    "sort": 6,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-news",
+    "name": "新闻资讯 Banner"
+  },
+  {
+    "id": 1053,
+    "parentId": 1043,
+    "sort": 7,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-alliance",
+    "name": "生态联盟 Banner"
+  },
+  {
+    "id": 1054,
+    "parentId": 1043,
+    "sort": 8,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-about",
+    "name": "关于我们 Banner"
+  },
+  {
+    "id": 1055,
+    "parentId": null,
+    "sort": 12,
+    "type": "group",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "member-center",
+    "name": "会员中心",
+    "icon": "TeamOutlined"
+  },
+  {
+    "id": 1056,
+    "parentId": 1055,
+    "sort": 1,
+    "type": "members",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "member",
+    "name": "会员管理"
+  },
+  {
+    "id": 1057,
+    "parentId": 1055,
+    "sort": 2,
+    "type": "feedback",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "feedback",
+    "name": "意见反馈"
+  },
+  {
+    "id": 1058,
+    "parentId": 1055,
+    "sort": 3,
+    "type": "authconfig",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "auth-config",
+    "name": "注册登录配置"
+  },
+  {
+    "id": 1059,
+    "parentId": 1055,
+    "sort": 4,
+    "type": "loginlog",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "login-log",
+    "name": "登录日志"
+  },
+  {
+    "id": 1060,
+    "parentId": null,
+    "sort": 13,
+    "type": "admins",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "admin",
+    "name": "管理员管理",
+    "icon": "UserOutlined"
+  }
+]

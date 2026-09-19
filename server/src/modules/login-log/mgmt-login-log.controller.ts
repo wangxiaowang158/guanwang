@@ -3,7 +3,9 @@
 import { Controller, Delete, Get, Query, UseGuards } from '@nestjs/common'
 import { IsIn, IsOptional, IsString, Matches } from 'class-validator'
 import { LoginLogService } from './login-log.service'
-import { MgmtDevGuard } from '../../common/guards/mgmt-dev.guard'
+import { AdminGuard } from '../../common/guards/admin.guard'
+import { PermGuard } from '../../common/guards/perm.guard'
+import { PERM, RequirePerm } from '../../common/decorators/require-perm.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
 import { LOGIN_RESULT, type LoginResult } from '../../common/enums'
 
@@ -44,7 +46,8 @@ class ClearLogDto {
 }
 
 @Controller('mgmt/login-log')
-@UseGuards(MgmtDevGuard)
+@UseGuards(AdminGuard, PermGuard)
+@RequirePerm(PERM.MEMBER_CENTER)
 export class MgmtLoginLogController {
   constructor(private readonly service: LoginLogService) {}
 

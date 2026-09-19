@@ -4,9 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { AuthConfig } from './auth-config.entity'
 import { AuthConfigService } from './auth-config.service'
 import { MgmtAuthConfigController } from './mgmt-auth-config.controller'
+import { AdminModule } from '../admin/admin.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AuthConfig])],
+  // AdminModule 提供后台接口所需的 AdminGuard / PermGuard
+  imports: [TypeOrmModule.forFeature([AuthConfig]), AdminModule],
   controllers: [MgmtAuthConfigController],
   providers: [AuthConfigService],
   exports: [AuthConfigService],

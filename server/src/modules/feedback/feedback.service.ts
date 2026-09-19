@@ -2,7 +2,7 @@
 // 状态流转一律走 FEEDBACK_STATUS_FLOW 白名单校验，不接受任意跳转
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Brackets, In, Repository } from 'typeorm'
+import { Brackets, In, Repository, type SelectQueryBuilder } from 'typeorm'
 import { Feedback } from './feedback.entity'
 import { FeedbackReply } from './feedback-reply.entity'
 import { Member } from '../member/member.entity'
@@ -24,6 +24,9 @@ import type { RequestContext } from '../../common/request-context'
 const DEFAULT_PAGE = 1
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
+
+/** 单次导出行数上限，防止条件过宽时把整表读进内存 */
+const EXPORT_MAX_ROWS = 10_000
 
 @Injectable()
 export class FeedbackService {
@@ -111,6 +114,29 @@ export class FeedbackService {
     const page = query.page && query.page > 0 ? query.page : DEFAULT_PAGE
     const pageSize = Math.min(query.pageSize || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
 
+    const qb = this.buildFilteredQuery(query)
+
+    const [items, total] = await qb
+      .orderBy('f.createdAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    // 一次性取回本页回复数，避免逐条查询
+    const counts = await this.countReplies(items.map((i) => i.id))
+    return {
+      list: items.map((f) => toFeedbackListItemVo(f, counts.get(f.id) ?? 0)),
+      total,
+      page,
+      pageSize,
+    }
+  }
+
+  /**
+   * 构造筛选条件（不含分页与排序）
+   * 列表与导出共用，避免两处各写一份筛选而导致导出口径与列表不一致
+   */
+  private buildFilteredQuery(query: FeedbackQueryDto): SelectQueryBuilder<Feedback> {
     const qb = this.repo.createQueryBuilder('f')
     if (query.source) qb.andWhere('f.source = :source', { source: query.source })
     if (query.status) qb.andWhere('f.status = :status', { status: query.status })
@@ -136,21 +162,18 @@ export class FeedbackService {
     if (query.endDate) {
       qb.andWhere('f.createdAt <= :end', { end: new Date(`${query.endDate}T23:59:59.999`) })
     }
+    return qb
+  }
 
-    const [items, total] = await qb
+  /**
+   * 导出用：按当前筛选条件取全部记录，不分页
+   * 口径与列表一致；提交 IP 不参与导出，故此处不 select 该列
+   */
+  async listForExport(query: FeedbackQueryDto): Promise<Feedback[]> {
+    return this.buildFilteredQuery(query)
       .orderBy('f.createdAt', 'DESC')
-      .skip((page - 1) * pageSize)
-      .take(pageSize)
-      .getManyAndCount()
-
-    // 一次性取回本页回复数，避免逐条查询
-    const counts = await this.countReplies(items.map((i) => i.id))
-    return {
-      list: items.map((f) => toFeedbackListItemVo(f, counts.get(f.id) ?? 0)),
-      total,
-      page,
-      pageSize,
-    }
+      .limit(EXPORT_MAX_ROWS)
+      .getMany()
   }
 
   /** 后台反馈详情，含全部回复与会员昵称 */

@@ -1,0 +1,186 @@
+[
+  {
+    "id": 5001,
+    "channelKey": "home-intro",
+    "title": "您身边专业的智慧能源提供商",
+    "sort": 218,
+    "isTop": true,
+    "createTime": "2021-8-31 15:36:14"
+  },
+  {
+    "id": 5002,
+    "channelKey": "home-intro",
+    "title": "联系人",
+    "sort": 1052,
+    "isTop": false,
+    "createTime": "2024-10-16 14:53:47"
+  },
+  {
+    "id": 5003,
+    "channelKey": "home-business",
+    "title": "节能咨询设计服务",
+    "sort": 222,
+    "isTop": false,
+    "createTime": "2021-8-31 15:40:46"
+  },
+  {
+    "id": 5004,
+    "channelKey": "home-business",
+    "title": "智慧能源综合服务",
+    "sort": 221,
+    "isTop": false,
+    "createTime": "2021-8-31 15:40:08"
+  },
+  {
+    "id": 5005,
+    "channelKey": "home-business",
+    "title": "智慧能源技术服务",
+    "sort": 220,
+    "isTop": false,
+    "createTime": "2021-8-31 15:41:20"
+  },
+  {
+    "id": 5006,
+    "channelKey": "home-business",
+    "title": "未来人居环境服务",
+    "sort": 219,
+    "isTop": false,
+    "createTime": "2021-8-31 15:38:36"
+  },
+  {
+    "id": 5007,
+    "channelKey": "home-view",
+    "title": "北京电视台财经频道《数说北京》栏目",
+    "sort": 986,
+    "isTop": false,
+    "createTime": "2022-9-15 10:40:37"
+  },
+  {
+    "id": 5008,
+    "channelKey": "home-view",
+    "title": "北京电视台财经频道《北京直通车》栏目",
+    "sort": 985,
+    "isTop": false,
+    "createTime": "2022-9-15 10:12:52"
+  },
+  {
+    "id": 5009,
+    "channelKey": "home-view",
+    "title": "全国卫生产业企业管理协会医院建筑工程装备分会",
+    "sort": 944,
+    "isTop": false,
+    "createTime": "2021-10-13 17:56:53"
+  },
+  {
+    "id": 5010,
+    "channelKey": "home-view",
+    "title": "中国节能协会节能服务产业委员会",
+    "sort": 930,
+    "isTop": false,
+    "createTime": "2021-10-13 17:56:37"
+  },
+  {
+    "id": 5011,
+    "channelKey": "hvac-category",
+    "name": "多联机、单元机",
+    "sort": 934,
+    "isTop": false,
+    "createTime": "2021-8-30 17:33:28"
+  },
+  {
+    "id": 5012,
+    "channelKey": "hvac-category",
+    "name": "冷水机组、热泵机组",
+    "sort": 933,
+    "isTop": false,
+    "createTime": "2021-8-30 17:31:57"
+  },
+  {
+    "id": 5013,
+    "channelKey": "hvac-category",
+    "name": "空调末端设备",
+    "sort": 101,
+    "isTop": false,
+    "createTime": "2021-11-15 13:17:36"
+  },
+  {
+    "id": 5014,
+    "channelKey": "hvac-category",
+    "name": "精密空调",
+    "sort": 100,
+    "isTop": false,
+    "createTime": "2021-11-15 13:18:03"
+  },
+  {
+    "id": 5015,
+    "channelKey": "hvac-category",
+    "name": "锅炉",
+    "sort": 97,
+    "isTop": false,
+    "createTime": "2021-9-9 11:40:43"
+  },
+  {
+    "id": 5016,
+    "channelKey": "hvac-category",
+    "name": "直燃机",
+    "sort": 95,
+    "isTop": false,
+    "createTime": "2021-10-12 9:52:36"
+  },
+  {
+    "id": 5017,
+    "channelKey": "hvac-product",
+    "title": "大金——VRV 水源热泵系列",
+    "sort": 911,
+    "isTop": false,
+    "createTime": "2021-9-9 14:39:15"
+  },
+  {
+    "id": 5018,
+    "channelKey": "hvac-product",
+    "title": "大金——VRV 更新用Q系列",
+    "sort": 910,
+    "isTop": false,
+    "createTime": "2021-9-9 14:40:28"
+  },
+  {
+    "id": 5019,
+    "channelKey": "hvac-product",
+    "title": "大金——VRV 大空间用系列",
+    "sort": 909,
+    "isTop": false,
+    "createTime": "2021-9-9 14:41:10"
+  },
+  {
+    "id": 5020,
+    "channelKey": "case-industry",
+    "title": "医疗卫生",
+    "sort": 21,
+    "isTop": false,
+    "createTime": "2021-8-27 10:45:32"
+  },
+  {
+    "id": 5021,
+    "channelKey": "case-industry",
+    "title": "教育文体",
+    "sort": 20,
+    "isTop": false,
+    "createTime": "2021-8-27 10:45:38"
+  },
+  {
+    "id": 5022,
+    "channelKey": "case-industry",
+    "title": "政府/事业单位",
+    "sort": 19,
+    "isTop": false,
+    "createTime": "2021-8-27 10:45:24"
+  },
+  {
+    "id": 5023,
+    "channelKey": "case-industry",
+    "title": "商业/办公楼/厂房",
+    "sort": 18,
+    "isTop": false,
+    "createTime": "2021-8-27 10:45:15"
+  }
+]

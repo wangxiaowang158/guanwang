@@ -10,6 +10,10 @@ import { MemberModule } from './modules/member/member.module'
 import { AuthConfigModule } from './modules/auth-config/auth-config.module'
 import { LoginLogModule } from './modules/login-log/login-log.module'
 import { FeedbackModule } from './modules/feedback/feedback.module'
+import { AdminModule } from './modules/admin/admin.module'
+import { CmsModule } from './modules/cms/cms.module'
+import { UploadModule } from './modules/upload/upload.module'
+import { VisitModule } from './modules/visit/visit.module'
 
 @Module({
   imports: [
@@ -18,10 +22,14 @@ import { FeedbackModule } from './modules/feedback/feedback.module'
     TypeOrmModule.forRoot(buildDataSourceOptions()),
     // 全局默认限流；注册登录等敏感接口在各自控制器上单独收紧
     ThrottlerModule.forRoot([{ ttl: THROTTLE.ttl * 1000, limit: THROTTLE.limit }]),
+    AdminModule,
     AuthConfigModule,
     LoginLogModule,
     MemberModule,
     FeedbackModule,
+    CmsModule,
+    UploadModule,
+    VisitModule,
   ],
   controllers: [HealthController],
 })

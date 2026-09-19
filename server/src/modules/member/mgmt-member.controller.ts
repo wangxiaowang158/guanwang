@@ -1,14 +1,17 @@
 // 后台会员管理接口 —— /api/mgmt/member/*
-// ⚠️ 当前挂 MgmtDevGuard（开发期占位守卫，无真实鉴权能力），详见该守卫文件头部说明
+// 需管理员登录（scope=admin）且被授予「会员中心」权限
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Put, Query, UseGuards } from '@nestjs/common'
 import { MemberService } from './member.service'
 import { LoginLogService } from '../login-log/login-log.service'
-import { MgmtDevGuard } from '../../common/guards/mgmt-dev.guard'
+import { AdminGuard } from '../../common/guards/admin.guard'
+import { PermGuard } from '../../common/guards/perm.guard'
+import { PERM, RequirePerm } from '../../common/decorators/require-perm.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
 import { AdminResetPasswordDto, MemberQueryDto, UpdateMemberStatusDto } from './dto/member-manage.dto'
 
 @Controller('mgmt/member')
-@UseGuards(MgmtDevGuard)
+@UseGuards(AdminGuard, PermGuard)
+@RequirePerm(PERM.MEMBER_CENTER)
 export class MgmtMemberController {
   constructor(
     private readonly memberService: MemberService,

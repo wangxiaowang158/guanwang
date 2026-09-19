@@ -5,10 +5,11 @@ import { MemberLoginLog } from './login-log.entity'
 import { Member } from '../member/member.entity'
 import { LoginLogService } from './login-log.service'
 import { MgmtLoginLogController } from './mgmt-login-log.controller'
+import { AdminModule } from '../admin/admin.module'
 
 @Module({
-  // 需查会员昵称，故一并注册 Member 仓储
-  imports: [TypeOrmModule.forFeature([MemberLoginLog, Member])],
+  // 需查会员昵称，故一并注册 Member 仓储；AdminModule 提供后台接口的守卫
+  imports: [TypeOrmModule.forFeature([MemberLoginLog, Member]), AdminModule],
   controllers: [MgmtLoginLogController],
   providers: [LoginLogService],
   exports: [LoginLogService],

@@ -67,3 +67,31 @@ export const LOGIN_FAIL_REASON = {
   ACCOUNT_LOCKED: 'accountLocked',
 } as const
 export type LoginFailReason = (typeof LOGIN_FAIL_REASON)[keyof typeof LOGIN_FAIL_REASON]
+
+/**
+ * 栏目类型：
+ * 前四项为内容型（管理端渲染通用增删改查界面），后五项为功能型（各自有专用页面）
+ */
+export const CHANNEL_TYPE = {
+  GROUP: 'group',
+  LIST: 'list',
+  SINGLE: 'single',
+  SITECONFIG: 'siteconfig',
+  ADMINS: 'admins',
+  MEMBERS: 'members',
+  FEEDBACK: 'feedback',
+  AUTHCONFIG: 'authconfig',
+  LOGINLOG: 'loginlog',
+} as const
+export type ChannelType = (typeof CHANNEL_TYPE)[keyof typeof CHANNEL_TYPE]
+
+/** 前台区块展示形态 */
+export const BLOCK_LAYOUT = {
+  CARDS: 'cards',
+  LIST: 'list',
+  TAGS: 'tags',
+  STEPS: 'steps',
+  RICH: 'rich',
+  VIDEO: 'video',
+} as const
+export type BlockLayout = (typeof BLOCK_LAYOUT)[keyof typeof BLOCK_LAYOUT]

@@ -5,15 +5,22 @@ import { Feedback } from './feedback.entity'
 import { FeedbackReply } from './feedback-reply.entity'
 import { Member } from '../member/member.entity'
 import { FeedbackService } from './feedback.service'
+import { FeedbackExportService } from './feedback-export.service'
 import { PortalFeedbackController } from './portal-feedback.controller'
 import { MgmtFeedbackController } from './mgmt-feedback.controller'
 import { MemberModule } from '../member/member.module'
+import { AdminModule } from '../admin/admin.module'
 
 @Module({
-  // 引入 Member 仓储用于取昵称快照与手机号缺省值；MemberModule 提供 MemberGuard
-  imports: [TypeOrmModule.forFeature([Feedback, FeedbackReply, Member]), MemberModule],
+  // 引入 Member 仓储用于取昵称快照与手机号缺省值；
+  // MemberModule 提供 MemberGuard（前台接口），AdminModule 提供 AdminGuard/PermGuard（后台接口）
+  imports: [
+    TypeOrmModule.forFeature([Feedback, FeedbackReply, Member]),
+    MemberModule,
+    AdminModule,
+  ],
   controllers: [PortalFeedbackController, MgmtFeedbackController],
-  providers: [FeedbackService],
+  providers: [FeedbackService, FeedbackExportService],
   exports: [FeedbackService],
 })
 export class FeedbackModule {}
