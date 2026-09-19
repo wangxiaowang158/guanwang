@@ -14,7 +14,9 @@
     "smoke:member": "ts-node src/scripts/smoke-member.ts",
     "smoke:lockout": "ts-node src/scripts/smoke-lockout.ts",
     "smoke:feedback": "ts-node src/scripts/smoke-feedback.ts",
-    "seed:feedback": "ts-node src/scripts/seed-feedback.ts"
+    "seed:feedback": "ts-node src/scripts/seed-feedback.ts",
+    "seed:cms": "ts-node src/scripts/seed-cms.ts",
+    "verify:cms": "ts-node src/scripts/verify-cms-parity.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -35,6 +37,7 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sanitize-html": "^2.17.0",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {
@@ -45,6 +48,7 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/sanitize-html": "^2.16.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.0"

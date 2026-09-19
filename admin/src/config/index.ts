@@ -16,26 +16,20 @@ function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, '')
 }
 
-/** 接口层与 mock 中硬编码声明的前缀，运行时按 API_PREFIX 改写 */
+/** 接口层硬编码声明的前缀，运行时按 API_PREFIX 改写 */
 export const DECLARED_API_PREFIX = '/api'
 
 /** 接口路径前缀，与后端及代理规则保持一致 */
 export const API_PREFIX = normalizePrefix(import.meta.env.VITE_API_PREFIX, DECLARED_API_PREFIX)
 
-/** 接口基础地址；空串表示同源相对路径（走 Mock 或开发代理） */
+/** 接口基础地址；空串表示同源相对路径（走开发代理或同源部署） */
 export const API_BASE_URL = trimTrailingSlash((import.meta.env.VITE_API_BASE_URL || '').trim())
 
-/** 管理端真实后端接口的子前缀（相对 DECLARED_API_PREFIX 声明，运行时随 API_PREFIX 改写） */
-export const MGMT_SUBPREFIX = '/mgmt'
-
-/** 管理端占位令牌的请求头名称，须与后端 MgmtDevGuard 一致 */
-export const MGMT_TOKEN_HEADER = 'x-mgmt-dev-token'
-
 /**
- * 管理端占位令牌
- * 【严禁公网部署】后端未实现管理员认证前的开发期措施，与 server 的 MGMT_DEV_TOKEN 对应
+ * 登录接口子路径（相对 API_PREFIX 声明，运行时随 API_PREFIX 改写）
+ * 响应拦截器据此放行登录失败的 401 —— 那是凭证错误，应留在登录页提示，不能触发跳登录
  */
-export const MGMT_DEV_TOKEN = (import.meta.env.VITE_MGMT_DEV_TOKEN || '').trim()
+export const LOGIN_SUBPATH = '/mgmt/auth/login'
 
 /** 解析正数型环境变量，非法值回退默认 */
 function toPositiveNumber(value: string | undefined, fallback: number): number {
@@ -60,3 +54,21 @@ export const UPLOAD_ACCEPT = UPLOAD_IMAGE_MIMES.join(',')
 
 /** 白名单对应的友好格式名，用于错误提示 */
 export const UPLOAD_IMAGE_LABEL = 'JPG / PNG / WebP / GIF'
+
+/** 视频上传大小上限（MB），与后端 UPLOAD_VIDEO_MAX_MB 保持一致 */
+export const UPLOAD_VIDEO_MAX_MB = toPositiveNumber(import.meta.env.VITE_UPLOAD_VIDEO_MAX_MB, 100)
+
+/** 视频上传大小上限（字节），供体积校验使用 */
+export const UPLOAD_VIDEO_MAX_BYTES = UPLOAD_VIDEO_MAX_MB * 1024 * 1024
+
+/**
+ * 允许上传的视频 MIME 白名单
+ * 只收浏览器能直接用 video 标签播的容器格式，avi/mov/wmv 需转码，不在此列
+ */
+export const UPLOAD_VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/ogg'] as const
+
+/** 视频文件选择框的 accept 属性值 */
+export const UPLOAD_VIDEO_ACCEPT = UPLOAD_VIDEO_MIMES.join(',')
+
+/** 视频白名单对应的友好格式名，用于错误提示 */
+export const UPLOAD_VIDEO_LABEL = 'MP4 / WebM / Ogg'

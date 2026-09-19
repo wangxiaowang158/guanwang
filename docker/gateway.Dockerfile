@@ -10,13 +10,6 @@ COPY admin/package.json admin/package-lock.json ./
 RUN npm ci
 COPY admin/ ./
 
-# Vite 的 loadEnv 中 process.env 优先级高于 .env 文件，故 build arg 可覆盖仓库默认值。
-# VITE_MGMT_DEV_TOKEN 必须与后端 MGMT_DEV_TOKEN 一致，否则管理端接口全部 401。
-ARG VITE_MGMT_DEV_TOKEN
-ENV VITE_MGMT_DEV_TOKEN=${VITE_MGMT_DEV_TOKEN}
-# 站点信息/菜单/内容等接口无后端实现，由浏览器端 Mock 提供，线上必须保持开启；
-# Mock 只拦已注册路由，/api/mgmt/* 会原样穿透到真实后端
-ENV VITE_USE_MOCK=true
 # 留空表示同源相对路径，请求由本容器 nginx 反代给 backend
 ENV VITE_API_BASE_URL=
 ENV VITE_API_PREFIX=/api
@@ -32,7 +25,6 @@ WORKDIR /app
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
-ENV VITE_USE_MOCK=true
 ENV VITE_API_BASE_URL=
 ENV VITE_API_PREFIX=/api
 ENV VITE_BASE_URL=/

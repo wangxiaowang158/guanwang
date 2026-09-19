@@ -6,8 +6,6 @@ interface ImportMetaEnv {
   readonly VITE_BASE_URL?: string
   /** 开发服务器端口 */
   readonly VITE_PORT?: string
-  /** Mock 开关，'true' 启用 */
-  readonly VITE_USE_MOCK?: string
   /** 接口基础地址，空串表示同源相对路径 */
   readonly VITE_API_BASE_URL?: string
   /** 真实后端代理目标 */

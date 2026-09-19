@@ -1,17 +1,23 @@
-// 应用入口 —— 全局前缀、校验管道、统一响应、异常包装、跨域
+// 应用入口 —— 全局前缀、校验管道、统一响应、异常包装、跨域、上传文件托管
 import 'reflect-metadata'
 import { Logger, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
+import { NestExpressApplication } from '@nestjs/platform-express'
 import { AppModule } from './app.module'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
 import { AllExceptionFilter } from './common/filters/all-exception.filter'
-import { CORS_ORIGINS, PORT } from './config/app.config'
+import { CORS_ORIGINS, PORT, UPLOAD } from './config/app.config'
+import { UploadService } from './modules/upload/upload.service'
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true })
+  // 指定 Express 适配器：托管上传目录需要 useStaticAssets
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true })
 
   // 全局前缀 /api，与前端 VITE_API_PREFIX 约定一致
   app.setGlobalPrefix('api')
+
+  // 上传文件按原始路径直出，不走 /api 前缀；生产环境可由网关接管此前缀
+  app.useStaticAssets(app.get(UploadService).getRootDir(), { prefix: UPLOAD.urlPrefix })
 
   app.useGlobalPipes(
     new ValidationPipe({

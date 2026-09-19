@@ -53,6 +53,8 @@ pnpm-debug.log*
 CLAUDE.md
 docs/
 admin/references/
+# 配图 prompt 与生图执行器，属一次性产物，不影响项目运行
+output/
 
 # admin 已用 npm（package-lock.json），避免双 lock 冲突
 admin/pnpm-lock.yaml

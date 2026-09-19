@@ -5,26 +5,21 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
-import { resolveBuildEnv, resolveRealBackendPrefixes } from './build/env'
+import { resolveBuildEnv, UPLOAD_URL_PREFIX } from './build/env'
 
 export default defineConfig(({ mode }): UserConfig => {
   // 读取 .env / .env.[mode] / .env.local，仅取 VITE_ 前缀
   const env = resolveBuildEnv(loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), 'VITE_'))
 
-  // 接口前缀仅在「关闭 Mock 且未指定绝对地址」时才代理到真实后端
+  // 未指定绝对地址时，接口前缀与上传目录代理到真实后端
   const proxy: Record<string, ProxyOptions> = {}
-  // 会员相关接口已有真实后端，其前缀无条件代理（不受 Mock 开关影响）；
-  // 必须先于通用 apiPrefix 注册 —— Vite 按插入顺序做前缀匹配，更具体的规则要在前
   if (!env.apiBaseUrl) {
-    for (const prefix of resolveRealBackendPrefixes(env.apiPrefix)) {
-      proxy[prefix] = {
-        target: env.proxyTarget,
-        changeOrigin: true,
-      }
-    }
-  }
-  if (!env.useMock && !env.apiBaseUrl) {
     proxy[env.apiPrefix] = {
+      target: env.proxyTarget,
+      changeOrigin: true,
+    }
+    // 上传文件由后端静态托管，地址不在 apiPrefix 之下，须单独代理
+    proxy[UPLOAD_URL_PREFIX] = {
       target: env.proxyTarget,
       changeOrigin: true,
     }

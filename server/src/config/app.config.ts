@@ -40,8 +40,45 @@ export const JWT_MEMBER = {
   expiresIn: (process.env.JWT_MEMBER_EXPIRES_IN || '2h').trim(),
 }
 
-/** 管理端开发期占位令牌（正式鉴权落地后删除） */
-export const MGMT_DEV_TOKEN = (process.env.MGMT_DEV_TOKEN || 'dev-mgmt-token-change-me').trim()
+/** 管理员令牌配置（scope=admin，与会员令牌密钥严格分开） */
+export const JWT_ADMIN = {
+  secret: (process.env.JWT_ADMIN_SECRET || 'dev-admin-secret-change-me').trim(),
+  expiresIn: (process.env.JWT_ADMIN_EXPIRES_IN || '8h').trim(),
+}
+
+/** 初始管理员账号：仅在管理员表为空时用于创建首个账号 */
+export const ADMIN_SEED = {
+  account: (process.env.ADMIN_SEED_ACCOUNT || 'admin').trim(),
+  password: process.env.ADMIN_SEED_PASSWORD || 'admin123456',
+}
+
+/** 上传配置：目录、单文件大小上限、可访问的 URL 前缀 */
+export const UPLOAD = {
+  dir: (process.env.UPLOAD_DIR || 'data/uploads').trim(),
+  maxMb: toInt(process.env.UPLOAD_MAX_MB, 2),
+  /** 视频单独一档上限：视频体积与图片不在一个量级，共用一个值会把图片口子开得过大 */
+  videoMaxMb: toInt(process.env.UPLOAD_VIDEO_MAX_MB, 100),
+  urlPrefix: '/uploads',
+  /** 允许的图片 MIME，与前端 UPLOAD_IMAGE_MIMES 保持一致 */
+  imageMimes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const,
+  /** MIME 对应落盘扩展名：不沿用客户端文件名，避免伪造扩展名 */
+  imageExts: {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+  } as Record<string, string>,
+  /**
+   * 允许的视频 MIME，与前端 UPLOAD_VIDEO_MIMES 保持一致
+   * 只收浏览器能直接用 <video> 播的容器格式，不收需转码的 avi/mov/wmv
+   */
+  videoMimes: ['video/mp4', 'video/webm', 'video/ogg'] as const,
+  videoExts: {
+    'video/mp4': '.mp4',
+    'video/webm': '.webm',
+    'video/ogg': '.ogv',
+  } as Record<string, string>,
+}
 
 /** 限流配置 */
 export const THROTTLE = {
@@ -57,3 +94,6 @@ export const CORS_ORIGINS = (process.env.CORS_ORIGINS || '')
 
 /** 令牌作用域，用于隔离会员与管理员两套身份 */
 export const SCOPE_MEMBER = 'member'
+
+/** 管理员令牌作用域；与 SCOPE_MEMBER 互斥，守卫两侧都做强校验 */
+export const SCOPE_ADMIN = 'admin'

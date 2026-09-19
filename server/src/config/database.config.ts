@@ -8,9 +8,17 @@ import { Feedback } from '../modules/feedback/feedback.entity'
 import { FeedbackReply } from '../modules/feedback/feedback-reply.entity'
 import { MemberLoginLog } from '../modules/login-log/login-log.entity'
 import { AuthConfig } from '../modules/auth-config/auth-config.entity'
+import { Admin } from '../modules/admin/admin.entity'
+import { Channel } from '../modules/cms/channel.entity'
+import { Content } from '../modules/cms/content.entity'
+import { SiteConfig } from '../modules/cms/site-config.entity'
+import { VisitLog } from '../modules/visit/visit-log.entity'
 
 /** 全部实体，集中登记避免 glob 扫描在打包后失效 */
-export const ENTITIES = [Member, Feedback, FeedbackReply, MemberLoginLog, AuthConfig]
+export const ENTITIES = [
+  Member, Feedback, FeedbackReply, MemberLoginLog, AuthConfig,
+  Admin, Channel, Content, SiteConfig, VisitLog,
+]
 
 /** 构建 TypeORM 配置 */
 export function buildDataSourceOptions(): TypeOrmModuleOptions {

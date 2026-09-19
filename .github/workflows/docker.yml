@@ -96,17 +96,8 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=sha-,format=short
 
-      # MGMT_DEV_TOKEN 是构建期写死进 admin 产物的，必须在此传入，
-      # 且要与服务器 .env 里的同名值完全一致，否则管理端接口全部 401。
-      # 缺失时不给默认值：宁可让构建失败，也不要产出一个静默 401 的镜像。
-      - name: 校验 Secret 是否已配置
-        run: |
-          if [ -z "${{ secrets.MGMT_DEV_TOKEN }}" ]; then
-            echo "::error::仓库 Secret MGMT_DEV_TOKEN 未配置，无法构建网关镜像"
-            echo "配置路径：仓库 Settings → Secrets and variables → Actions → New repository secret"
-            exit 1
-          fi
-
+      # 管理端改用真实 JWT 登录后，前端产物不再内嵌任何凭证，
+      # 故此处无需传 build-arg，也不再需要仓库 Secret
       - name: 构建并推送
         uses: docker/build-push-action@v6
         with:
@@ -115,7 +106,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_MGMT_DEV_TOKEN=${{ secrets.MGMT_DEV_TOKEN }}
           cache-from: type=gha,scope=gateway
           cache-to: type=gha,mode=max,scope=gateway

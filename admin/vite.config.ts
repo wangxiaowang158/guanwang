@@ -1,14 +1,14 @@
 import { defineConfig, loadEnv, type ProxyOptions } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'node:path'
-import { resolveBuildEnv, resolveRealBackendPrefixes } from './build/env'
+import { resolveBuildEnv, UPLOAD_URL_PREFIX } from './build/env'
 import { annotationSavePlugin } from './build/annotation-save'
 
 export default defineConfig(({ mode }) => {
   // 读取 .env / .env.[mode] / .env.local，仅取 VITE_ 前缀
   const env = resolveBuildEnv(loadEnv(mode, __dirname, 'VITE_'))
 
-  // 代理规则：地图数据源固定代理；接口前缀仅在「关闭 Mock 且未指定绝对地址」时才代理到后端
+  // 代理规则：地图数据源固定代理；接口与上传目录在「未指定绝对地址」时代理到后端
   const proxy: Record<string, ProxyOptions> = {
     '/map-api': {
       target: env.mapApiTarget,
@@ -16,18 +16,13 @@ export default defineConfig(({ mode }) => {
       rewrite: (p) => p.replace(/^\/map-api/, ''),
     },
   }
-  // 会员与反馈模块已有真实后端，其前缀无条件代理（不受 Mock 开关影响）；
-  // 必须先于通用 apiPrefix 注册 —— Vite 按插入顺序做前缀匹配，更具体的规则要在前
   if (!env.apiBaseUrl) {
-    for (const prefix of resolveRealBackendPrefixes(env.apiPrefix)) {
-      proxy[prefix] = {
-        target: env.proxyTarget,
-        changeOrigin: true,
-      }
-    }
-  }
-  if (!env.useMock && !env.apiBaseUrl) {
     proxy[env.apiPrefix] = {
+      target: env.proxyTarget,
+      changeOrigin: true,
+    }
+    // 上传文件由后端静态托管，地址不在 apiPrefix 之下，须单独代理
+    proxy[UPLOAD_URL_PREFIX] = {
       target: env.proxyTarget,
       changeOrigin: true,
     }

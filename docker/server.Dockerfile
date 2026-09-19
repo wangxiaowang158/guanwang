@@ -29,7 +29,9 @@ ENV NODE_ENV=production
 
 # 容器内进程以非 root 运行；node 用户由基础镜像预置
 # 数据目录用于 DB_TYPE=sqlite 时落盘，MySQL 模式下留空不影响
-RUN mkdir -p /app/data && chown -R node:node /app
+# uploads 必须在镜像里先建出来：命名卷只有在挂载点已存在时才继承其属主，
+# 否则 Docker 以 root:root 新建该目录，node 用户首次上传即 EACCES
+RUN mkdir -p /app/data/uploads && chown -R node:node /app
 
 # 直接搬运已编译好的 node_modules，避免运行时再装一次原生模块
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules

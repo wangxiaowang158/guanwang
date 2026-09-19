@@ -78,11 +78,24 @@ services:
       DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
       JWT_MEMBER_SECRET: ${JWT_MEMBER_SECRET:?必须在 .env 中设置}
       JWT_MEMBER_EXPIRES_IN: ${JWT_MEMBER_EXPIRES_IN:-2h}
-      MGMT_DEV_TOKEN: ${MGMT_DEV_TOKEN:?必须在 .env 中设置}
+      # 管理员令牌密钥：必填。缺省会回落到源码内的开发默认值，令牌可被任意伪造
+      JWT_ADMIN_SECRET: ${JWT_ADMIN_SECRET:?必须在 .env 中设置}
+      JWT_ADMIN_EXPIRES_IN: ${JWT_ADMIN_EXPIRES_IN:-8h}
+      # 首个管理员账号：仅在管理员表为空时创建，建成后改密码即与此处无关
+      ADMIN_SEED_ACCOUNT: ${ADMIN_SEED_ACCOUNT:-admin}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:?必须在 .env 中设置}
+      # 上传目录：与下方 backend-uploads 卷的挂载点一致，容器重建不丢图
+      UPLOAD_DIR: data/uploads
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-2}
+      UPLOAD_VIDEO_MAX_MB: ${UPLOAD_VIDEO_MAX_MB:-100}
       THROTTLE_TTL: ${THROTTLE_TTL:-60}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:-60}
       # 留空即不启用跨域：两个前端都经 gateway 同源访问 /api，本就无跨域
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      # 后台上传的图片落在容器内，不挂卷则重建容器即全部丢失。
+      # 路径须与上方 UPLOAD_DIR 一致（相对镜像 WORKDIR /app）
+      - backend-uploads:/app/data/uploads
     networks:
       - zrh-net
 
@@ -91,10 +104,6 @@ services:
     build:
       context: .
       dockerfile: docker/gateway.Dockerfile
-      args:
-        # Vite 在构建期把变量写死进产物，故 token 必须在此传入；
-        # 改动此值需重新 build gateway，单纯重启不生效
-        VITE_MGMT_DEV_TOKEN: ${MGMT_DEV_TOKEN}
     container_name: zrh-gateway
     restart: unless-stopped
     depends_on:
@@ -114,3 +123,4 @@ networks:
 volumes:
   mysql-data:
   redis-data:
+  backend-uploads:

@@ -7,8 +7,6 @@ export interface BuildEnv {
   base: string
   /** 开发服务器端口 */
   port: number
-  /** 是否启用内置 Mock */
-  useMock: boolean
   /** 接口基础地址，空串表示同源相对路径 */
   apiBaseUrl: string
   /** 真实后端代理目标 */
@@ -22,18 +20,10 @@ export interface BuildEnv {
 }
 
 /**
- * 走真实后端的接口子前缀（相对 apiPrefix）
- * portal 为前台会员接口，mgmt 为管理端会员/反馈接口；其余路径仍由 Mock 拦截
+ * 上传文件访问前缀，与后端 UPLOAD.urlPrefix 一致
+ * 不在 apiPrefix 之下，需单独代理，否则开发期上传后的图片取不到
  */
-export const REAL_BACKEND_SUBPREFIXES = ['/portal', '/mgmt'] as const
-
-/**
- * 拼出走真实后端的完整路径前缀
- * @param apiPrefix 规范化后的接口前缀（如 /api）
- */
-export function resolveRealBackendPrefixes(apiPrefix: string): string[] {
-  return REAL_BACKEND_SUBPREFIXES.map((sub) => `${apiPrefix}${sub}`)
-}
+export const UPLOAD_URL_PREFIX = '/uploads'
 
 /** 解析布尔型环境变量，仅 'true' 视为真 */
 function toBool(value: string | undefined, fallback: boolean): boolean {
@@ -75,7 +65,6 @@ export function resolveBuildEnv(env: Record<string, string>): BuildEnv {
   return {
     base: normalizeBase(env.VITE_BASE_URL),
     port: toPort(env.VITE_PORT, 3810),
-    useMock: toBool(env.VITE_USE_MOCK, true),
     apiBaseUrl: (env.VITE_API_BASE_URL || '').trim(),
     proxyTarget: (env.VITE_PROXY_TARGET || '').trim() || 'http://localhost:3000',
     apiPrefix: normalizePrefix(env.VITE_API_PREFIX, '/api'),
