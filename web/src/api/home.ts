@@ -15,7 +15,13 @@ export interface SiteInfo {
   address: string
   mapLng: string
   mapLat: string
+  /** 地图跳转链接，为空时地址不可点击 */
+  mapLink: string
   wechatQr: string
+  /** 页头 Logo 地址，为空时回退到文字品牌标识 */
+  logo: string
+  /** 页脚 Logo 地址，为空时回退到文字品牌标识 */
+  footerLogo: string
   icpCode: string
   policeCode: string
   copyright: string

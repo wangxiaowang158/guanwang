@@ -29,6 +29,10 @@
           <a-form-item label="网站描述" name="description">
             <a-textarea v-model:value="form.description" :rows="3" />
           </a-form-item>
+          <a-form-item label="首页副标语" name="subSlogan">
+            <a-input v-model:value="form.subSlogan" :maxlength="200" />
+            <div class="field-tip">前台首屏标题上方与页脚简介引用；留空则用内置文案</div>
+          </a-form-item>
           <a-form-item label="电话" name="phone">
             <a-input v-model:value="form.phone" :maxlength="20" />
           </a-form-item>
@@ -113,7 +117,7 @@ const saving = ref(false)
 const previewOpen = ref(false)
 
 const form = reactive<SiteInfo>({
-  webTitle: '', keywords: '', description: '', phone: '', website: '',
+  webTitle: '', keywords: '', description: '', subSlogan: '', phone: '', website: '',
   recruitEmail: '', contactEmail: '', address: '', mapLng: '', mapLat: '',
   mapLink: '', copyright: '', icpCode: '', policeCode: '',
   logo: '', footerLogo: '', wechatQr: '', template: '1',

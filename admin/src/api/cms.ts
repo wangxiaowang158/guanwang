@@ -24,6 +24,15 @@ export interface Channel {
   subheading?: string
   /** 区块展示形态 */
   layout?: BlockLayout
+  /** 前台路由路径，如 /hvac；为空表示该栏目不进前台。管理端只读不改 */
+  portalPath?: string
+  // 页面头图文案 —— 仅顶级板块页使用，前台栏目页顶部展示
+  /** Hero 眉标题，标题上方的小字 */
+  heroEyebrow?: string
+  /** Hero 主标题，为空时前台回落到栏目名称 */
+  heroTitle?: string
+  /** Hero 描述，标题下方的说明文字 */
+  heroDesc?: string
   // 栏目页 SEO 元信息（TDK）—— 仅顶级板块页使用
   seoTitle?: string
   seoKeywords?: string
@@ -76,6 +85,8 @@ export interface SiteInfo {
   webTitle: string
   keywords: string
   description: string
+  /** 首页副标语，前台首屏与页脚展示；为空时前台回落到内置文案 */
+  subSlogan: string
   phone: string
   website: string
   recruitEmail: string

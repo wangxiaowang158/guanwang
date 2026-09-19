@@ -6,7 +6,17 @@
         <!-- 品牌 -->
         <div class="md:col-span-5">
           <div class="flex items-center gap-3 mb-5">
-            <div class="w-10 h-10 flex items-center justify-center text-white text-lg font-bold" style="background: var(--rs-primary)">Z</div>
+            <!-- 页脚 Logo 独立配置：深色底常需浅色版本，与页头不共用 -->
+            <img
+              v-if="footerLogo"
+              :src="footerLogo"
+              alt=""
+              class="h-10 w-auto max-w-[160px] object-contain"
+              width="144"
+              height="40"
+              loading="lazy"
+            />
+            <div v-else class="w-10 h-10 flex items-center justify-center text-white text-lg font-bold" style="background: var(--rs-primary)">Z</div>
             <div class="flex flex-col leading-none">
               <span class="font-bold text-xl text-white">中瑞恒集团</span>
               <span class="text-[10px] tracking-[0.25em] mt-1" style="color: var(--rs-text-muted)">ZRUIHENG GROUP</span>
@@ -69,6 +79,8 @@ const site = computed(() => siteStore.site)
 const menu = computed<MenuNode[]>(() => siteStore.menu)
 
 const wechatQr = computed(() => site.value.wechatQr || '')
+// 页脚 Logo：后台未配时为空，模板回退到文字标识
+const footerLogo = computed(() => site.value.footerLogo || '')
 
 onMounted(() => {
   // store 内部已做去重，重复调用不会产生额外请求

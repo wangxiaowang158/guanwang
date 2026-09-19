@@ -6,7 +6,17 @@
         <!-- 品牌 -->
         <div class="md:col-span-2">
           <div class="flex items-center gap-2.5 mb-4">
-            <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white text-base font-bold">Z</div>
+            <!-- 页脚 Logo 独立配置：深色底常需浅色版本，与页头不共用 -->
+            <img
+              v-if="footerLogo"
+              :src="footerLogo"
+              alt=""
+              class="h-9 w-auto max-w-[140px] object-contain"
+              width="130"
+              height="36"
+              loading="lazy"
+            />
+            <div v-else class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white text-base font-bold">Z</div>
             <div class="flex flex-col leading-none">
               <span class="font-bold text-lg text-white">中瑞恒</span>
               <span class="text-[10px] text-gray-500 tracking-[0.2em] mt-0.5">ZRUIHENG</span>
@@ -86,6 +96,8 @@ const menu = computed<MenuNode[]>(() => siteStore.menu)
 
 // 微信二维码：仅在配置了有效图片地址时展示
 const wechatQr = computed(() => site.value.wechatQr || '')
+// 页脚 Logo：后台未配时为空，模板回退到文字标识
+const footerLogo = computed(() => site.value.footerLogo || '')
 
 onMounted(() => {
   // store 内部已做去重，重复调用不会产生额外请求

@@ -11,9 +11,9 @@
   "mapLat": "40.09",
   "mapLink": "https://j.map.baidu.com/e0/RDH",
   "copyright": "COPYRIGHT@ 中瑞恒(北京)科技有限公司    地址：北京市顺义区空港融慧园6号楼\n<a href=\"https://beian.miit.gov.cn\" target=\"_blank\">京ICP备11010169号-1</a>",
-  "logo": "/static/images/logo.png",
-  "footerLogo": "/static/images/logo02.png",
-  "wechatQr": "/static/images/erweima.png",
+  "logo": "",
+  "footerLogo": "",
+  "wechatQr": "",
   "template": "1",
   "heroImage": "",
   "heroVideo": ""

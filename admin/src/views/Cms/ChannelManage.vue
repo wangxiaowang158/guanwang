@@ -97,6 +97,22 @@
                 </div>
               </a-form-item>
             </template>
+            <!-- 页面头图文案：走通用栏目页模板的板块可填，对应前台页面顶部 -->
+            <template v-if="showHero">
+              <a-divider style="margin: 4px 0 16px">页面头图</a-divider>
+              <a-form-item label="眉标题">
+                <a-input v-model:value="form.heroEyebrow" placeholder="选填，显示在主标题上方" :maxlength="100" />
+              </a-form-item>
+              <a-form-item label="主标题">
+                <a-input v-model:value="form.heroTitle" placeholder="留空则使用栏目名称" :maxlength="200" />
+              </a-form-item>
+              <a-form-item label="头图描述">
+                <a-textarea v-model:value="form.heroDesc" placeholder="选填，显示在主标题下方" :rows="3" :maxlength="1000" />
+              </a-form-item>
+              <div class="field-tip" style="margin: -8px 0 16px">
+                头图背景图片在「Banner管理」中按页面维护，此处只配文案
+              </div>
+            </template>
             <!-- SEO 信息（TDK）：仅顶级板块页可填，用于前台页面搜索引擎优化 -->
             <template v-if="showSeo">
               <a-divider style="margin: 4px 0 16px">SEO 信息（TDK）</a-divider>
@@ -165,6 +181,7 @@ const defaultForm = () => ({
   formFields: ['title', 'content', 'updateTime', 'isTop'] as string[],
   listColumns: ['title', 'createTime', 'isTop'] as string[],
   anchor: '', subheading: '', layout: undefined as BlockLayout | undefined,
+  heroEyebrow: '', heroTitle: '', heroDesc: '',
   seoTitle: '', seoKeywords: '', seoDescription: ''
 })
 const form = reactive(defaultForm())
@@ -179,6 +196,16 @@ const showSeo = computed(() =>
   form.parentId === null &&
   !SEO_EXCLUDE_TYPES.includes(form.type) &&
   !SEO_EXCLUDE_KEYS.includes(form.key)
+)
+
+// 当前编辑节点的前台路径，仅用于判断是否展示头图配置，不参与提交
+const editingPortalPath = ref('')
+
+// 页面头图文案只对走通用栏目页模板的前台页面开放：
+// 有 portalPath 才是前台页面；首页有独立首屏设计，不读栏目头图字段，配了也不生效
+const HERO_EXCLUDE_KEYS = ['home']
+const showHero = computed(() =>
+  !!editingPortalPath.value && !HERO_EXCLUDE_KEYS.includes(form.key)
 )
 
 // 区块配置只对「挂在某个页面下的内容栏目」开放：
@@ -282,10 +309,13 @@ const onTreeDrop = async (info: any) => {
 const openAdd = (parentId: number | null) => {
   Object.assign(form, defaultForm())
   form.parentId = parentId
+  // 新建栏目还没有前台路径，不展示头图配置
+  editingPortalPath.value = ''
   editing.value = true
 }
 
 const openEdit = (node: Channel) => {
+  editingPortalPath.value = node.portalPath || ''
   Object.assign(form, defaultForm(), {
     id: node.id,
     parentId: node.parentId,
@@ -299,6 +329,9 @@ const openEdit = (node: Channel) => {
     anchor: node.anchor || '',
     subheading: node.subheading || '',
     layout: node.layout,
+    heroEyebrow: node.heroEyebrow || '',
+    heroTitle: node.heroTitle || '',
+    heroDesc: node.heroDesc || '',
     seoTitle: node.seoTitle || '',
     seoKeywords: node.seoKeywords || '',
     seoDescription: node.seoDescription || ''
@@ -320,6 +353,13 @@ const onSave = async () => {
       delete seoPayload.seoTitle
       delete seoPayload.seoKeywords
       delete seoPayload.seoDescription
+    }
+    // 不展示头图表单的栏目（子栏目、系统栏目、首页）不提交头图字段
+    if (!showHero.value) {
+      const heroPayload = payload as Partial<typeof payload>
+      delete heroPayload.heroEyebrow
+      delete heroPayload.heroTitle
+      delete heroPayload.heroDesc
     }
     // 顶级栏目本身是页面不是区块，不保存区块字段
     if (!showBlockConfig.value) {

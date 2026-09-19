@@ -8,7 +8,19 @@
       <div class="flex items-center justify-between" style="height: 76px">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-3 no-underline shrink-0">
+          <!-- 后台配了 Logo 用图，未配回退到文字标识，避免首屏出现空白占位 -->
+          <img
+            v-if="siteLogo"
+            :src="siteLogo"
+            alt=""
+            class="h-10 w-auto max-w-[160px] object-contain"
+            width="144"
+            height="40"
+            loading="eager"
+            fetchpriority="high"
+          />
           <div
+            v-else
             class="w-10 h-10 flex items-center justify-center text-white text-lg font-bold"
             style="background: var(--rs-primary)"
           >Z</div>
@@ -133,6 +145,8 @@ const siteStore = useSiteStore()
 // 菜单与电话取自 site store，多组件共享同一次请求
 const menu = computed<MenuNode[]>(() => siteStore.menu)
 const sitePhone = computed(() => siteStore.site.phone || '010-53608607')
+// 页头 Logo：后台未配时为空，模板回退到文字标识
+const siteLogo = computed(() => siteStore.site.logo || '')
 const scrolled = ref(false)
 const menuOpen = ref(false)
 const openKey = ref('')
