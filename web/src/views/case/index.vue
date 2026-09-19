@@ -1,6 +1,6 @@
 <template>
   <!-- 项目案例栏目页 -->
-  <ChannelPage page-key="case" visit-label="项目案例" />
+  <ChannelPage page-key="case" />
 </template>
 
 <script setup lang="ts">

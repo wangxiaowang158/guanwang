@@ -50,11 +50,34 @@
       </li>
     </ol>
 
-    <!-- rich：富文本段落块 -->
+    <!-- video：视频板块，单条占满、多条两列 -->
+    <div
+      v-else-if="block.layout === 'video'"
+      class="grid grid-cols-1 gap-8"
+      :class="playable.length > 1 ? 'md:grid-cols-2' : 'max-w-3xl'"
+    >
+      <VideoPlayer
+        v-for="item in playable"
+        :key="item.id"
+        :src="item.video as string"
+        :poster="item.image"
+        :title="item.title"
+        :desc="item.desc"
+        :on-dark="onDark"
+      />
+    </div>
+
+    <!-- rich：富文本段落块，正文有 HTML 时按富文本渲染，否则回落纯文本描述 -->
     <div v-else-if="block.layout === 'rich'" class="max-w-3xl space-y-7">
       <div v-for="item in sorted" :key="item.id">
         <h3 class="rs-rich-title text-lg font-bold mb-3">{{ item.title }}</h3>
-        <p v-if="item.desc" class="rs-rich-text text-base leading-loose">{{ item.desc }}</p>
+        <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 richHtml -->
+        <div
+          v-if="item.html"
+          class="rs-rich-text rich-html text-base leading-loose"
+          v-html="richHtml(item.html)"
+        ></div>
+        <p v-else-if="item.desc" class="rs-rich-text text-base leading-loose">{{ item.desc }}</p>
       </div>
     </div>
   </section>
@@ -63,12 +86,20 @@
 // 样式二内容块：与样式一同数据结构，仅呈现层不同
 import { computed } from 'vue'
 import type { PageBlock } from '@/api/page'
+import { sanitizeRichText } from '@/utils/sanitize'
 import EmptyState from './EmptyState.vue'
+import VideoPlayer from './VideoPlayer.vue'
 
 const props = defineProps<{ block: PageBlock; onDark?: boolean }>()
 
 // 按 sort 升序展示（与后台排序语义一致）
 const sorted = computed(() => [...props.block.items].sort((a, b) => a.sort - b.sort))
+
+// 视频板块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
+const playable = computed(() => sorted.value.filter(item => item.video))
+
+/** 富文本渲染前净化，v-html 不接未净化内容 */
+const richHtml = (html: string) => sanitizeRichText(html)
 </script>
 
 <style scoped>
@@ -145,8 +176,78 @@ const sorted = computed(() => [...props.block.items].sort((a, b) => a.sort - b.s
   color: var(--rs-text-body);
 }
 
+/* v-html 产出的节点不带 scoped 标记，必须用 :deep 才能命中 */
+.rich-html :deep(p) {
+  margin-bottom: 1em;
+}
+
+.rich-html :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.rich-html :deep(h2),
+.rich-html :deep(h3) {
+  font-weight: 700;
+  color: var(--rs-text-dark);
+  margin: 1.4em 0 0.6em;
+}
+
+.rich-html :deep(h2) {
+  font-size: 1.15rem;
+}
+
+.rich-html :deep(h3) {
+  font-size: 1.05rem;
+}
+
+.rich-html :deep(ul),
+.rich-html :deep(ol) {
+  margin: 0 0 1em 1.4em;
+}
+
+.rich-html :deep(ul) {
+  list-style: disc;
+}
+
+.rich-html :deep(ol) {
+  list-style: decimal;
+}
+
+.rich-html :deep(li) {
+  margin-bottom: 0.4em;
+}
+
+.rich-html :deep(blockquote) {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 3px solid var(--rs-primary);
+}
+
+.rich-html :deep(a) {
+  color: var(--rs-primary);
+  text-decoration: underline;
+}
+
+.rich-html :deep(img),
+.rich-html :deep(video) {
+  max-width: 100%;
+  display: block;
+  margin: 1.2em 0;
+}
+
+.rich-html :deep(video) {
+  width: 100%;
+  background: #000;
+}
+
 /* 背景图板块：标题与富文本切换浅色，卡片/列表保持白底悬浮于图上 */
 .rs-block--ondark .rs-block-sub {
+  color: #fff;
+}
+
+/* 深色板块上富文本内的标题同样要提亮 */
+.rs-block--ondark .rich-html :deep(h2),
+.rs-block--ondark .rich-html :deep(h3) {
   color: #fff;
 }
 .rs-block--ondark .rs-rich-title {

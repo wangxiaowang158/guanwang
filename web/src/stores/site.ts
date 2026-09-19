@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { getSiteInfo, type SiteInfo } from '@/api/home'
 import { getMenu, type MenuNode } from '@/api/menu'
 import { getSeoConfigs, type SeoConfigMap } from '@/api/seo'
+import { API_SUCCESS_CODE } from '@/config'
 
 /**
  * 站点 store —— 全局共享站点配置、导航菜单与栏目 SEO 配置
@@ -36,7 +37,7 @@ export const useSiteStore = defineStore('site', () => {
     sitePending = (async () => {
       try {
         const res = await getSiteInfo()
-        if (res.code === 0 && res.data) site.value = res.data
+        if (res.code === API_SUCCESS_CODE && res.data) site.value = res.data
       } catch {
         site.value = {}
       } finally {
@@ -59,7 +60,7 @@ export const useSiteStore = defineStore('site', () => {
     menuPending = (async () => {
       try {
         const res = await getMenu()
-        if (res.code === 0 && res.data) menu.value = res.data
+        if (res.code === API_SUCCESS_CODE && res.data) menu.value = res.data
       } catch {
         menu.value = []
       } finally {
@@ -82,7 +83,7 @@ export const useSiteStore = defineStore('site', () => {
     seoPending = (async () => {
       try {
         const res = await getSeoConfigs()
-        if (res.code === 0 && res.data) seo.value = res.data
+        if (res.code === API_SUCCESS_CODE && res.data) seo.value = res.data
       } catch {
         seo.value = {}
       } finally {

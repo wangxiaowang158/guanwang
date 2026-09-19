@@ -13,7 +13,7 @@
 // 短信验证码按钮：校验手机号 → 调发送接口 → 进入倒计时
 import { computed, onUnmounted, ref } from 'vue'
 import { sendSmsCode, type SmsPurpose } from '@/api/memberAuth'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const props = defineProps<{
   phone: string
@@ -59,7 +59,7 @@ async function onSend() {
   sending.value = true
   try {
     const res = await sendSmsCode(props.phone.trim(), props.purpose)
-    if (res.code !== REAL_API_SUCCESS_CODE) {
+    if (res.code !== API_SUCCESS_CODE) {
       emit('fail', res.message || '验证码发送失败，请稍后重试')
       return
     }

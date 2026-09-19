@@ -66,7 +66,7 @@ import {
   type CaptchaChallenge, type LoginMethod, type PortalAuthConfig,
 } from '@/api/memberAuth'
 import { useMemberStore } from '@/stores/member'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const route = useRoute()
 const router = useRouter()
@@ -111,7 +111,7 @@ function safeRedirect(value: unknown): string {
 async function loadCaptcha() {
   try {
     const res = await fetchCaptcha()
-    if (res.code === REAL_API_SUCCESS_CODE && res.data) {
+    if (res.code === API_SUCCESS_CODE && res.data) {
       captcha.value = res.data
       form.captcha = ''
     }
@@ -149,7 +149,7 @@ async function onSubmit() {
       captcha: captcha.value ? form.captcha.trim() : undefined,
       captchaId: captcha.value?.captchaId,
     })
-    if (res.code === REAL_API_SUCCESS_CODE && isAuthSuccess(res.data)) {
+    if (res.code === API_SUCCESS_CODE && isAuthSuccess(res.data)) {
       memberStore.setAuth(res.data.token, res.data.profile)
       await router.replace(safeRedirect(route.query.redirect))
       return
@@ -167,7 +167,7 @@ onMounted(async () => {
   // 已登录的拦截在路由守卫（meta.guestOnly）完成，此处只拉配置
   try {
     const res = await fetchAuthConfig()
-    if (res.code === REAL_API_SUCCESS_CODE && res.data) {
+    if (res.code === API_SUCCESS_CODE && res.data) {
       config.value = res.data
       // 密码登录被后台关闭时，落到可用的第一种方式
       if (!res.data.allowPasswordLogin && res.data.allowSmsLogin) method.value = 'smsCode'

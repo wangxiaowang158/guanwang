@@ -1,5 +1,4 @@
-// 前台意见反馈接口层 —— 走真实后端 /api/portal/feedback（非 Mock）
-// 成功码为 200，与既有 Mock 接口的 code:0 不同，勿混用
+// 前台意见反馈接口层 —— /api/portal/feedback
 import { authRequest, post, type ApiResult } from './request'
 
 export type FeedbackType = 'suggestion' | 'complaint' | 'cooperation' | 'other'

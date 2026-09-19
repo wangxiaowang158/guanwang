@@ -48,6 +48,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { getPageContent } from '@/api/page'
 import type { PageContent } from '@/api/page'
 import { recordVisit } from '@/api/home'
+import { API_SUCCESS_CODE } from '@/config'
 import { useThemeStore } from '@/stores/theme'
 import PageHero from './PageHero.vue'
 import ContentBlock from './ContentBlock.vue'
@@ -55,7 +56,7 @@ import Style2PageHero from './Style2PageHero.vue'
 import Style2ContentBlock from './Style2ContentBlock.vue'
 import EmptyState from './EmptyState.vue'
 
-const props = defineProps<{ pageKey: string; visitLabel: string }>()
+const props = defineProps<{ pageKey: string }>()
 
 const theme = useThemeStore()
 const heroComp = computed(() => (theme.isStyle2 ? Style2PageHero : PageHero))
@@ -80,7 +81,7 @@ async function load(key: string) {
   content.value = null
   try {
     const res = await getPageContent(key)
-    if (res.code === 0 && res.data) content.value = res.data
+    if (res.code === API_SUCCESS_CODE && res.data) content.value = res.data
   } catch {
     content.value = null
   } finally {
@@ -90,7 +91,7 @@ async function load(key: string) {
 
 onMounted(() => {
   // 访问埋点，失败静默忽略
-  recordVisit(props.visitLabel).catch(() => {})
+  recordVisit(props.pageKey).catch(() => {})
 })
 
 watch(() => props.pageKey, (key) => load(key), { immediate: true })

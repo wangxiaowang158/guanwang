@@ -1,6 +1,6 @@
 <template>
   <!-- 综合能源节能栏目页 -->
-  <ChannelPage page-key="energy" visit-label="综合能源节能" />
+  <ChannelPage page-key="energy" />
 </template>
 
 <script setup lang="ts">

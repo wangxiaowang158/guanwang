@@ -1,6 +1,6 @@
 <template>
   <!-- 智能家居栏目页 -->
-  <ChannelPage page-key="household" visit-label="智能家居" />
+  <ChannelPage page-key="household" />
 </template>
 
 <script setup lang="ts">

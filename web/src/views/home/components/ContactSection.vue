@@ -98,7 +98,7 @@ import { reactive, ref, computed } from 'vue'
 import type { SiteInfo } from '@/api/home'
 import { submitAnonymousFeedback, submitMemberFeedback } from '@/api/feedback'
 import { useMemberStore } from '@/stores/member'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const memberStore = useMemberStore()
 
@@ -157,7 +157,7 @@ async function handleSubmit() {
           content,
           sourcePage: '首页-联系我们',
         })
-    if (res.code === REAL_API_SUCCESS_CODE) {
+    if (res.code === API_SUCCESS_CODE) {
       sent.value = true
       form.name = ''
       form.phone = ''

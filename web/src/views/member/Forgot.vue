@@ -49,7 +49,7 @@ import { useRouter } from 'vue-router'
 import AuthShell from './AuthShell.vue'
 import SmsCodeButton from './SmsCodeButton.vue'
 import { fetchAuthConfig, resetPassword, type PortalAuthConfig } from '@/api/memberAuth'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const router = useRouter()
 
@@ -110,7 +110,7 @@ async function onSubmit() {
       smsCode: form.smsCode.trim(),
       newPassword: form.password,
     })
-    if (res.code !== REAL_API_SUCCESS_CODE) {
+    if (res.code !== API_SUCCESS_CODE) {
       tipText.value = ''
       errorText.value = res.message || '重置失败，请确认验证码是否正确'
       return
@@ -129,7 +129,7 @@ async function onSubmit() {
 onMounted(async () => {
   try {
     const res = await fetchAuthConfig()
-    if (res.code === REAL_API_SUCCESS_CODE && res.data) config.value = res.data
+    if (res.code === API_SUCCESS_CODE && res.data) config.value = res.data
   } catch {
     // 配置拉取失败按后端默认密码规则校验，不阻断流程
   }

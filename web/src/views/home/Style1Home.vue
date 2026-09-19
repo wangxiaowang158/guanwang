@@ -5,7 +5,7 @@
     ══════════════════════════════════════════ -->
     <section class="s1-hero">
       <!-- 背景媒体层 -->
-      <video v-if="heroVideo" class="s1-hero-media" :src="heroVideo" autoplay muted loop playsinline />
+      <video v-if="showHeroVideo" class="s1-hero-media" :src="heroVideo" autoplay muted loop playsinline />
       <img v-else-if="heroImage" :src="heroImage" alt="" class="s1-hero-media" width="1920" height="1080" fetchpriority="high" />
       <!-- 科技网格遮罩 -->
       <div class="s1-hero-overlay"></div>
@@ -274,6 +274,8 @@ import { ref, computed, inject, onMounted, onBeforeUnmount } from 'vue'
 import { getHomeSections, recordVisit } from '@/api/home'
 import type { HomeSections, AchievementItem } from '@/api/home'
 import { useSiteStore } from '@/stores/site'
+import { API_SUCCESS_CODE } from '@/config'
+import { useHeroVideo } from '@/composables/useHeroVideo'
 import AchievementStat from './components/AchievementStat.vue'
 import ContactSection from './components/ContactSection.vue'
 
@@ -285,6 +287,9 @@ const site = computed(() => siteStore.site)
 // Hero 背景媒体
 const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || '')
 const heroVideo = computed(() => site.value.heroVideo || '')
+// 窄屏与减少动效偏好下不播背景视频，回落到背景图
+const { blocked: heroVideoBlocked } = useHeroVideo()
+const showHeroVideo = computed(() => !!heroVideo.value && !heroVideoBlocked.value)
 
 // 统计条数据：带 countUp display
 interface StatItem extends AchievementItem { display: number }
@@ -340,12 +345,12 @@ const vIntersect = {
 }
 
 onMounted(async () => {
-  recordVisit('首页').catch(() => {})
+  recordVisit('home').catch(() => {})
   // 站点信息走 store（已去重），首页板块数据本页独有
   siteStore.fetchSite()
   try {
     const secRes = await getHomeSections()
-    if (secRes.code === 0 && secRes.data) {
+    if (secRes.code === API_SUCCESS_CODE && secRes.data) {
       sections.value = secRes.data
       // 初始化统计条数据
       statItems.value = (secRes.data.achievements || []).map(a => ({ ...a, display: 0 }))

@@ -1,6 +1,6 @@
 <template>
   <!-- 关于我们栏目页 -->
-  <ChannelPage page-key="about" visit-label="关于我们" />
+  <ChannelPage page-key="about" />
 </template>
 
 <script setup lang="ts">

@@ -1,4 +1,4 @@
-// 前台官网接口层 —— 站点信息 / 首页板块 / 在线留言 / 访问记录
+// 前台官网接口层 —— /api/portal/*：站点信息 / 首页板块 / 访问记录
 import { get, post } from './request'
 
 /** 站点基本信息 */
@@ -62,13 +62,17 @@ export interface HomeSections {
 }
 
 /** 获取站点基本信息 */
-export const getSiteInfo = () => get<SiteInfo>('/api/site/detail')
+export const getSiteInfo = () => get<SiteInfo>('/api/portal/site/detail')
 
 /** 获取首页各板块聚合数据 */
-export const getHomeSections = () => get<HomeSections>('/api/home/sections')
+export const getHomeSections = () => get<HomeSections>('/api/portal/home/sections')
 
 // 在线留言提交已迁至 @/api/feedback（真实后端 /api/portal/feedback/*）
 
-/** 记录访客访问（埋点，失败由调用方静默忽略） */
-export const recordVisit = (page: string) =>
-  post<null>('/api/visit/record', { page })
+/**
+ * 记录访客访问（埋点，失败由调用方静默忽略）
+ * 上报栏目 key 而非栏目名：后台改栏目名时历史统计不会被割成两段
+ * @param channelKey 一级栏目 key，如 home / hvac
+ */
+export const recordVisit = (channelKey: string) =>
+  post<null>('/api/portal/visit/record', { channelKey })

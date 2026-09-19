@@ -3,7 +3,7 @@
     <!-- 首屏 Hero：满屏深色大图叠加，编辑式大标题；可配背景图/视频 -->
     <section class="rs-hero">
       <!-- 背景媒体层：视频优先，其次图片，垫在深色渐变之上、蒙版之下 -->
-      <video v-if="heroVideo" class="rs-hero-media" :src="heroVideo" autoplay muted loop playsinline></video>
+      <video v-if="showHeroVideo" class="rs-hero-media" :src="heroVideo" autoplay muted loop playsinline></video>
       <img v-else-if="heroImage" :src="heroImage" alt="" class="rs-hero-media" />
       <div class="rs-hero-overlay"></div>
       <div class="relative z-10 mx-auto px-6 lg:px-10 w-full" style="max-width: var(--rs-content-max)">
@@ -183,6 +183,8 @@ import { ref, computed, inject, onMounted } from 'vue'
 import { getHomeSections, recordVisit } from '@/api/home'
 import type { HomeSections } from '@/api/home'
 import { useSiteStore } from '@/stores/site'
+import { API_SUCCESS_CODE } from '@/config'
+import { useHeroVideo } from '@/composables/useHeroVideo'
 import EmptyState from '@/components/sections/EmptyState.vue'
 import AchievementStat from './components/AchievementStat.vue'
 import ContactSection from './components/ContactSection.vue'
@@ -195,6 +197,9 @@ const site = computed(() => siteStore.site)
 // Hero 背景媒体：视频优先，其次背景图（站点配置优先，回退板块背景配置 backgrounds.hero）
 const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || '')
 const heroVideo = computed(() => site.value.heroVideo || '')
+// 窄屏与减少动效偏好下不播背景视频，回落到背景图
+const { blocked: heroVideoBlocked } = useHeroVideo()
+const showHeroVideo = computed(() => !!heroVideo.value && !heroVideoBlocked.value)
 
 // Hero 数据条：取前 4 项业绩，无数据时为空数组（模板自然不渲染）
 const heroStats = computed(() =>
@@ -211,12 +216,12 @@ function scrollTo(id: string) {
 }
 
 onMounted(async () => {
-  recordVisit('首页').catch(() => {})
+  recordVisit('home').catch(() => {})
   // 站点信息走 store（已去重），首页板块数据本页独有
   siteStore.fetchSite()
   try {
     const secRes = await getHomeSections()
-    if (secRes.code === 0 && secRes.data) sections.value = secRes.data
+    if (secRes.code === API_SUCCESS_CODE && secRes.data) sections.value = secRes.data
   } catch {
     sections.value = null
   }

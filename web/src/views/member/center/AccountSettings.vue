@@ -62,7 +62,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { changePassword, updateProfile } from '@/api/member'
 import { fetchAuthConfig, type PortalAuthConfig } from '@/api/memberAuth'
 import { useMemberStore } from '@/stores/member'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const memberStore = useMemberStore()
 
@@ -115,7 +115,7 @@ async function onSaveProfile() {
   errorText.value = ''
   try {
     const res = await updateProfile({ nickname, email })
-    if (res.code !== REAL_API_SUCCESS_CODE || !res.data) {
+    if (res.code !== API_SUCCESS_CODE || !res.data) {
       tipText.value = ''
       errorText.value = res.message || '保存失败，请稍后重试'
       return
@@ -159,7 +159,7 @@ async function onChangePassword() {
       oldPassword: pwdForm.oldPassword,
       newPassword: pwdForm.newPassword,
     })
-    if (res.code !== REAL_API_SUCCESS_CODE) {
+    if (res.code !== API_SUCCESS_CODE) {
       tipText.value = ''
       errorText.value = res.message || '修改失败，请确认当前密码是否正确'
       return
@@ -179,7 +179,7 @@ async function onChangePassword() {
 onMounted(async () => {
   try {
     const res = await fetchAuthConfig()
-    if (res.code === REAL_API_SUCCESS_CODE && res.data) config.value = res.data
+    if (res.code === API_SUCCESS_CODE && res.data) config.value = res.data
   } catch {
     // 配置拉取失败按后端默认密码规则校验，不阻断流程
   }

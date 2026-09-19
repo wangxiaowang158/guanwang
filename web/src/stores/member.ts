@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { fetchProfile } from '@/api/member'
 import type { MemberProfile } from '@/api/memberAuth'
-import { MEMBER_TOKEN_KEY, REAL_API_SUCCESS_CODE } from '@/config'
+import { MEMBER_TOKEN_KEY, API_SUCCESS_CODE } from '@/config'
 
 /**
  * 会员 store —— 全局共享会员登录态与资料
@@ -60,7 +60,7 @@ export const useMemberStore = defineStore('member', () => {
     restorePending = (async () => {
       try {
         const res = await fetchProfile()
-        if (res.code === REAL_API_SUCCESS_CODE && res.data) {
+        if (res.code === API_SUCCESS_CODE && res.data) {
           profile.value = res.data
         } else {
           // 令牌已失效（过期或会员被禁用），清空登录态

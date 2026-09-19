@@ -48,7 +48,7 @@ import { reactive, ref } from 'vue'
 import {
   submitMemberFeedback, FEEDBACK_TYPE_LABEL, type FeedbackType,
 } from '@/api/feedback'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const emit = defineEmits<{ submitted: [] }>()
 
@@ -91,7 +91,7 @@ async function onSubmit() {
       phone: phone || undefined,
       sourcePage: '会员中心-提交反馈',
     })
-    if (res.code !== REAL_API_SUCCESS_CODE) {
+    if (res.code !== API_SUCCESS_CODE) {
       tipText.value = ''
       errorText.value = res.message || '提交失败，请稍后重试'
       return

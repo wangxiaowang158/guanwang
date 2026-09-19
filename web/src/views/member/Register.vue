@@ -62,7 +62,7 @@ import AuthShell from './AuthShell.vue'
 import SmsCodeButton from './SmsCodeButton.vue'
 import { fetchAuthConfig, register, isAuthSuccess, type PortalAuthConfig } from '@/api/memberAuth'
 import { useMemberStore } from '@/stores/member'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const router = useRouter()
 const memberStore = useMemberStore()
@@ -127,7 +127,7 @@ async function onSubmit() {
       smsCode: form.smsCode.trim(),
       email: form.email.trim() || undefined,
     })
-    if (res.code === REAL_API_SUCCESS_CODE && isAuthSuccess(res.data)) {
+    if (res.code === API_SUCCESS_CODE && isAuthSuccess(res.data)) {
       memberStore.setAuth(res.data.token, res.data.profile)
       await router.replace('/member/center')
       return
@@ -146,7 +146,7 @@ onMounted(async () => {
   // 已登录的拦截在路由守卫（meta.guestOnly）完成，此处只拉配置
   try {
     const res = await fetchAuthConfig()
-    if (res.code === REAL_API_SUCCESS_CODE && res.data) config.value = res.data
+    if (res.code === API_SUCCESS_CODE && res.data) config.value = res.data
   } catch {
     errorText.value = '注册配置加载失败，请刷新页面重试'
   }

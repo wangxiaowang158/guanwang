@@ -1,5 +1,4 @@
-// 会员认证接口层 —— 走真实后端 /api/portal/auth（非 Mock）
-// 成功码为 200，与既有 Mock 接口的 code:0 不同，勿混用
+// 会员认证接口层 —— /api/portal/auth
 import { get, post, type ApiResult } from './request'
 
 /** 登录方式：密码 / 短信验证码 */

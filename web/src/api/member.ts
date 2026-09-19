@@ -1,5 +1,4 @@
-// 会员个人中心接口层 —— 走真实后端 /api/portal/member，需携带会员令牌
-// 成功码为 200，与既有 Mock 接口的 code:0 不同，勿混用
+// 会员个人中心接口层 —— /api/portal/member，需携带会员令牌
 import { authRequest } from './request'
 import type { MemberProfile } from './memberAuth'
 

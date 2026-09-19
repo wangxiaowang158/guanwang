@@ -1,4 +1,4 @@
-// 前台统一请求封装 —— 基于 fetch，约定响应 { code, data, message }，code:0 表成功
+// 前台统一请求封装 —— 基于 fetch，约定响应 { code, data, message }，成功码见 API_SUCCESS_CODE
 // 避免各处裸写 fetch，统一错误处理与 JSON 解析
 import { API_BASE_URL, API_PREFIX, DECLARED_API_PREFIX, MEMBER_TOKEN_KEY } from '@/config'
 

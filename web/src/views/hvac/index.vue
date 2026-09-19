@@ -1,6 +1,6 @@
 <template>
   <!-- 暖通空调产品栏目页 -->
-  <ChannelPage page-key="hvac" visit-label="暖通空调产品" />
+  <ChannelPage page-key="hvac" />
 </template>
 
 <script setup lang="ts">

@@ -1,6 +1,6 @@
 <template>
   <!-- 智慧能源管理栏目页 -->
-  <ChannelPage page-key="smart" visit-label="智慧能源管理" />
+  <ChannelPage page-key="smart" />
 </template>
 
 <script setup lang="ts">

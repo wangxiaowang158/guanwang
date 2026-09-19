@@ -45,7 +45,7 @@ import {
   fetchMyFeedback, FEEDBACK_STATUS_LABEL, FEEDBACK_TYPE_LABEL,
   type FeedbackStatus, type FeedbackType, type MyFeedbackItem,
 } from '@/api/feedback'
-import { REAL_API_SUCCESS_CODE } from '@/config'
+import { API_SUCCESS_CODE } from '@/config'
 
 const list = ref<MyFeedbackItem[]>([])
 const loading = ref(true)
@@ -72,7 +72,7 @@ async function load() {
   errorText.value = ''
   try {
     const res = await fetchMyFeedback()
-    if (res.code !== REAL_API_SUCCESS_CODE) {
+    if (res.code !== API_SUCCESS_CODE) {
       errorText.value = res.message || '获取反馈记录失败'
       return
     }
