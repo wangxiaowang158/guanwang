@@ -49,6 +49,7 @@ import {
   submitMemberFeedback, FEEDBACK_TYPE_LABEL, type FeedbackType,
 } from '@/api/feedback'
 import { API_SUCCESS_CODE } from '@/config'
+import { PHONE_PATTERN } from '@/utils/validators'
 
 const emit = defineEmits<{ submitted: [] }>()
 
@@ -56,8 +57,10 @@ const submitting = ref(false)
 const errorText = ref('')
 const tipText = ref('')
 
-const form = reactive<{ feedbackType: FeedbackType; content: string; phone: string }>({
-  feedbackType: 'suggestion',
+// 分类不预选（SRS 3.5.13 无默认值）：预选「建议」会让不留意的会员把投诉也提交成建议，
+// 后台按分类统计就失真了
+const form = reactive<{ feedbackType: FeedbackType | ''; content: string; phone: string }>({
+  feedbackType: '',
   content: '',
   phone: '',
 })
@@ -75,8 +78,10 @@ const typeOptions = (Object.keys(FEEDBACK_TYPE_LABEL) as FeedbackType[]).map((va
 async function onSubmit() {
   const content = form.content.trim()
   const phone = form.phone.trim()
+  const feedbackType = form.feedbackType
+  if (!feedbackType) { tipText.value = ''; errorText.value = '请选择反馈分类'; return }
   if (!content) { tipText.value = ''; errorText.value = '请填写反馈内容'; return }
-  if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+  if (phone && !PHONE_PATTERN.test(phone)) {
     tipText.value = ''
     errorText.value = '请输入正确的手机号，或留空使用注册手机号'
     return
@@ -86,7 +91,7 @@ async function onSubmit() {
   errorText.value = ''
   try {
     const res = await submitMemberFeedback({
-      feedbackType: form.feedbackType,
+      feedbackType,
       content,
       phone: phone || undefined,
       sourcePage: '会员中心-提交反馈',
@@ -97,6 +102,7 @@ async function onSubmit() {
       return
     }
     tipText.value = '反馈已提交，我们会尽快处理'
+    form.feedbackType = ''
     form.content = ''
     form.phone = ''
     emit('submitted')

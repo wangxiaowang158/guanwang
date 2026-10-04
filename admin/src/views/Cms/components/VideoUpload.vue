@@ -13,6 +13,7 @@
           </span>
         </template>
       </a-input>
+      <a-button class="preview-btn" @click="pickerOpen = true">选择已有</a-button>
       <a-button class="preview-btn" :disabled="!modelValue" @click="previewVisible = true">
         预览视频
       </a-button>
@@ -42,6 +43,14 @@
     >
       <video v-if="modelValue" :src="modelValue" controls preload="metadata" class="preview-video" />
     </a-modal>
+
+    <!-- 从素材库挑已上传的视频，省掉重复上传（视频体积大，重传代价更高） -->
+    <MediaPickerModal
+      v-model:open="pickerOpen"
+      type="video"
+      title="选择已有视频"
+      @pick="(url) => emit('update:modelValue', url)"
+    />
   </div>
 </template>
 
@@ -50,12 +59,14 @@
 import { computed, ref } from 'vue'
 import { UPLOAD_VIDEO_ACCEPT, UPLOAD_VIDEO_LABEL, UPLOAD_VIDEO_MAX_MB } from '@/config'
 import { useVideoUpload } from '@/composables/useVideoUpload'
+import MediaPickerModal from '@/views/Media/components/MediaPickerModal.vue'
 
 defineProps<{ modelValue?: string; tip?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const fileRef = ref<HTMLInputElement>()
 const previewVisible = ref(false)
+const pickerOpen = ref(false)
 
 const { uploading, progress, pickAndUpload } = useVideoUpload()
 

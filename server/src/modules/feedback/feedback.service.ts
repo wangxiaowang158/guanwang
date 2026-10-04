@@ -6,6 +6,7 @@ import { Brackets, In, Repository, type SelectQueryBuilder } from 'typeorm'
 import { Feedback } from './feedback.entity'
 import { FeedbackReply } from './feedback-reply.entity'
 import { Member } from '../member/member.entity'
+import { FeedbackNotifyService } from './feedback-notify.service'
 import {
   FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_STATUS_FLOW, type FeedbackStatus,
 } from '../../common/enums'
@@ -37,6 +38,7 @@ export class FeedbackService {
     private readonly replyRepo: Repository<FeedbackReply>,
     @InjectRepository(Member)
     private readonly memberRepo: Repository<Member>,
+    private readonly notify: FeedbackNotifyService,
   ) {}
 
   /** 匿名咨询提交：沿用原留言入口，无需登录 */
@@ -57,6 +59,7 @@ export class FeedbackService {
       sourcePage: dto.sourcePage || null,
     })
     const saved = await this.repo.save(entity)
+    this.pushNotify(saved)
     return { ok: true, data: { id: saved.id } }
   }
 
@@ -85,7 +88,24 @@ export class FeedbackService {
       sourcePage: dto.sourcePage || null,
     })
     const saved = await this.repo.save(entity)
+    this.pushNotify(saved)
     return { ok: true, data: { id: saved.id } }
+  }
+
+  /**
+   * 落库成功后推送群通知
+   * 不 await：通知通道再慢也不该拖住提交响应；notify 内部已吞掉所有异常，
+   * 这里不会产生未捕获的 rejection
+   * @param saved 已落库的反馈记录
+   */
+  private pushNotify(saved: Feedback): void {
+    void this.notify.notify({
+      id: saved.id,
+      source: saved.source,
+      name: saved.name,
+      phone: saved.phone,
+      content: saved.content,
+    })
   }
 
   /** 前台「我的反馈」：只返回本人记录，且仅含对会员可见的回复 */

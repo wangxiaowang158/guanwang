@@ -14,6 +14,8 @@ import { MgmtContentController } from './mgmt-content.controller'
 import { MgmtSiteController } from './mgmt-site.controller'
 import { PortalCmsController } from './portal-cms.controller'
 import { PortalCmsService } from './portal-cms.service'
+import { PrerenderHeadBuilder } from './prerender-head.builder'
+import { PrerenderService } from './prerender.service'
 import { SiteConfig } from './site-config.entity'
 import { SiteConfigService } from './site-config.service'
 
@@ -32,6 +34,9 @@ import { SiteConfigService } from './site-config.service'
     SiteConfigService,
     PortalCmsService,
     HomeSectionService,
+    // 首屏预渲染片段与 <head> 片段，供网关 SSI 调用
+    PrerenderService,
+    PrerenderHeadBuilder,
     // 内容接口的栏目级权限校验，依赖 ChannelService
     ChannelPermGuard,
   ],

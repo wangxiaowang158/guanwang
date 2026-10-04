@@ -1,14 +1,17 @@
 // CMS 种子数据 —— 把原 admin / web 两套 mock 的内容一次性写入数据库
-// 用法：npx ts-node src/scripts/seed-cms.ts
+// 用法：npx ts-node src/scripts/seed-cms.ts [--if-empty]
+//       容器内：node dist/scripts/seed-cms.js --if-empty（镜像启动时已自动执行）
 // 幂等：栏目按 key 判重（存在则补齐前台字段），内容按栏目判重（该栏目已有内容则整栏跳过）
 import 'reflect-metadata'
 import { config } from 'dotenv'
 import { NestFactory } from '@nestjs/core'
 import { DataSource } from 'typeorm'
+import { CONTENT_STATUS } from '../common/enums'
 import { buildChannelRows } from './seed/channel-rows'
 import { buildContentRows } from './seed/content-rows'
 import siteJson from '../modules/cms/seed/site.json'
 import webSiteJson from '../modules/cms/seed/web-site.json'
+import { say } from './report'
 
 config()
 
@@ -85,11 +88,12 @@ async function seedContents(ds: DataSource): Promise<{ inserted: number; skipped
       continue
     }
     if (!knownChannels.has(row.channelKey)) {
-      console.warn(`  ⚠️ 栏目 ${row.channelKey} 不存在，该条内容跳过`)
+      say(`  ⚠️ 栏目 ${row.channelKey} 不存在，该条内容跳过`)
       skipped += 1
       continue
     }
-    await repo.save(repo.create(row))
+    // 显式标记已发布：种子内容就是为了让前台开箱有东西可看，不能落成草稿
+    await repo.save(repo.create({ ...row, status: CONTENT_STATUS.PUBLISHED }))
     inserted += 1
   }
 
@@ -104,7 +108,8 @@ async function seedSiteConfig(ds: DataSource): Promise<'inserted' | 'skipped'> {
   if (existing?.webTitle) return 'skipped'
 
   const web = webSiteJson.siteInfo
-  // 两份 mock 各有独占字段：admin 有 logo / mapLink，web 有 slogan / 备案号
+  // 两份 mock 各有独占字段：admin 有 logo / mapLink，web 有 slogan。
+  // 备案号以 site.json 为准（原先塞在 copyright 里，已拆成独立字段），缺失时回落 web-site.json
   await repo.save(repo.create({
     id: 1,
     webTitle: siteJson.webTitle,
@@ -121,8 +126,8 @@ async function seedSiteConfig(ds: DataSource): Promise<'inserted' | 'skipped'> {
     mapLat: siteJson.mapLat,
     mapLink: siteJson.mapLink,
     copyright: siteJson.copyright,
-    icpCode: web.icpCode,
-    policeCode: web.policeCode,
+    icpCode: siteJson.icpCode || web.icpCode,
+    policeCode: siteJson.policeCode || web.policeCode,
     logo: siteJson.logo,
     footerLogo: siteJson.footerLogo,
     wechatQr: siteJson.wechatQr,
@@ -133,28 +138,54 @@ async function seedSiteConfig(ds: DataSource): Promise<'inserted' | 'skipped'> {
   return 'inserted'
 }
 
+/**
+ * --if-empty：仅当栏目表为空（全新库）时才写入，供容器启动时自动执行。
+ * 不带此参数时，已有栏目的前台呈现字段（路径、锚点、头图文案等）会被种子值覆盖，
+ * 每次启动都跑就会冲掉后台改过的配置，故自动执行必须带它
+ */
+const IF_EMPTY = process.argv.includes('--if-empty')
+
+/** 判断是否已初始化的标志栏目：种子栏目树的根，首页一级页面 */
+const SEED_MARKER_KEY = 'home'
+
 async function main(): Promise<void> {
   const { AppModule } = await import('../app.module')
-  const app = await NestFactory.createApplicationContext(AppModule, { logger: false })
+  // 保留 warn/error：启动上下文会触发 AdminModule 建首个超管，
+  // 容器首启时本脚本先于主进程运行，随机初始口令只会在这里打出那一次
+  const app = await NestFactory.createApplicationContext(AppModule, { logger: ['warn', 'error'] })
   const ds = app.get(DataSource)
 
-  console.info('写入栏目树…')
-  const ch = await seedChannels(ds)
-  console.info(`  栏目：新增 ${ch.inserted} 个，补齐 ${ch.updated} 个`)
+  try {
+    if (IF_EMPTY) {
+      // 以「官网首页」栏目是否存在判断是否已初始化，不能用栏目总数：
+      // 迁移 AddOpLogChannel 在全新库上也会插入操作日志栏目，跑完迁移栏目表就不再为空
+      const { Channel } = await import('../modules/cms/channel.entity')
+      if (await ds.getRepository(Channel).exists({ where: { key: SEED_MARKER_KEY } })) {
+        say('官网栏目已初始化，跳过 CMS 种子写入')
+        return
+      }
+    }
 
-  console.info('写入站点信息…')
-  const site = await seedSiteConfig(ds)
-  console.info(`  站点信息：${site === 'inserted' ? '已写入' : '已存在，跳过'}`)
+    say('写入栏目树…')
+    const ch = await seedChannels(ds)
+    say(`  栏目：新增 ${ch.inserted} 个，补齐 ${ch.updated} 个`)
 
-  console.info('写入内容…')
-  const ct = await seedContents(ds)
-  console.info(`  内容：新增 ${ct.inserted} 条，跳过 ${ct.skipped} 条`)
+    say('写入站点信息…')
+    const site = await seedSiteConfig(ds)
+    say(`  站点信息：${site === 'inserted' ? '已写入' : '已存在，跳过'}`)
 
-  await app.close()
-  console.info('CMS 种子数据写入完成')
+    say('写入内容…')
+    const ct = await seedContents(ds)
+    say(`  内容：新增 ${ct.inserted} 条，跳过 ${ct.skipped} 条`)
+
+    say('CMS 种子数据写入完成')
+  } finally {
+    await app.close()
+  }
 }
 
-main().catch((err) => {
-  console.error('CMS 种子数据写入失败：', err)
+main().catch((err: unknown) => {
+  const reason = err instanceof Error ? err.stack ?? err.message : String(err)
+  process.stderr.write(`CMS 种子数据写入失败：${reason}\n`)
   process.exit(1)
 })

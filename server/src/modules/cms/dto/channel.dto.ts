@@ -65,12 +65,8 @@ export class CreateChannelDto {
   @Length(0, 1000)
   seoDescription?: string
 
-  /** 前台路由路径，须以 / 开头；为空表示不对前台开放 */
-  @IsOptional()
-  @IsString()
-  @Matches(/^(\/[A-Za-z0-9\-/]*)?$/, { message: '前台路径须以 / 开头，且只含字母、数字、连字符' })
-  @Length(0, 100)
-  portalPath?: string
+  // 不收 portalPath：官网一级页面固定（前台路由与网关白名单写死），
+  // 由种子维护；接口开放它只会造出点进去 404 的菜单项。全局 whitelist 会剥掉该字段
 
   @IsOptional()
   @IsString()
@@ -150,11 +146,7 @@ export class UpdateChannelDto {
   @Length(0, 1000)
   seoDescription?: string
 
-  @IsOptional()
-  @IsString()
-  @Matches(/^(\/[A-Za-z0-9\-/]*)?$/, { message: '前台路径须以 / 开头，且只含字母、数字、连字符' })
-  @Length(0, 100)
-  portalPath?: string
+  // 不收 portalPath，理由见 CreateChannelDto
 
   @IsOptional()
   @IsString()

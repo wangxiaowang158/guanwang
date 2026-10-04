@@ -29,6 +29,9 @@
           <a-form-item label="网站描述" name="description">
             <a-textarea v-model:value="form.description" :rows="3" />
           </a-form-item>
+          <a-form-item label="首页主标语" name="slogan" extra="官网首屏的大标题">
+            <a-input v-model:value="form.slogan" :maxlength="200" />
+          </a-form-item>
           <a-form-item label="首页副标语" name="subSlogan">
             <a-input v-model:value="form.subSlogan" :maxlength="200" />
             <div class="field-tip">前台首屏标题上方与页脚简介引用；留空则用内置文案</div>
@@ -87,6 +90,15 @@
               手机端为省流量仍显示背景图
             </div>
           </a-form-item>
+          <a-form-item label="首屏主按钮" name="heroPrimaryText" extra="点击后滚动至业务板块；留空显示「了解业务」">
+            <a-input v-model:value="form.heroPrimaryText" :maxlength="20" placeholder="了解业务" />
+          </a-form-item>
+          <a-form-item label="首屏次按钮" name="heroSecondaryText" extra="点击后滚动至联系板块；留空显示「联系我们」">
+            <a-input v-model:value="form.heroSecondaryText" :maxlength="20" placeholder="联系我们" />
+          </a-form-item>
+          <a-form-item label="联系板块标题" name="contactHeading" extra="首页底部在线留言区的主标题；留空显示内置文案">
+            <a-input v-model:value="form.contactHeading" :maxlength="100" placeholder="留下需求，我们尽快与您联系" />
+          </a-form-item>
           <a-form-item :wrapper-col="{ offset: 0 }" class="form-actions">
             <a-button type="primary" :loading="saving" @click="onSave">保存</a-button>
           </a-form-item>
@@ -117,11 +129,12 @@ const saving = ref(false)
 const previewOpen = ref(false)
 
 const form = reactive<SiteInfo>({
-  webTitle: '', keywords: '', description: '', subSlogan: '', phone: '', website: '',
+  webTitle: '', keywords: '', description: '', slogan: '', subSlogan: '', phone: '', website: '',
   recruitEmail: '', contactEmail: '', address: '', mapLng: '', mapLat: '',
   mapLink: '', copyright: '', icpCode: '', policeCode: '',
   logo: '', footerLogo: '', wechatQr: '', template: '1',
-  heroImage: '', heroVideo: ''
+  heroImage: '', heroVideo: '',
+  heroPrimaryText: '', heroSecondaryText: '', contactHeading: ''
 })
 
 const rules: Record<string, Rule[]> = {

@@ -1,107 +1,94 @@
 <template>
-  <!-- 页脚：品牌简介 + 栏目导航 + 联系方式 + 备案号 + 版权，数据来自站点配置 -->
-  <footer class="bg-gray-900 text-gray-400">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-14">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
-        <!-- 品牌 -->
-        <div class="md:col-span-2">
-          <div class="flex items-center gap-2.5 mb-4">
-            <!-- 页脚 Logo 独立配置：深色底常需浅色版本，与页头不共用 -->
-            <img
-              v-if="footerLogo"
-              :src="footerLogo"
-              alt=""
-              class="h-9 w-auto max-w-[140px] object-contain"
-              width="130"
-              height="36"
-              loading="lazy"
-            />
-            <div v-else class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white text-base font-bold">Z</div>
-            <div class="flex flex-col leading-none">
-              <span class="font-bold text-lg text-white">中瑞恒</span>
-              <span class="text-[10px] text-gray-500 tracking-[0.2em] mt-0.5">ZRUIHENG</span>
-            </div>
+  <!-- 样式一页脚：品牌与服务热线 + 按栏目分栏的站内链接 + 二维码；底栏为版权、备案号、隐私政策 -->
+  <footer class="bg-navy-950 text-slate-400">
+    <div class="site-container pt-16 pb-10">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
+        <!-- 品牌与联系方式 -->
+        <div class="lg:col-span-4">
+          <div class="flex items-center gap-2.5 mb-5">
+            <img v-if="footerLogo" :src="footerLogo" :alt="COMPANY_SHORT" class="h-9 w-auto max-w-[160px] object-contain" width="144" height="36" loading="lazy" />
+            <template v-else>
+              <span class="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white text-base font-bold" aria-hidden="true">恒</span>
+              <span class="flex flex-col leading-none">
+                <span class="font-bold text-lg text-white">{{ COMPANY_SHORT }}</span>
+                <span class="text-[10px] text-slate-400 tracking-[0.2em] mt-1">{{ COMPANY_EN }}</span>
+              </span>
+            </template>
           </div>
-          <p class="text-sm leading-relaxed max-w-sm text-gray-500">
-            {{ site.subSlogan || '您身边专业的智慧能源提供商' }}。立足智慧能源领域，以数字化方式重构能源系统。
-          </p>
-          <!-- 联系方式 -->
-          <ul class="mt-6 space-y-2 text-sm text-gray-500">
-            <li v-if="site.phone" class="flex items-center gap-2">
-              <span class="text-gray-600">电话</span>{{ site.phone }}
-            </li>
-            <li v-if="site.address" class="flex items-center gap-2">
-              <span class="text-gray-600">地址</span>{{ site.address }}
-            </li>
-            <li v-if="site.contactEmail" class="flex items-center gap-2">
-              <span class="text-gray-600">邮箱</span>{{ site.contactEmail }}
+          <p v-if="site.subSlogan" class="text-sm leading-relaxed text-slate-300 max-w-sm mb-6">{{ site.subSlogan }}</p>
+
+          <template v-if="site.phone">
+            <p class="text-xs text-slate-400 mb-1">服务热线</p>
+            <a :href="`tel:${site.phone}`" class="block text-[28px] font-bold text-white tabular-nums tracking-tight no-underline hover:text-brand-200 transition-colors">{{ site.phone }}</a>
+          </template>
+          <ul class="mt-5 space-y-2 text-sm text-slate-300">
+            <li v-if="site.address" class="flex gap-3"><span class="text-slate-400 shrink-0">地址</span>{{ site.address }}</li>
+            <li v-if="site.contactEmail" class="flex gap-3">
+              <span class="text-slate-400 shrink-0">邮箱</span>
+              <a :href="`mailto:${site.contactEmail}`" class="hover:text-white transition-colors">{{ site.contactEmail }}</a>
             </li>
           </ul>
         </div>
 
-        <!-- 栏目导航 -->
-        <div>
-          <h4 class="text-white font-medium mb-4 text-sm">栏目导航</h4>
-          <ul class="space-y-2.5">
-            <li v-for="item in menu" :key="item.key">
-              <RouterLink :to="item.path" class="text-gray-500 hover:text-gray-300 transition-colors text-sm no-underline">
-                {{ item.label }}
-              </RouterLink>
-            </li>
-          </ul>
-        </div>
-
-        <!-- 微信二维码占位 -->
-        <div>
-          <h4 class="text-white font-medium mb-4 text-sm">关注我们</h4>
-          <div class="w-28 h-28 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center overflow-hidden">
-            <img v-if="wechatQr" :src="wechatQr" alt="微信二维码" class="w-full h-full object-cover" width="112" height="112" loading="lazy" />
-            <span v-else class="text-xs text-gray-600">微信二维码</span>
+        <!-- 按栏目分栏 -->
+        <nav class="lg:col-span-6 grid grid-cols-2 sm:grid-cols-3 gap-8" aria-label="页脚导航">
+          <div v-for="g in groups" :key="g.key">
+            <h2 class="text-sm font-semibold text-white mb-4">
+              <RouterLink :to="g.path" class="hover:text-brand-200 transition-colors">{{ g.label }}</RouterLink>
+            </h2>
+            <ul class="space-y-2.5">
+              <li v-for="c in g.children" :key="c.key">
+                <RouterLink :to="childTo(c)" class="text-sm text-slate-400 hover:text-white transition-colors">{{ c.label }}</RouterLink>
+              </li>
+            </ul>
           </div>
+          <div v-if="others.length">
+            <h2 class="text-sm font-semibold text-white mb-4">更多</h2>
+            <ul class="space-y-2.5">
+              <li v-for="m in others" :key="m.key">
+                <RouterLink :to="m.path" class="text-sm text-slate-400 hover:text-white transition-colors">{{ m.label }}</RouterLink>
+              </li>
+            </ul>
+          </div>
+        </nav>
+
+        <!-- 二维码：未配置时整块不显示 -->
+        <div v-if="wechatQr" class="lg:col-span-2">
+          <h2 class="text-sm font-semibold text-white mb-4">关注我们</h2>
+          <img :src="wechatQr" alt="微信公众号二维码" class="w-28 h-28 rounded-md bg-white p-1.5 object-contain" width="112" height="112" loading="lazy" />
+          <p class="text-xs text-slate-400 mt-2">微信扫码关注</p>
         </div>
       </div>
-      <!-- 备案号 + 版权 -->
-      <div class="border-t border-gray-800 mt-12 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-sm text-gray-600">
-        <p>{{ site.copyright || '© 中瑞恒(北京)科技有限公司' }}</p>
-        <div class="flex flex-wrap gap-4 justify-center">
-          <a
-            v-if="site.icpCode"
-            href="https://beian.miit.gov.cn"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="hover:text-gray-400 transition-colors"
-          >{{ site.icpCode }}</a>
-          <a
-            v-if="site.policeCode"
-            href="https://www.beian.gov.cn"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="hover:text-gray-400 transition-colors"
-          >{{ site.policeCode }}</a>
+
+      <div class="border-t border-white/10 mt-12 pt-6 flex flex-col md:flex-row md:justify-between md:items-center gap-3 text-[13px] text-slate-400">
+        <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 useFooterInfo -->
+        <p v-if="copyrightHtml" class="footer-copyright" v-html="copyrightHtml"></p>
+        <p v-else>{{ copyrightFallback }}</p>
+        <div class="flex flex-wrap gap-x-5 gap-y-2">
+          <a v-if="site.icpCode" href="https://beian.miit.gov.cn" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">{{ site.icpCode }}</a>
+          <a v-if="site.policeCode" href="https://www.beian.gov.cn" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">{{ site.policeCode }}</a>
+          <RouterLink to="/privacy" class="hover:text-white transition-colors">隐私政策</RouterLink>
         </div>
       </div>
     </div>
   </footer>
 </template>
+
 <script setup lang="ts">
-// 页脚：站点配置（联系方式/备案号/版权）+ 栏目导航，数据来自后台
-import { computed, onMounted } from 'vue'
-import type { MenuNode } from '@/api/menu'
-import { useSiteStore } from '@/stores/site'
+// 样式一页脚：取值口径见 useFooterInfo，本组件只管呈现
+import { COMPANY_EN, COMPANY_SHORT } from '@/config/brand'
+import { useFooterInfo } from '@/composables/useFooterInfo'
 
-const siteStore = useSiteStore()
-// 站点信息与菜单取自 site store，多组件共享同一次请求
-const site = computed(() => siteStore.site)
-const menu = computed<MenuNode[]>(() => siteStore.menu)
-
-// 微信二维码：仅在配置了有效图片地址时展示
-const wechatQr = computed(() => site.value.wechatQr || '')
-// 页脚 Logo：后台未配时为空，模板回退到文字标识
-const footerLogo = computed(() => site.value.footerLogo || '')
-
-onMounted(() => {
-  // store 内部已做去重，重复调用不会产生额外请求
-  siteStore.fetchSite()
-  siteStore.fetchMenu()
-})
+const { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo } = useFooterInfo()
 </script>
+
+<style scoped>
+/* 版权信息为后台富文本，内含链接时沿用页脚的链接色 */
+.footer-copyright :deep(a) {
+  color: inherit;
+  transition: color var(--dur-fast);
+}
+.footer-copyright :deep(a:hover) {
+  color: #fff;
+}
+</style>

@@ -7,6 +7,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -17,7 +18,12 @@ import { AdminGuard, type CurrentAdminInfo } from '../../common/guards/admin.gua
 import { CurrentAdmin } from '../../common/decorators/current-admin.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
 import { toAdminVo } from './vo/admin.vo'
-import { CreateAdminDto, ResetAdminPasswordDto, UpdateAdminDto } from './dto/admin.dto'
+import {
+  AdminListQueryDto,
+  CreateAdminDto,
+  ResetAdminPasswordDto,
+  UpdateAdminDto,
+} from './dto/admin.dto'
 
 @Controller('mgmt/admin')
 @UseGuards(AdminGuard)
@@ -29,19 +35,19 @@ export class MgmtAdminController {
     if (!admin.isSuper) throw new ForbiddenException('仅超级管理员可维护后台账号')
   }
 
-  /** 管理员列表，支持账号或名称关键字筛选 */
+  /** 管理员列表，支持账号或名称关键字筛选；分页在服务端完成 */
   @Get('list')
-  async list(@CurrentAdmin() admin: CurrentAdminInfo, @Query('keyword') keyword?: string) {
+  async list(@CurrentAdmin() admin: CurrentAdminInfo, @Query() query: AdminListQueryDto) {
     this.assertSuper(admin)
-    const rows = await this.service.list(keyword)
-    return rows.map(toAdminVo)
+    const { list, total, page, pageSize } = await this.service.list(query)
+    return { list: list.map(toAdminVo), total, page, pageSize }
   }
 
   /** 管理员详情 */
   @Get('detail')
-  async detail(@CurrentAdmin() admin: CurrentAdminInfo, @Query('id') id: string) {
+  async detail(@CurrentAdmin() admin: CurrentAdminInfo, @Query('id', ParseIntPipe) id: number) {
     this.assertSuper(admin)
-    const found = await this.service.findById(Number(id))
+    const found = await this.service.findById(id)
     return toAdminVo(found)
   }
 
@@ -57,10 +63,10 @@ export class MgmtAdminController {
   @Put('update')
   async update(
     @CurrentAdmin() admin: CurrentAdminInfo,
-    @Body() body: UpdateAdminDto & { id: number },
+    @Body() body: UpdateAdminDto,
   ) {
     this.assertSuper(admin)
-    const saved = await this.service.update(Number(body.id), body)
+    const saved = await this.service.update(body.id, body)
     return raw(toAdminVo(saved), '保存成功')
   }
 
@@ -68,20 +74,19 @@ export class MgmtAdminController {
   @Put('reset-password')
   async resetPassword(
     @CurrentAdmin() admin: CurrentAdminInfo,
-    @Body() body: ResetAdminPasswordDto & { id: number },
+    @Body() body: ResetAdminPasswordDto,
   ) {
     this.assertSuper(admin)
-    await this.service.resetPassword(Number(body.id), body.password)
+    await this.service.resetPassword(body.id, body.password)
     return raw(null, '密码已重置')
   }
 
   /** 删除管理员；不可删除自己，也不可删除超管 */
   @Delete('delete')
-  async remove(@CurrentAdmin() admin: CurrentAdminInfo, @Query('id') id: string) {
+  async remove(@CurrentAdmin() admin: CurrentAdminInfo, @Query('id', ParseIntPipe) id: number) {
     this.assertSuper(admin)
-    const targetId = Number(id)
-    if (targetId === admin.id) throw new ForbiddenException('不可删除当前登录账号')
-    await this.service.remove(targetId)
+    if (id === admin.id) throw new ForbiddenException('不可删除当前登录账号')
+    await this.service.remove(id)
     return raw(null, '删除成功')
   }
 }

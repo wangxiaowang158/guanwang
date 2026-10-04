@@ -1,14 +1,14 @@
 <template>
-  <!-- 单个业绩数字：进入视口时从 0 滚动到目标值 -->
+  <!-- 单个业绩数字：进入视口时从 0 递增到目标值 -->
   <div ref="elRef" class="text-center">
     <div
-      class="text-3xl md:text-4xl font-bold mb-1"
-      :class="accent ? '' : 'text-blue-600'"
+      class="text-4xl md:text-5xl font-bold mb-2 tabular-nums tracking-tight"
+      :class="accent ? '' : onDark ? 'text-white' : 'text-brand-600'"
       :style="accent ? { color: accent } : undefined"
     >
-      {{ display }}<span class="text-2xl">{{ suffix }}</span>
+      {{ display }}<span class="text-2xl ml-0.5" :class="onDark && !accent ? 'text-accent' : ''">{{ suffix }}</span>
     </div>
-    <div class="text-sm text-gray-400">{{ label }}</div>
+    <div class="text-sm" :class="onDark ? 'text-slate-300' : 'text-ink-500'">{{ label }}</div>
   </div>
 </template>
 
@@ -21,7 +21,10 @@ const props = defineProps<{
   value: number
   suffix: string
   label: string
-  accent?: string // 数字颜色覆盖（样式二传入红色），不传用默认蓝色
+  /** 数字颜色覆盖（样式二传入品牌红），不传时按底色取品牌蓝或白色 */
+  accent?: string
+  /** 深色底板块 */
+  onDark?: boolean
 }>()
 
 const elRef = ref<HTMLElement>()

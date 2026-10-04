@@ -26,6 +26,10 @@
                 <SettingOutlined />
                 <span>设置</span>
               </a-menu-item>
+              <a-menu-item key="password" @click="pwdVisible = true">
+                <KeyOutlined />
+                <span>修改密码</span>
+              </a-menu-item>
               <a-menu-item key="logout" @click="handleLogout">
                 <LogoutOutlined />
                 <span>退出登录</span>
@@ -35,23 +39,29 @@
         </a-dropdown>
       </a-space>
     </div>
+
+    <ChangePasswordModal v-model:open="pwdVisible" @success="onPasswordChanged" />
   </div>
 </template>
 
 <script setup lang="ts">
-// 顶栏：品牌 + 主页/服务器信息/进入网站/HI,管理员/退出
+// 顶栏：品牌 + 主页/服务器信息/进入网站/HI,管理员（设置·修改密码·退出）
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   HomeOutlined, DatabaseOutlined, GlobalOutlined,
-  SettingOutlined, LogoutOutlined
+  SettingOutlined, LogoutOutlined, KeyOutlined
 } from '@ant-design/icons-vue'
 import { logout } from '@/api/auth'
 import { getSiteInfo } from '@/api/cms'
 import { useUserStore } from '@/store'
+import ChangePasswordModal from './ChangePasswordModal.vue'
 
 defineEmits(['openSettings'])
+
+// 改密弹窗开关
+const pwdVisible = ref(false)
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -83,6 +93,16 @@ const openSite = () => {
   // 站点配置可能只填域名（如 www.example.com），补全协议避免被当作相对路径
   const target = /^https?:\/\//.test(url) ? url : `https://${url}`
   window.open(target, '_blank', 'noopener,noreferrer')
+}
+
+/**
+ * 改密成功后强制重新登录
+ * 旧令牌签发时的密码已失效，继续用它访问会在某个接口上突然 401；
+ * 主动清掉并回登录页，比让用户在半失效状态里点来点去清楚
+ */
+const onPasswordChanged = () => {
+  userStore.clearUser()
+  router.push('/login')
 }
 
 /** 退出登录：清除凭证后跳转登录页 */

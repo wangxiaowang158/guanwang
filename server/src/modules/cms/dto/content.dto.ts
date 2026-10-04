@@ -1,8 +1,15 @@
 // 内容管理入参校验
 import { Type } from 'class-transformer'
 import {
-  IsBoolean, IsInt, IsOptional, IsString, Length, Matches, Min,
+  IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, Matches, Min,
 } from 'class-validator'
+import { CONTENT_STATUS, type ContentStatus } from '../../../common/enums'
+
+/** 发布状态取值白名单，DTO 校验用 */
+const CONTENT_STATUS_VALUES = Object.values(CONTENT_STATUS)
+
+/** 发布时间形态：空串（清空）、日期、日期 + 时分秒；日期合法性（如 2 月 31 日）由服务层再校 */
+const PUBLISH_AT_PATTERN = /^(?:\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}:\d{2})?)?$/
 
 /** 内容列表查询 */
 export class ContentListQueryDto {
@@ -25,6 +32,25 @@ export class ContentListQueryDto {
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: '结束日期格式须为 YYYY-MM-DD' })
   endDate?: string
+
+  /** 发布状态筛选，不传则草稿与已发布都列出 */
+  @IsOptional()
+  @IsIn(CONTENT_STATUS_VALUES, { message: '发布状态取值非法' })
+  status?: ContentStatus
+
+  /** 页码，从 1 起。@Type 显式转数字：query 取到的都是字符串 */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: '页码须为整数' })
+  @Min(1, { message: '页码须大于 0' })
+  page?: number
+
+  /** 每页条数，上限由 service 收口 */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: '每页条数须为整数' })
+  @Min(1, { message: '每页条数须大于 0' })
+  pageSize?: number
 }
 
 /** 内容详情查询 */
@@ -147,11 +173,20 @@ export class SaveContentDto {
   @IsBoolean()
   isTop?: boolean
 
-  /** 发布时间，格式 YYYY-MM-DD 或完整时间串 */
+  /** 发布状态，不传时新增按已发布、更新保持原值 */
+  @IsOptional()
+  @IsIn(CONTENT_STATUS_VALUES, { message: '发布状态取值非法' })
+  status?: ContentStatus
+
+  /**
+   * 发布时间，前台展示的发布日期；格式 `YYYY-MM-DD` 或 `YYYY-MM-DD HH:mm:ss`（与管理端返回的 updateTime 同形）
+   * 空串或 null 表示清空，回落为创建时间；不传则更新时保持原值
+   * 按服务器本地时区解释，不接受带时区后缀的串——管理端与前台展示都按本地时间，混入时区只会造成日期错位
+   */
   @IsOptional()
   @IsString()
-  @Length(0, 30)
-  publishAt?: string
+  @Matches(PUBLISH_AT_PATTERN, { message: '发布时间格式应为 YYYY-MM-DD 或 YYYY-MM-DD HH:mm:ss' })
+  publishAt?: string | null
 }
 
 /** 切换置顶 */

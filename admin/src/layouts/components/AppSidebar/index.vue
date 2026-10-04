@@ -20,7 +20,12 @@
 // 侧边栏：菜单由栏目配置动态生成
 import { computed, ref, watch, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { SettingOutlined, DashboardOutlined, BarChartOutlined } from '@ant-design/icons-vue'
+import {
+  SettingOutlined,
+  DashboardOutlined,
+  BarChartOutlined,
+  PictureOutlined
+} from '@ant-design/icons-vue'
 import { useChannels, channelPath } from '@/composables/useChannels'
 import { TOP_MENUS, BOTTOM_MENUS, FIXED_MENU_PATHS } from '@/constants/menu'
 import { useUserStore } from '@/store'
@@ -38,6 +43,7 @@ const openKeys = ref<string[]>([])
 const FIXED_ICONS: Record<string, () => ReturnType<typeof h>> = {
   '/dashboard': () => h(DashboardOutlined),
   '/visit-stats': () => h(BarChartOutlined),
+  '/media': () => h(PictureOutlined),
   '/channel-manage': () => h(SettingOutlined)
 }
 

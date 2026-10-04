@@ -9,6 +9,7 @@ import { useUserStore } from '@/store'
 // 中瑞恒官网后台路由模块
 import cmsRoutes from './modules/cms'
 import dashboardRoutes from './modules/dashboard'
+import mediaRoutes from './modules/media'
 import statsRoutes from './modules/stats'
 
 const routes: RouteRecordRaw[] = [
@@ -26,7 +27,16 @@ const routes: RouteRecordRaw[] = [
     children: [
       ...dashboardRoutes,
       ...statsRoutes,
-      ...cmsRoutes
+      ...cmsRoutes,
+      ...mediaRoutes,
+      // 未匹配地址：套主布局展示 404。原先没有此项，输错地址会渲染出
+      // 只有侧边栏的空白页，看起来像功能坏了而不是地址错了
+      {
+        path: ':pathMatch(.*)*',
+        name: 'NotFound',
+        component: () => import('@/views/Error/NotFound.vue'),
+        meta: { title: '页面不存在' }
+      }
     ]
   }
 ]

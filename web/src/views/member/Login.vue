@@ -1,5 +1,9 @@
 <template>
   <AuthShell title="会员登录" subtitle="登录后可提交反馈并查看回复">
+    <!-- 从账号设置改密跳来：说明为什么要重新登录 -->
+    <el-alert v-if="pwdChanged && !errorText" type="success" :closable="false" show-icon class="auth-alert">
+      密码已修改，请使用新密码重新登录
+    </el-alert>
     <el-alert v-if="errorText" type="error" :closable="false" show-icon class="auth-alert">
       {{ errorText }}
     </el-alert>
@@ -67,6 +71,7 @@ import {
 } from '@/api/memberAuth'
 import { useMemberStore } from '@/stores/member'
 import { API_SUCCESS_CODE } from '@/config'
+import { PHONE_PATTERN } from '@/utils/validators'
 
 const route = useRoute()
 const router = useRouter()
@@ -77,6 +82,8 @@ const captcha = ref<CaptchaChallenge | null>(null)
 const method = ref<LoginMethod>('password')
 const submitting = ref(false)
 const errorText = ref('')
+/** 是否刚改完密码跳来；只认固定值，不把查询串原样渲染 */
+const pwdChanged = computed(() => route.query.reason === 'pwd-changed')
 
 const form = reactive({ phone: '', password: '', smsCode: '', captcha: '' })
 
@@ -122,7 +129,7 @@ async function loadCaptcha() {
 
 /** 提交前的本地必填校验，返回错误文案（无错误返回空串） */
 function validate(): string {
-  if (!/^1\d{10}$/.test(form.phone.trim())) return '请输入正确的手机号'
+  if (!PHONE_PATTERN.test(form.phone.trim())) return '请输入正确的手机号'
   if (method.value === 'password' && !form.password) return '请输入密码'
   if (method.value === 'smsCode' && !form.smsCode.trim()) return '请输入短信验证码'
   if (captcha.value && !form.captcha.trim()) return '请填写图形验证码'

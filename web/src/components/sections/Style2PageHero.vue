@@ -3,9 +3,14 @@
   <section class="rs-page-hero" :class="{ 'rs-page-hero--img': bg }" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined">
     <div class="rs-page-hero-overlay"></div>
     <div class="relative z-10 mx-auto px-6 lg:px-10 w-full" style="max-width: var(--rs-content-max)">
-      <div class="rs-page-hero-tag">{{ eyebrow }}</div>
+      <nav class="rs-page-hero-crumb" aria-label="当前位置">
+        <RouterLink to="/">首页</RouterLink>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ crumb || title }}</span>
+      </nav>
+      <div v-if="eyebrow" class="rs-page-hero-tag">{{ eyebrow }}</div>
       <h1 class="rs-page-hero-title">{{ title }}</h1>
-      <p class="rs-page-hero-desc">{{ desc }}</p>
+      <p v-if="desc" class="rs-page-hero-desc">{{ desc }}</p>
     </div>
   </section>
 </template>
@@ -17,6 +22,8 @@ defineProps<{
   title: string
   desc: string
   bg?: string
+  /** 当前位置末级显示的栏目名，缺省时用主标题 */
+  crumb?: string
 }>()
 </script>
 
@@ -41,6 +48,18 @@ defineProps<{
   inset: 0;
   background: radial-gradient(circle at 82% 25%, rgba(200, 22, 29, 0.25), transparent 45%);
   pointer-events: none;
+}
+.rs-page-hero-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--rs-text-light-sub);
+}
+.rs-page-hero-crumb a:hover,
+.rs-page-hero-crumb [aria-current] {
+  color: #fff;
 }
 .rs-page-hero-tag {
   display: inline-block;

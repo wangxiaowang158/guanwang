@@ -7,6 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "npm run type-check:app && npm run type-check:build",
+    "check:sfc": "node scripts/check-sfc.mjs",
     "type-check:app": "vue-tsc --noEmit",
     "type-check:build": "tsc --noEmit --ignoreConfig --skipLibCheck --strict --module esnext --moduleResolution bundler --target es2022 --types node vite.config.ts build/*.ts"
   },

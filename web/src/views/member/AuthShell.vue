@@ -84,7 +84,7 @@ defineProps<{
 .auth-brand-en {
   font-size: 10px;
   letter-spacing: 0.2em;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 
 .auth-back {
@@ -124,7 +124,7 @@ defineProps<{
 .auth-subtitle {
   margin: 8px 0 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 
 .auth-foot {

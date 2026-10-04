@@ -25,6 +25,7 @@ export interface Channel {
   /** 区块展示形态 */
   layout?: BlockLayout
   /** 前台路由路径，如 /hvac；为空表示该栏目不进前台。管理端只读不改 */
+  /** 前台页面路径，只读：由种子维护，接口不接收修改 */
   portalPath?: string
   // 页面头图文案 —— 仅顶级板块页使用，前台栏目页顶部展示
   /** Hero 眉标题，标题上方的小字 */
@@ -76,15 +77,28 @@ export interface Content {
   source?: string
   sort?: number
   isTop?: boolean
+  /** 发布状态：草稿仅后台可见，前台只读已发布 */
+  status?: ContentStatus
+  /**
+   * 运营设定的发布时间，`YYYY-MM-DD HH:mm:ss`；未设定时不返回
+   * 保存时传空串表示清空（前台回落为创建日期），不传表示保持原值
+   */
+  publishAt?: string
+  /** 列表展示日期：已设发布时间时取发布时间，否则取创建时间 */
   createTime?: string
   updateTime?: string
 }
+
+/** 内容发布状态 */
+export type ContentStatus = 'draft' | 'published'
 
 /** 站点基本信息（单例） */
 export interface SiteInfo {
   webTitle: string
   keywords: string
   description: string
+  /** 首页主标语，前台首屏大标题；为空时前台回落到内置文案 */
+  slogan: string
   /** 首页副标语，前台首屏与页脚展示；为空时前台回落到内置文案 */
   subSlogan: string
   phone: string
@@ -109,6 +123,12 @@ export interface SiteInfo {
   heroImage?: string
   /** 首页 Hero 背景视频地址 */
   heroVideo?: string
+  /** 首屏主按钮文字（滚动至业务板块），为空时用内置文案 */
+  heroPrimaryText?: string
+  /** 首屏次按钮文字（滚动至联系板块），为空时用内置文案 */
+  heroSecondaryText?: string
+  /** 首页联系板块主标题，为空时用内置文案 */
+  contactHeading?: string
 }
 
 // ---------------- 栏目 ----------------
@@ -135,13 +155,24 @@ export const deleteChannel = (id: number) =>
 
 // ---------------- 内容 ----------------
 
-/** 获取某栏目内容列表（支持关键字、日期筛选） */
+/** 内容列表的分页响应 */
+export interface ContentPage {
+  list: Content[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+/** 获取某栏目内容列表（服务端分页，支持关键字、日期、发布状态筛选） */
 export const getContentList = (params: {
   channelKey: string
   keyword?: string
   startDate?: string
   endDate?: string
-}) => axios.get<ApiResult<Content[]>>('/api/mgmt/content/list', { params })
+  status?: ContentStatus
+  page?: number
+  pageSize?: number
+}) => axios.get<ApiResult<ContentPage>>('/api/mgmt/content/list', { params })
 
 /** 获取单条内容详情 */
 export const getContentDetail = (params: { channelKey: string; id?: number }) =>
@@ -149,7 +180,7 @@ export const getContentDetail = (params: { channelKey: string; id?: number }) =>
 
 /** 保存内容（有 id 为更新，无 id 为新增） */
 export const saveContent = (data: Partial<Content> & { channelKey: string }) =>
-  axios.post<ApiResult<null>>('/api/mgmt/content/save', data)
+  axios.post<ApiResult<Content>>('/api/mgmt/content/save', data)
 
 /** 删除内容（支持批量，ids 逗号分隔） */
 export const deleteContent = (channelKey: string, ids: (number | string)[]) =>

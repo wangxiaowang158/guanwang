@@ -12,12 +12,78 @@ declare module 'vue-router' {
      * 缺省时回落到基本信息管理的站点标题
      */
     title?: string
+    /**
+     * 禁止搜索引擎收录该页面，由 useSeo 输出 robots meta
+     * 404 页必须置此项：不然它会以各种错误地址被反复收录
+     */
+    noindex?: boolean
   }
 }
 
+/** 等待锚点元素出现的上限：栏目页内容异步加载，元素晚于路由切换出现 */
+const ANCHOR_WAIT_MS = 3000
+
+/** 锚点定位时让出的顶部距离：固定顶栏（样式二最高 76px）+ 12px 呼吸 */
+const ANCHOR_OFFSET = 88
+
+/**
+ * 等待锚点元素渲染出来
+ * @param selector 路由 hash，如 #product
+ * @returns 找到时 resolve true，超时 resolve false
+ */
+function waitForAnchor(selector: string): Promise<boolean> {
+  const id = decodeURIComponent(selector.slice(1))
+  const start = performance.now()
+  return new Promise((resolve) => {
+    const check = () => {
+      if (document.getElementById(id)) return resolve(true)
+      if (performance.now() - start > ANCHOR_WAIT_MS) return resolve(false)
+      requestAnimationFrame(check)
+    }
+    check()
+  })
+}
+
+/**
+ * 等待页面高度至少达到目标值，超时即放弃等待
+ * @param minHeight 目标文档高度（px）
+ */
+function waitForHeight(minHeight: number): Promise<void> {
+  const start = performance.now()
+  return new Promise((resolve) => {
+    const check = () => {
+      const enough = document.documentElement.scrollHeight >= minHeight
+      if (enough || performance.now() - start > ANCHOR_WAIT_MS) return resolve()
+      requestAnimationFrame(check)
+    }
+    check()
+  })
+}
+
+// 注意：新增前台路由须同步 docker/nginx/gateway.conf 的已知路由正则，
+// 否则网关会对该地址返回 404 状态码（页面仍能渲染，但搜索引擎不收录）
 // 前台官网路由 —— 对齐后台对外栏目（首页 + 8 个一级栏目页）+ 会员页
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  /**
+   * 滚动行为：前进后退恢复原位置；带锚点等内容渲染后定位（顶栏遮挡由 scroll-padding-top 补偿）；
+   * 同一页面只改查询串（翻页、切分类）时不动滚动位置，由页面自己定位到对应内容块
+   */
+  async scrollBehavior(to, from, saved) {
+    if (saved) {
+      // 从详情返回栏目页时内容是重新异步加载的，页面还没撑到原高度就滚会停在半路
+      await waitForHeight(saved.top + window.innerHeight)
+      return saved
+    }
+    if (to.hash) {
+      const found = await waitForAnchor(to.hash)
+      // vue-router 按 el 定位时内部用 window.scrollTo，不吃 html 的 scroll-padding-top，
+      // 固定顶栏的遮挡得在这里显式让出（与 style.css 的 scroll-padding-top 同值）
+      return found ? { el: to.hash, top: ANCHOR_OFFSET, behavior: 'smooth' } : { top: 0 }
+    }
+    if (to.path === from.path) return false
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
@@ -32,12 +98,36 @@ const router = createRouter({
         { path: 'news', name: 'news', component: () => import('@/views/news/index.vue') },
         { path: 'alliance', name: 'alliance', component: () => import('@/views/alliance/index.vue') },
         { path: 'about', name: 'about', component: () => import('@/views/about/index.vue') },
+        // 文章详情：新闻/案例等有正文的内容公用一条路由，标题与 SEO 由页面按内容动态写入
+        {
+          path: 'article/:id',
+          name: 'article',
+          component: () => import('@/views/article/index.vue'),
+        },
+        // 隐私政策：留言表单与会员注册都收集个人信息，需有常驻告知页
+        // 不做成后台栏目：栏目一旦配 portalPath 就会进主导航，而法务页应只在页脚出现
+        {
+          path: 'privacy',
+          name: 'privacy',
+          component: () => import('@/views/legal/Privacy.vue'),
+          meta: { title: '隐私政策 - 中瑞恒' },
+        },
         // 会员中心随官网顶栏一起呈现，需登录
         {
           path: 'member/center',
           name: 'member-center',
           component: () => import('@/views/member/center/index.vue'),
           meta: { requiresMember: true, title: '会员中心 - 中瑞恒' },
+        },
+        // 未匹配地址：套官网壳展示 404，不再 redirect 到首页。
+        // 原先跳首页有两个实际损失：用户不知道自己点错了地址，
+        // 且搜索引擎会把大量错误地址当成首页的重复内容收录。
+        // 放在 children 里是为了带上页眉页脚，用户能直接导航去别处
+        {
+          path: ':pathMatch(.*)*',
+          name: 'not-found',
+          component: () => import('@/views/error/NotFound.vue'),
+          meta: { title: '页面不存在 - 中瑞恒', noindex: true },
         },
       ],
     },
@@ -61,8 +151,6 @@ const router = createRouter({
       component: () => import('@/views/member/Forgot.vue'),
       meta: { title: '找回密码 - 中瑞恒' },
     },
-    // 未匹配路由回首页
-    { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
 

@@ -81,7 +81,8 @@ import { useUserStore } from '@/store'
 
 // 站点品牌文案（实际公司名后续由站点配置维护）
 const BRAND_TITLE = '中瑞恒后台管理'
-const COMPANY_NAME = '中瑞恒(北京)科技有限公司'
+// 公司全称按 SRS 3.5.1 固定口径
+const COMPANY_NAME = '北京中瑞恒有限责任公司'
 
 // 默认账号提示仅开发环境展示
 const isDev = import.meta.env.DEV

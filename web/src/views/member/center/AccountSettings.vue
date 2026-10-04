@@ -59,12 +59,16 @@
 <script setup lang="ts">
 // 账号设置：基本资料与密码分别提交，密码强度规则取自后台配置
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { changePassword, updateProfile } from '@/api/member'
 import { fetchAuthConfig, type PortalAuthConfig } from '@/api/memberAuth'
 import { useMemberStore } from '@/stores/member'
 import { API_SUCCESS_CODE } from '@/config'
+import { checkNickname, checkOptionalEmail } from '@/utils/validators'
 
 const memberStore = useMemberStore()
+const router = useRouter()
+const route = useRoute()
 
 const config = ref<PortalAuthConfig | null>(null)
 const savingProfile = ref(false)
@@ -100,14 +104,11 @@ watch(
 async function onSaveProfile() {
   const nickname = profileForm.nickname.trim()
   const email = profileForm.email.trim()
-  if (nickname.length < 2 || nickname.length > 20) {
+  // 与注册页同一口径（utils/validators），两处不再各写一份
+  const invalid = checkNickname(nickname) || checkOptionalEmail(email)
+  if (invalid) {
     tipText.value = ''
-    errorText.value = '昵称长度需为 2-20 字'
-    return
-  }
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    tipText.value = ''
-    errorText.value = '请输入正确的邮箱地址'
+    errorText.value = invalid
     return
   }
 
@@ -164,10 +165,14 @@ async function onChangePassword() {
       errorText.value = res.message || '修改失败，请确认当前密码是否正确'
       return
     }
-    tipText.value = res.message || '密码已修改'
     pwdForm.oldPassword = ''
     pwdForm.newPassword = ''
     pwdForm.confirm = ''
+    // 改密后服务端会让改密前签发的令牌（含当前这条）失效，与其等下次操作被踢，
+    // 不如当场退出并带着提示去登录页，用户知道要用新密码登录。
+    // 令牌已由改密作废，不必再发吊销请求
+    memberStore.logout(false)
+    void router.push({ name: 'member-login', query: { redirect: route.fullPath, reason: 'pwd-changed' } })
   } catch {
     tipText.value = ''
     errorText.value = '网络异常，请稍后重试'
@@ -210,7 +215,7 @@ onMounted(async () => {
 
 .as-hint {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 
 /* 表单底部操作按钮右对齐 */

@@ -23,6 +23,7 @@
           placeholder="手机号 / 昵称 / 邮箱"
           style="width: 240px"
           allow-clear
+          :maxlength="50"
           @search="search"
         />
       </a-space>

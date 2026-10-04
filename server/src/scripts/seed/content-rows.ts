@@ -8,6 +8,9 @@ import pageContents from '../../modules/cms/seed/page-contents.json'
 import webSite from '../../modules/cms/seed/web-site.json'
 import { HOME_SECTION_KEYS } from '../../modules/cms/home-section.service'
 
+/** 表单以 name 为名称字段的栏目，种子须写 name 而非 title（迁移 1790000008000 同步旧库） */
+const NAME_KEYED_CHANNELS = new Set(['hvac-category'])
+
 /** 待写入的内容行，字段名与实体一致 */
 export interface ContentRow {
   channelKey: string
@@ -58,9 +61,11 @@ function buildPageRows(): ContentRow[] {
       const channelKey = `${pageKey}-${block.anchor}`
       WEB_OWNED_CHANNELS.add(channelKey)
       block.items.forEach((item, i) => {
+        // 分类栏目的表单只有「名称」字段，标题存进 title 会让后台改名后前台不变
+        const labelField = NAME_KEYED_CHANNELS.has(channelKey) ? 'name' : 'title'
         rows.push({
           channelKey,
-          title: item.title,
+          [labelField]: item.title,
           description: item.desc ?? null,
           category: item.tag ?? null,
           sort: descSort(block.items.length, i),

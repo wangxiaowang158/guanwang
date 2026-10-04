@@ -31,7 +31,19 @@ export interface SiteInfo {
   heroImage?: string
   /** 首页 Hero 背景视频地址 */
   heroVideo?: string
+  /** 首屏主按钮文字，为空时用内置文案 */
+  heroPrimaryText?: string
+  /** 首屏次按钮文字，为空时用内置文案 */
+  heroSecondaryText?: string
+  /** 首页联系板块主标题，为空时用内置文案 */
+  contactHeading?: string
 }
+
+/** 板块标题：小标题取栏目名，主标题取栏目区块副标题；任一为空时前台用内置文案 */
+export interface SectionHeading { eyebrow: string; title: string }
+
+/** 「我眼中的中瑞恒」项：媒体报道、行业评价 */
+export interface ViewItem { id: number; title: string; desc: string; image: string; link: string; sort: number }
 
 /** 单条文本板块（公司简介 / 经营理念） */
 export interface SingleSection {
@@ -63,6 +75,10 @@ export interface HomeSections {
   partners: PartnerItem[]
   achievements: AchievementItem[]
   social: SocialItem[]
+  /** 「我眼中的中瑞恒」 */
+  views?: ViewItem[]
+  /** 各板块标题，key 为板块标识：about/business/product/service/philosophy/achievement/partner/view/social */
+  headings?: Record<string, SectionHeading>
   /** 各板块背景图配置（来自后台），key 为板块标识：hero/about/business/product/service/philosophy/partner/achievement/social/contact，无值时用默认样式 */
   backgrounds?: Record<string, string>
 }

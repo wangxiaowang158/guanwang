@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Put, Query, UseGuards } from '@nestjs/common'
 import { MemberService } from './member.service'
 import { LoginLogService } from '../login-log/login-log.service'
+import { AuthConfigService } from '../auth-config/auth-config.service'
 import { AdminGuard } from '../../common/guards/admin.guard'
 import { PermGuard } from '../../common/guards/perm.guard'
 import { PERM, RequirePerm } from '../../common/decorators/require-perm.decorator'
@@ -16,6 +17,7 @@ export class MgmtMemberController {
   constructor(
     private readonly memberService: MemberService,
     private readonly loginLog: LoginLogService,
+    private readonly authConfig: AuthConfigService,
   ) {}
 
   /** 会员列表（分页 + 筛选） */
@@ -44,6 +46,10 @@ export class MgmtMemberController {
   /** 重置会员密码 */
   @Put('reset-password/:id')
   async resetPassword(@Param('id', ParseIntPipe) id: number, @Body() dto: AdminResetPasswordDto) {
+    // 与注册、找回、自助改密同一口径：后台重置出的弱口令同样会被撞库
+    const pwdError = await this.authConfig.validatePassword(dto.newPassword)
+    if (pwdError) return raw(null, pwdError, 400)
+
     const result = await this.memberService.resetPassword(id, dto.newPassword)
     return result.ok ? raw(null, '密码已重置') : raw(null, result.message, 404)
   }

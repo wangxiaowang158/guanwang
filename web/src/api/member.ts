@@ -17,6 +17,14 @@ export const updateProfile = (data: {
   avatar?: string
 }) => authRequest<MemberProfile>('PUT', '/api/portal/member/profile', data)
 
+/**
+ * 退出登录：通知服务端吊销当前令牌
+ * 不触发全局 401 处理：本地登录态在发请求的同时已清空，若用户紧接着重新登录，
+ * 这条旧请求晚到的 401 会把新登录态误清掉
+ */
+export const logoutRemote = () =>
+  authRequest<null>('POST', '/api/portal/member/logout', undefined, { skipAuthExpired: true })
+
 /** 修改密码；旧密码错误时后端返回 code 400 */
 export const changePassword = (data: { oldPassword: string; newPassword: string }) =>
   authRequest<null>('PUT', '/api/portal/member/password', data)

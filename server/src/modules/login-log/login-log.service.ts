@@ -6,6 +6,11 @@ import { MemberLoginLog } from './login-log.entity'
 import { Member } from '../member/member.entity'
 import type { LoginFailReason, LoginMethod, LoginResult } from '../../common/enums'
 import { LOGIN_RESULT } from '../../common/enums'
+import { resolvePaging } from '../../common/pagination'
+
+/** 每页条数默认值与上限，与其余后台列表一致 */
+const DEFAULT_PAGE_SIZE = 10
+const MAX_PAGE_SIZE = 100
 
 /** 写入日志的入参 */
 export interface WriteLogInput {
@@ -55,10 +60,12 @@ export class LoginLogService {
 
   /** 后台分页查询，附带会员昵称 */
   async list(query: LogQuery) {
-    const page = Math.max(query.page ?? 1, 1)
-    const pageSize = Math.min(Math.max(query.pageSize ?? 10, 1), 100)
+    const { page, pageSize, skip } = resolvePaging(query.page, query.pageSize, {
+      defaultSize: DEFAULT_PAGE_SIZE,
+      maxSize: MAX_PAGE_SIZE,
+    })
 
-    // 关键字命中会员昵称时先解析出会员 id，再按 id 或账号匹配
+    // 关键字命中会员昵称时先解析出会员 id，再按 id、账号或 IP 匹配
     let memberIds: number[] = []
     if (query.keyword) {
       const members = await this.memberRepo.find({
@@ -72,8 +79,8 @@ export class LoginLogService {
     if (query.keyword) {
       qb.andWhere(
         memberIds.length > 0
-          ? '(log.loginAccount LIKE :kw OR log.memberId IN (:...ids))'
-          : 'log.loginAccount LIKE :kw',
+          ? '(log.loginAccount LIKE :kw OR log.loginIp LIKE :kw OR log.memberId IN (:...ids))'
+          : '(log.loginAccount LIKE :kw OR log.loginIp LIKE :kw)',
         memberIds.length > 0 ? { kw: `%${query.keyword}%`, ids: memberIds } : { kw: `%${query.keyword}%` },
       )
     }
@@ -89,7 +96,7 @@ export class LoginLogService {
 
     const [rows, total] = await qb
       .orderBy('log.createdAt', 'DESC')
-      .skip((page - 1) * pageSize)
+      .skip(skip)
       .take(pageSize)
       .getManyAndCount()
 

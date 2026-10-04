@@ -126,7 +126,7 @@ async function onLogout() {
 .center-phone {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 
 .center-body {

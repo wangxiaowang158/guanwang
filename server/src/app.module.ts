@@ -14,14 +14,25 @@ import { AdminModule } from './modules/admin/admin.module'
 import { CmsModule } from './modules/cms/cms.module'
 import { UploadModule } from './modules/upload/upload.module'
 import { VisitModule } from './modules/visit/visit.module'
+import { OpLogModule } from './modules/op-log/op-log.module'
+import { KvModule } from './modules/kv/kv.module'
 
 @Module({
   imports: [
     // 全局读取 .env，须在其他模块之前完成
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     TypeOrmModule.forRoot(buildDataSourceOptions()),
-    // 全局默认限流；注册登录等敏感接口在各自控制器上单独收紧
-    ThrottlerModule.forRoot([{ ttl: THROTTLE.ttl * 1000, limit: THROTTLE.limit }]),
+    // 全局默认限流；注册登录等敏感接口在各自控制器上单独收紧。
+    // 用对象形式而非数组：只有对象形式才能配 errorMessage，否则 ThrottlerGuard 抛出的是
+    // 库自带的英文「ThrottlerException: Too Many Requests」，经全局过滤器原样到前台。
+    // 过滤器取 HttpException 的状态码作 code，故前台收到 { code: 429, message: 下述文案 }
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: THROTTLE.ttl * 1000, limit: THROTTLE.limit }],
+      // SRS 3.5.2 原文；各限流接口（留言、注册登录、埋点）共用一条中文提示
+      errorMessage: '提交过于频繁，请稍后再试',
+    }),
+    // 全局模块，须在用到验证码存储的 MemberModule 之前装载
+    KvModule,
     AdminModule,
     AuthConfigModule,
     LoginLogModule,
@@ -30,6 +41,7 @@ import { VisitModule } from './modules/visit/visit.module'
     CmsModule,
     UploadModule,
     VisitModule,
+    OpLogModule,
   ],
   controllers: [HealthController],
 })

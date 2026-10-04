@@ -27,3 +27,13 @@ export interface VisitQuery {
 /** 获取访问统计聚合数据 */
 export const getVisitSummary = (params: VisitQuery) =>
   axios.get<ApiResult<VisitSummary>>('/api/mgmt/visit-stats/summary', { params })
+
+/**
+ * 清理指定日期之前的访问日志（不含该日），不可撤销
+ * @param before 分界日期 YYYY-MM-DD
+ * @returns 实际删除条数
+ */
+export const clearVisitLog = (before: string) =>
+  axios.delete<ApiResult<{ count: number } | null>>('/api/mgmt/visit-stats/clear', {
+    params: { before },
+  })

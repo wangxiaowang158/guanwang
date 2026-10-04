@@ -17,11 +17,11 @@ import { toContentVo } from './vo/cms.vo'
 export class MgmtContentController {
   constructor(private readonly service: ContentService) {}
 
-  /** 某栏目的内容列表 */
+  /** 某栏目的内容列表，服务端分页 */
   @Get('list')
   async list(@Query() query: ContentListQueryDto) {
-    const rows = await this.service.list(query)
-    return rows.map(toContentVo)
+    const { list, total, page, pageSize } = await this.service.list(query)
+    return { list: list.map(toContentVo), total, page, pageSize }
   }
 
   /** 单条内容详情；不传 id 时返回该栏目首条（单页型栏目用） */

@@ -1,29 +1,83 @@
 <template>
-  <!-- 栏目页通用 Hero：支持背景图配置。配图时深色蒙版 + 浅色文字；无图时浅蓝渐变 + 网格纹理 -->
-  <section
-    class="relative overflow-hidden pt-28 pb-16"
-    :class="bg ? 'bg-cover bg-center' : 'bg-gradient-to-b from-blue-50 to-white'"
-    :style="bg ? { backgroundImage: `url('${bg}')` } : undefined"
-  >
-    <!-- 配图时：深色渐变蒙版保证文字可读 -->
-    <div v-if="bg" class="absolute inset-0 bg-gradient-to-b from-black/55 to-black/35 pointer-events-none"></div>
-    <!-- 无图时：浅色网格纹理 -->
-    <div v-else class="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none"></div>
-
-    <div class="relative max-w-7xl mx-auto px-6 lg:px-8 text-center">
-      <p class="text-xs font-semibold mb-3 tracking-widest uppercase" :class="bg ? 'text-blue-200' : 'text-blue-600'">{{ eyebrow }}</p>
-      <h1 class="text-4xl lg:text-5xl font-bold mb-5 leading-tight" :class="bg ? 'text-white' : 'text-gray-900'">{{ title }}</h1>
-      <p class="text-base leading-relaxed max-w-3xl mx-auto" :class="bg ? 'text-gray-100' : 'text-gray-500'">{{ desc }}</p>
+  <!-- 样式一栏目页头图：左对齐标题区 + 当前位置导航；配背景图时叠深色遮罩，未配时为品牌深色底 -->
+  <section class="page-hero" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined" :class="{ 'page-hero--img': bg }">
+    <div class="page-hero-overlay" aria-hidden="true"></div>
+    <div class="relative site-container">
+      <nav class="page-hero-crumb" aria-label="当前位置">
+        <RouterLink to="/">首页</RouterLink>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ crumb || title }}</span>
+      </nav>
+      <p v-if="eyebrow" class="page-hero-eyebrow">{{ eyebrow }}</p>
+      <h1 class="page-hero-title">{{ title }}</h1>
+      <p v-if="desc" class="page-hero-desc">{{ desc }}</p>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-// 栏目页顶部视觉区，纯展示组件；bg 为背景图地址（来自后台配置），为空时用默认浅色样式
+// 栏目页顶部视觉区，纯展示组件；bg 为背景图地址（来自 Banner 管理），为空时用品牌深色底
 defineProps<{
   eyebrow: string
   title: string
   desc: string
   bg?: string
+  /** 当前位置末级显示的栏目名，缺省时用主标题 */
+  crumb?: string
 }>()
 </script>
+
+<style scoped>
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  padding: calc(var(--nav-h) + 56px) 0 64px;
+  background-color: var(--color-navy-950);
+  background-size: cover;
+  background-position: center;
+}
+/* 无图：品牌深色 + 细网格；有图：左深右浅的遮罩，保证左侧文字可读 */
+.page-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 63px, rgba(148, 163, 184, 0.06) 64px),
+    repeating-linear-gradient(90deg, transparent, transparent 63px, rgba(148, 163, 184, 0.06) 64px),
+    radial-gradient(circle at 85% 20%, rgba(0, 184, 217, 0.18), transparent 45%);
+}
+.page-hero--img .page-hero-overlay {
+  background: linear-gradient(90deg, rgba(7, 26, 54, 0.9) 0%, rgba(7, 26, 54, 0.65) 55%, rgba(7, 26, 54, 0.35) 100%);
+}
+.page-hero-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.7);
+}
+.page-hero-crumb a { transition: color var(--dur-fast); }
+.page-hero-crumb a:hover { color: #fff; }
+.page-hero-crumb [aria-current] { color: #fff; }
+.page-hero-eyebrow {
+  margin: 0 0 12px;
+  font-size: var(--text-fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--color-accent);
+}
+.page-hero-title {
+  margin: 0;
+  font-size: var(--text-fs-h1);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+}
+.page-hero-desc {
+  margin: 16px 0 0;
+  max-width: 720px;
+  font-size: var(--text-fs-body-lg);
+  line-height: 1.8;
+  color: rgba(226, 232, 240, 0.85);
+}
+</style>

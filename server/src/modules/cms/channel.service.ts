@@ -11,7 +11,9 @@ import type { CreateChannelDto, UpdateChannelDto } from './dto/channel.dto'
 /** 可写的纯文本字段，统一按「空串即清空」处理；layout 有自己的取值域，单独赋值 */
 const TEXT_FIELDS = [
   'icon', 'seoTitle', 'seoKeywords', 'seoDescription',
-  'portalPath', 'anchor', 'subheading',
+  // portalPath 不在此列：前台路由与网关白名单固定为种子里的一级页面，
+  // 经接口新增或改动路径只会得到一个点进去 404 的菜单项，故由种子独占维护
+  'anchor', 'subheading',
   'heroEyebrow', 'heroTitle', 'heroDesc',
 ] as const
 
@@ -96,13 +98,23 @@ export class ChannelService {
     const functional: string[] = [
       CHANNEL_TYPE.SITECONFIG, CHANNEL_TYPE.ADMINS, CHANNEL_TYPE.MEMBERS,
       CHANNEL_TYPE.FEEDBACK, CHANNEL_TYPE.AUTHCONFIG, CHANNEL_TYPE.LOGINLOG,
+      // 操作日志是审计入口，且新增栏目的类型选项里没有它，删了就建不回来
+      CHANNEL_TYPE.OPLOG,
     ]
     if (functional.includes(entity.type)) {
       throw new BadRequestException('系统功能栏目不允许删除')
     }
-
+    // 前台一级页面：路由与网关固定，删了前台页面仍在却取不到内容
+    if (entity.portalPath) {
+      throw new BadRequestException('官网一级页面栏目不允许删除，可删除或调整其下的子栏目')
+    }
+    // 后代里含系统栏目或前台页面时同样拒绝，否则删父级会把它们连带删掉
     const all = await this.repo.find()
     const doomed = this.collectDescendants(all, id)
+    if (doomed.some(c => functional.includes(c.type) || c.portalPath)) {
+      throw new BadRequestException('该栏目下含系统功能栏目或官网页面，不允许删除')
+    }
+
     const keys = doomed.map(c => c.key)
 
     await this.contentRepo.delete({ channelKey: In(keys) })

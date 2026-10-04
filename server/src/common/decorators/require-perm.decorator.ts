@@ -12,6 +12,7 @@ export const PERM = {
   VISIT_STATS: '访问统计',
   CHANNEL_MANAGE: '栏目管理',
   MEMBER_CENTER: '会员中心',
+  MEDIA_LIBRARY: '素材库',
 } as const
 
 /**

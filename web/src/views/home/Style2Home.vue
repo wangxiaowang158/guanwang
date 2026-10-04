@@ -3,31 +3,27 @@
     <!-- 首屏 Hero：满屏深色大图叠加，编辑式大标题；可配背景图/视频 -->
     <section class="rs-hero">
       <!-- 背景媒体层：视频优先，其次图片，垫在深色渐变之上、蒙版之下 -->
-      <video v-if="showHeroVideo" class="rs-hero-media" :src="heroVideo" autoplay muted loop playsinline></video>
-      <img v-else-if="heroImage" :src="heroImage" alt="" class="rs-hero-media" />
+      <video v-if="showHeroVideo" class="rs-hero-media" :src="heroVideo" :poster="heroImage || undefined" autoplay muted loop playsinline @error="markHeroVideoFailed"></video>
+      <img v-else-if="heroImage" :src="heroImage" alt="" class="rs-hero-media" width="1920" height="1080" fetchpriority="high" />
       <div class="rs-hero-overlay"></div>
-      <div class="relative z-10 mx-auto px-6 lg:px-10 w-full" style="max-width: var(--rs-content-max)">
-        <div class="max-w-3xl">
-          <div class="rs-hero-tag">ZRUIHENG GROUP · 智慧能源</div>
-          <h1 class="rs-hero-title">
-            让建筑更<span style="color: var(--rs-primary-light)">节能</span><br />
-            让环境更<span style="color: var(--rs-primary-light)">舒适</span>
-          </h1>
-          <p class="rs-hero-desc">
-            {{ site.subSlogan || '您身边专业的智慧能源提供商' }}——立足智慧能源领域，以数字化方式重构能源系统，提供多场景数智解决方案。
-          </p>
-          <div class="flex flex-wrap gap-4 mt-9">
-            <button class="rs-btn-primary" @click="scrollTo('business')">了解集团业务</button>
-            <button class="rs-btn-ghost" @click="scrollTo('contact')">联系我们</button>
+      <!-- 文案区占满剩余高度并垂直居中，数据条随文档流排在其后，移动端不会互相覆盖 -->
+      <div class="rs-hero-main">
+        <div class="relative z-10 mx-auto px-6 lg:px-10 w-full" style="max-width: var(--rs-content-max)">
+          <div class="max-w-3xl">
+            <div class="rs-hero-tag">{{ heroTag }}</div>
+            <h1 class="rs-hero-title">{{ heroTitle }}</h1>
+            <p v-if="heroDesc" class="rs-hero-desc">{{ heroDesc }}</p>
+            <div class="flex flex-wrap gap-4 mt-9">
+              <button type="button" class="rs-btn-primary" @click="scrollToAnchor('business')">{{ heroPrimaryText }}</button>
+              <button type="button" class="rs-btn-ghost" @click="scrollToAnchor('contact')">{{ heroSecondaryText }}</button>
+            </div>
           </div>
         </div>
       </div>
-      <!-- 底部数据条 -->
-      <div class="rs-hero-stats">
+      <div v-if="sections?.achievements.length" class="rs-hero-stats">
         <div class="mx-auto px-6 lg:px-10 grid grid-cols-2 md:grid-cols-4 gap-px" style="max-width: var(--rs-content-max)">
-          <div v-for="a in heroStats" :key="a.label" class="rs-hero-stat-item">
-            <div class="rs-hero-stat-value">{{ a.value }}</div>
-            <div class="rs-hero-stat-label">{{ a.label }}</div>
+          <div v-for="a in sections.achievements.slice(0, 4)" :key="a.id" class="rs-hero-stat-item">
+            <AchievementStat :value="a.value" :suffix="a.suffix" :label="a.label" accent="#fff" on-dark />
           </div>
         </div>
       </div>
@@ -37,29 +33,31 @@
     <section id="about" class="rs-section bg-white scroll-mt-20">
       <div class="rs-container grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         <div class="lg:col-span-4">
-          <p class="rs-eyebrow">关于集团</p>
-          <h2 class="rs-h2">{{ sections?.about.title || '集团简介' }}</h2>
+          <p class="rs-eyebrow">{{ heading('about').eyebrow }}</p>
+          <h2 class="rs-h2">{{ sections?.about.title || heading('about').eyebrow }}</h2>
           <div class="rs-accent-bar"></div>
         </div>
         <div class="lg:col-span-8">
           <p v-if="sections?.about.subtitle" class="text-base font-medium mb-4" style="color: var(--rs-primary)">{{ sections.about.subtitle }}</p>
-          <p class="text-base leading-loose" style="color: var(--rs-text-body)">{{ sections?.about.content }}</p>
+          <p class="text-base leading-loose whitespace-pre-line" style="color: var(--rs-text-body)">{{ sections?.about.content }}</p>
         </div>
       </div>
     </section>
     <!-- 业务与行业：深色底，序号编号陈列 -->
     <section id="business" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
       <div class="rs-container">
-        <p class="rs-eyebrow">业务与行业</p>
-        <h2 class="rs-h2 mb-12">覆盖能源全链路的专业服务方向</h2>
-        <EmptyState v-if="!sections?.business.length" />
+        <p class="rs-eyebrow">{{ heading('business').eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ heading('business').title }}</h2>
+        <EmptyState v-if="!sections?.business.length" v-show="!loading" />
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px" style="background: var(--rs-border)">
           <article
             v-for="(item, i) in sections.business"
             :key="item.id"
             class="rs-biz-card"
           >
-            <span class="rs-biz-index">{{ String(i + 1).padStart(2, '0') }}</span>
+            <!-- 后台选了图标显示图标，未选（或图标已下架）回落为序号 -->
+            <component :is="homeIconOf(item.icon)" v-if="homeIconOf(item.icon)" class="rs-card-icon" aria-hidden="true" />
+            <span v-else class="rs-biz-index">{{ String(i + 1).padStart(2, '0') }}</span>
             <h3 class="text-lg font-bold mb-3 mt-6" style="color: var(--rs-text-dark)">{{ item.title }}</h3>
             <p class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ item.desc }}</p>
           </article>
@@ -70,16 +68,19 @@
     <!-- 主要产品：编辑式横向条目 -->
     <section id="product" class="rs-section bg-white scroll-mt-20">
       <div class="rs-container">
-        <p class="rs-eyebrow">主要产品</p>
-        <h2 class="rs-h2 mb-12">面向建筑能源全生命周期的核心产品</h2>
-        <EmptyState v-if="!sections?.products.length" />
+        <p class="rs-eyebrow">{{ heading('product').eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ heading('product').title }}</h2>
+        <EmptyState v-if="!sections?.products.length" v-show="!loading" />
         <div v-else class="divide-y" style="border-color: var(--rs-border)">
-          <article v-for="item in sections.products" :key="item.id" class="grid grid-cols-1 lg:grid-cols-3 gap-8 py-9 first:pt-0">
-            <div class="lg:col-span-1">
-              <h3 class="text-xl font-bold mb-3" style="color: var(--rs-text-dark)">{{ item.name }}</h3>
-              <p class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ item.summary }}</p>
+          <article v-for="item in sections.products" :key="item.id" class="grid grid-cols-1 lg:grid-cols-12 gap-8 py-9 first:pt-0 items-center">
+            <div class="lg:col-span-4 aspect-[16/10] overflow-hidden" style="background: var(--rs-bg-cream)">
+              <SafeImage :src="item.image" :alt="item.name" :width="480" :height="300" />
             </div>
-            <ul class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 self-center">
+            <div class="lg:col-span-3">
+              <h3 class="text-xl font-bold mb-3" style="color: var(--rs-text-dark)">{{ item.name }}</h3>
+              <p class="text-sm leading-relaxed" style="color: var(--rs-text-body)">{{ item.summary }}</p>
+            </div>
+            <ul class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 self-center">
               <li v-for="f in item.features" :key="f" class="flex items-start gap-2.5 text-sm" style="color: var(--rs-text-body)">
                 <span class="mt-1.5 w-1.5 h-1.5 shrink-0" style="background: var(--rs-primary)"></span>
                 {{ f }}
@@ -93,11 +94,13 @@
     <!-- 技术支持及服务：浅底卡片 -->
     <section id="service" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
       <div class="rs-container">
-        <p class="rs-eyebrow">技术支持及服务</p>
-        <h2 class="rs-h2 mb-12">全周期的专业能源技术服务</h2>
-        <EmptyState v-if="!sections?.services.length" />
+        <p class="rs-eyebrow">{{ heading('service').eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ heading('service').title }}</h2>
+        <EmptyState v-if="!sections?.services.length" v-show="!loading" />
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <article v-for="item in sections.services" :key="item.id" class="bg-white p-7 border-t-2" style="border-color: var(--rs-primary)">
+            <!-- 后台选了图标才显示；服务卡片原本无序号，未选时保持原样 -->
+            <component :is="homeIconOf(item.icon)" v-if="homeIconOf(item.icon)" class="rs-card-icon mb-4" aria-hidden="true" />
             <h3 class="text-base font-bold mb-3" style="color: var(--rs-text-dark)">{{ item.title }}</h3>
             <p class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ item.desc }}</p>
           </article>
@@ -106,29 +109,36 @@
     </section>
     <!-- 经营理念：深色满幅大字 -->
     <section id="philosophy" class="rs-section scroll-mt-20" style="background: var(--rs-bg-dark)">
-      <div class="rs-container text-center max-w-3xl">
-        <div class="rs-accent-bar mx-auto"></div>
-        <h2 class="text-3xl md:text-4xl font-bold text-white mt-6 mb-6 leading-snug">{{ sections?.philosophy.title || '经营理念' }}</h2>
-        <p class="text-base leading-loose" style="color: var(--rs-text-light-sub)">{{ sections?.philosophy.content }}</p>
+      <div class="rs-container text-center">
+        <!-- 内层再收窄：.rs-container 的 max-width 是 scoped 样式，优先级高于工具类，写在同一元素上不生效 -->
+        <div class="max-w-3xl mx-auto">
+          <div class="rs-accent-bar mx-auto"></div>
+          <h2 class="text-3xl md:text-4xl font-bold text-white mt-6 mb-6 leading-snug">{{ sections?.philosophy.title || site.slogan || heading('philosophy').eyebrow }}</h2>
+          <p class="text-base leading-loose whitespace-pre-line" style="color: var(--rs-text-light-sub)">{{ sections?.philosophy.content }}</p>
+        </div>
       </div>
     </section>
 
     <!-- 合作伙伴 -->
     <section id="partner" class="rs-section bg-white scroll-mt-20">
       <div class="rs-container">
-        <p class="rs-eyebrow">合作伙伴</p>
-        <h2 class="rs-h2 mb-12">与主流品牌携手共建能源生态</h2>
-        <EmptyState v-if="!sections?.partners.length" />
+        <p class="rs-eyebrow">{{ heading('partner').eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ heading('partner').title }}</h2>
+        <EmptyState v-if="!sections?.partners.length" v-show="!loading" />
         <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px" style="background: var(--rs-border)">
           <component
-            :is="p.link ? 'a' : 'div'"
+            :is="safeExternalUrl(p.link) ? 'a' : 'div'"
             v-for="p in sections.partners"
             :key="p.id"
-            :href="p.link || undefined"
-            :target="p.link ? '_blank' : undefined"
-            :rel="p.link ? 'noopener noreferrer' : undefined"
+            :href="safeExternalUrl(p.link) || undefined"
+            :target="safeExternalUrl(p.link) ? '_blank' : undefined"
+            :rel="safeExternalUrl(p.link) ? 'noopener noreferrer' : undefined"
             class="rs-partner-cell"
-          >{{ p.name }}</component>
+          >
+            <!-- Logo 挂了回退为名称，不显示破图（SRS 图片加载失败） -->
+            <img v-if="imgs.usable(p.logo)" :src="p.logo" :alt="p.name" class="rs-partner-logo" width="140" height="48" loading="lazy" @error="imgs.markBroken(p.logo)" />
+            <span v-else>{{ p.name }}</span>
+          </component>
         </div>
       </div>
     </section>
@@ -136,7 +146,7 @@
     <!-- 公司业绩（数字滚动动效） -->
     <section id="achievement" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
       <div class="rs-container">
-        <EmptyState v-if="!sections?.achievements.length" />
+        <EmptyState v-if="!sections?.achievements.length" v-show="!loading" />
         <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div v-for="a in sections.achievements" :key="a.id" class="text-center">
             <AchievementStat :value="a.value" :suffix="a.suffix" :label="a.label" accent="var(--rs-primary)" />
@@ -145,19 +155,44 @@
       </div>
     </section>
 
+    <!-- 我眼中的中瑞恒：媒体报道与行业评价；无内容时整块不显示 -->
+    <section v-if="sections?.views?.length" id="view" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
+      <div class="rs-container">
+        <p class="rs-eyebrow">{{ heading('view').eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ heading('view').title }}</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <component
+            :is="v.link ? 'a' : 'article'"
+            v-for="v in sections.views"
+            :key="v.id"
+            :href="v.link || undefined"
+            :target="v.link ? '_blank' : undefined"
+            :rel="v.link ? 'noopener noreferrer' : undefined"
+            class="group block bg-white border-t-2"
+            style="border-color: var(--rs-primary)"
+          >
+            <div v-if="imgs.usable(v.image)" class="aspect-video overflow-hidden rs-zoom" style="background: var(--rs-bg-cream)">
+              <img :src="v.image" :alt="v.title" width="400" height="225" loading="lazy" class="w-full h-full object-cover" @error="imgs.markBroken(v.image)" />
+            </div>
+            <div class="p-7">
+              <h3 class="text-base font-bold mb-2" style="color: var(--rs-text-dark)">{{ v.title }}</h3>
+              <p v-if="v.desc" class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ v.desc }}</p>
+            </div>
+          </component>
+        </div>
+      </div>
+    </section>
+
     <!-- 社会贡献 -->
     <section id="social" class="rs-section bg-white scroll-mt-20">
       <div class="rs-container">
-        <p class="rs-eyebrow">社会贡献</p>
-        <h2 class="rs-h2 mb-12">践行绿色低碳发展使命</h2>
-        <EmptyState v-if="!sections?.social.length" />
+        <p class="rs-eyebrow">{{ heading('social').eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ heading('social').title }}</h2>
+        <EmptyState v-if="!sections?.social.length" v-show="!loading" />
         <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <article v-for="s in sections.social" :key="s.id" class="group">
-            <div class="h-52 overflow-hidden mb-5" style="background: var(--rs-bg-cream)">
-              <img v-if="s.image" :src="s.image" :alt="s.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="208" loading="lazy" />
-              <div v-else class="w-full h-full flex items-center justify-center" style="color: var(--rs-border)">
-                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" /></svg>
-              </div>
+            <div class="h-52 overflow-hidden mb-5 rs-zoom" style="background: var(--rs-bg-cream)">
+              <SafeImage :src="s.image" :alt="s.title" :width="400" :height="208" />
             </div>
             <h3 class="text-base font-bold mb-2" style="color: var(--rs-text-dark)">{{ s.title }}</h3>
             <p class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ s.desc }}</p>
@@ -169,8 +204,8 @@
     <!-- 联系我们 -->
     <section id="contact" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
       <div class="rs-container">
-        <p class="rs-eyebrow">联系我们</p>
-        <h2 class="rs-h2 mb-12">留下您的需求，我们将尽快与您联系</h2>
+        <p class="rs-eyebrow">{{ contactHeading.eyebrow }}</p>
+        <h2 class="rs-h2 mb-12">{{ contactHeading.title }}</h2>
         <ContactSection :site="site" />
       </div>
     </section>
@@ -179,51 +214,56 @@
 <!-- STYLE2_HOME_SCRIPT -->
 <script setup lang="ts">
 // 样式二首页（集团品牌风）：复用首页聚合数据，仅呈现层不同
-import { ref, computed, inject, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getHomeSections, recordVisit } from '@/api/home'
 import type { HomeSections } from '@/api/home'
 import { useSiteStore } from '@/stores/site'
 import { API_SUCCESS_CODE } from '@/config'
+import { COMPANY_EN } from '@/config/brand'
 import { useHeroVideo } from '@/composables/useHeroVideo'
+import { scrollToAnchor } from '@/composables/useWindowScroll'
+import { safeExternalUrl } from '@/utils/sanitize'
 import EmptyState from '@/components/sections/EmptyState.vue'
+import SafeImage from '@/components/common/SafeImage.vue'
 import AchievementStat from './components/AchievementStat.vue'
 import ContactSection from './components/ContactSection.vue'
+import { useBrokenImages } from '@/composables/useBrokenImages'
+import { useHomeCopy } from '@/composables/useHomeCopy'
+import { homeIconOf } from '@/config/homeIcons'
+
+/** 合作伙伴 Logo、「我眼中的中瑞恒」配图失效登记 */
+const imgs = useBrokenImages()
 
 const sections = ref<HomeSections | null>(null)
+// 加载完成前不出「暂无内容」，避免每个板块先闪一下空状态
+const loading = ref(true)
 const siteStore = useSiteStore()
 // 站点信息取自 site store，与页眉/页脚共享同一次请求
 const site = computed(() => siteStore.site)
+// 板块标题、首屏按钮、联系板块标题：后台配了用后台，否则内置文案
+const { heading, contactHeading, heroPrimaryText, heroSecondaryText } = useHomeCopy(sections, site)
+
+// 首屏文案取自基本信息管理，未配置时用内置文案
+const heroTitle = computed(() => site.value.slogan || '让建筑更节能　让环境更舒适')
+const heroTag = computed(() => `${COMPANY_EN} · ${site.value.subSlogan || '智慧能源'}`)
+const heroDesc = computed(() => site.value.description || '')
 
 // Hero 背景媒体：视频优先，其次背景图（站点配置优先，回退板块背景配置 backgrounds.hero）
 const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || '')
 const heroVideo = computed(() => site.value.heroVideo || '')
 // 窄屏与减少动效偏好下不播背景视频，回落到背景图
-const { blocked: heroVideoBlocked } = useHeroVideo()
+const { blocked: heroVideoBlocked, markFailed: markHeroVideoFailed } = useHeroVideo()
 const showHeroVideo = computed(() => !!heroVideo.value && !heroVideoBlocked.value)
-
-// Hero 数据条：取前 4 项业绩，无数据时为空数组（模板自然不渲染）
-const heroStats = computed(() =>
-  (sections.value?.achievements || []).slice(0, 4).map((a) => ({
-    value: `${a.value}${a.suffix}`,
-    label: a.label,
-  }))
-)
-
-const scrollToAnchor = inject<(hash: string) => void>('scrollToAnchor')
-function scrollTo(id: string) {
-  if (scrollToAnchor) scrollToAnchor(`#${id}`)
-  else document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-}
 
 onMounted(async () => {
   recordVisit('home').catch(() => {})
-  // 站点信息走 store（已去重），首页板块数据本页独有
-  siteStore.fetchSite()
   try {
     const secRes = await getHomeSections()
     if (secRes.code === API_SUCCESS_CODE && secRes.data) sections.value = secRes.data
   } catch {
     sections.value = null
+  } finally {
+    loading.value = false
   }
 })
 </script>
@@ -263,9 +303,9 @@ onMounted(async () => {
 /* Hero */
 .rs-hero {
   position: relative;
-  min-height: 88vh;
+  min-height: min(100svh, 880px);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   background: linear-gradient(120deg, #1a1a1a 0%, #2a1416 55%, #3a161a 100%);
   overflow: hidden;
 }
@@ -310,11 +350,18 @@ onMounted(async () => {
   color: var(--rs-text-light-sub);
   max-width: 36rem;
 }
+.rs-hero-main {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  /* 顶栏 76px 叠在首屏上，文案整体下移避开 */
+  padding: 128px 0 64px;
+}
 .rs-hero-stats {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  z-index: 10;
   background: rgba(255, 255, 255, 0.04);
   border-top: 1px solid var(--rs-border-dark);
   backdrop-filter: blur(4px);
@@ -365,6 +412,17 @@ onMounted(async () => {
 .rs-biz-card:hover {
   background: var(--rs-bg-cream);
 }
+/* 后台选定的业务/服务图标；在业务卡片里占序号的位置 */
+.rs-card-icon {
+  width: 30px;
+  height: 30px;
+  color: var(--rs-primary);
+}
+.rs-biz-card > .rs-card-icon {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+}
 .rs-biz-index {
   position: absolute;
   top: 28px;
@@ -385,5 +443,33 @@ onMounted(async () => {
 }
 .rs-partner-cell:hover {
   color: var(--rs-primary);
+}
+.rs-partner-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 104px;
+}
+/* 合作伙伴 Logo 灰度展示，悬停恢复原色 */
+.rs-partner-logo {
+  max-width: 140px;
+  max-height: 48px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: 0.65;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+}
+.rs-partner-cell:hover .rs-partner-logo {
+  filter: none;
+  opacity: 1;
+}
+/* 社会贡献配图悬停轻微放大，只动 transform */
+.rs-zoom :deep(img) {
+  transition: transform 0.5s ease;
+}
+.rs-zoom:hover :deep(img) {
+  transform: scale(1.05);
 }
 </style>

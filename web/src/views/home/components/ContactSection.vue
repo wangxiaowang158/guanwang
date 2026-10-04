@@ -1,202 +1,207 @@
 <template>
-  <!-- 联系我们：左侧联系信息，右侧在线留言表单 -->
-  <div class="grid grid-cols-1 lg:grid-cols-5 gap-10">
-    <!-- 联系信息 -->
-    <div class="lg:col-span-2 space-y-4">
-      <div v-for="info in contactItems" :key="info.label" class="flex items-start gap-4 p-5 rounded-2xl border border-gray-100">
-        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="info.icon" />
-          </svg>
-        </div>
+  <!-- 联系我们：左侧联系方式，右侧在线留言表单（SRS 3.5.2） -->
+  <div class="cs" :class="{ 'cs--style2': theme.isStyle2 }">
+    <ul class="cs-info">
+      <li v-for="info in contactItems" :key="info.label" class="cs-info-item">
+        <span class="cs-info-icon" aria-hidden="true">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="info.icon" /></svg>
+        </span>
         <div class="min-w-0">
-          <div class="text-sm font-semibold text-gray-900 mb-0.5">{{ info.label }}</div>
-          <a
-            v-if="info.link && info.value"
-            :href="info.link"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-blue-600 break-all no-underline hover:underline"
-          >{{ info.value }}</a>
-          <div v-else class="text-sm text-gray-400 break-all">{{ info.value || '暂无' }}</div>
+          <p class="cs-info-label">{{ info.label }}</p>
+          <a v-if="info.href" :href="info.href" :target="info.external ? '_blank' : undefined" :rel="info.external ? 'noopener noreferrer' : undefined" class="cs-info-value cs-info-value--link">{{ info.value }}</a>
+          <p v-else class="cs-info-value">{{ info.value }}</p>
         </div>
-      </div>
-    </div>
+      </li>
+      <li v-if="site.wechatQr" class="cs-info-item">
+        <img :src="site.wechatQr" alt="微信公众号二维码" class="w-24 h-24 object-contain bg-white border border-line p-1" width="96" height="96" loading="lazy" />
+        <p class="cs-info-label self-center">微信扫码咨询</p>
+      </li>
+    </ul>
 
-    <!-- 在线留言表单 -->
-    <div class="lg:col-span-3">
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
-        <h3 class="text-lg font-bold text-gray-900 mb-6">在线留言</h3>
-        <form class="space-y-5" @submit.prevent="handleSubmit">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1.5">
-                姓名 <span v-if="!memberStore.isLoggedIn" class="text-red-400">*</span>
-              </label>
-              <!-- 已登录时以会员身份提交，姓名取账号昵称，故只读展示 -->
+    <div class="cs-form-card">
+      <h3 class="cs-form-title">在线留言</h3>
+      <form class="space-y-5" novalidate @submit.prevent="handleSubmit">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label for="cs-name" class="cs-label">姓名 <span v-if="!memberStore.isLoggedIn" class="cs-req" aria-hidden="true">*</span></label>
+            <!-- 已登录时以会员身份提交，姓名取账号昵称，故只读展示 -->
+            <input v-if="memberStore.isLoggedIn" id="cs-name" :value="memberStore.displayName" type="text" readonly class="cs-input cs-input--readonly" />
+            <template v-else>
               <input
-                v-if="memberStore.isLoggedIn"
-                :value="memberStore.displayName"
+                id="cs-name"
+                v-model="form.name"
                 type="text"
-                readonly
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-500 outline-none"
+                maxlength="20"
+                autocomplete="name"
+                placeholder="请输入您的姓名"
+                class="cs-input"
+                :class="{ 'is-error': errors.name }"
+                :aria-invalid="!!errors.name"
+                :aria-describedby="errors.name ? 'cs-name-err' : undefined"
+                aria-required="true"
+                @blur="validate('name')"
               />
-              <template v-else>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  maxlength="20"
-                  placeholder="请输入您的姓名"
-                  class="w-full px-3.5 py-2.5 rounded-xl border text-sm text-gray-900 placeholder-gray-300 outline-none transition-all"
-                  :class="errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-50'"
-                  @blur="validate('name')"
-                />
-                <p v-if="errors.name" class="text-xs text-red-400 mt-1">{{ errors.name }}</p>
-              </template>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1.5">手机号 <span class="text-red-400">*</span></label>
-              <input
-                v-model="form.phone"
-                type="tel"
-                maxlength="11"
-                placeholder="请输入手机号"
-                class="w-full px-3.5 py-2.5 rounded-xl border text-sm text-gray-900 placeholder-gray-300 outline-none transition-all"
-                :class="errors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-50'"
-                @blur="validate('phone')"
-              />
-              <p v-if="errors.phone" class="text-xs text-red-400 mt-1">{{ errors.phone }}</p>
-            </div>
+              <p v-if="errors.name" id="cs-name-err" class="cs-err">{{ errors.name }}</p>
+            </template>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1.5">留言内容 <span class="text-red-400">*</span></label>
-            <textarea
-              v-model="form.content"
-              rows="5"
-              maxlength="500"
-              placeholder="请描述您的需求或咨询内容..."
-              class="w-full px-3.5 py-2.5 rounded-xl border text-sm text-gray-900 placeholder-gray-300 outline-none transition-all resize-none"
-              :class="errors.content ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-50'"
-              @blur="validate('content')"
-            ></textarea>
-            <p v-if="errors.content" class="text-xs text-red-400 mt-1">{{ errors.content }}</p>
+            <label for="cs-phone" class="cs-label">手机号 <span class="cs-req" aria-hidden="true">*</span></label>
+            <input
+              id="cs-phone"
+              v-model="form.phone"
+              type="tel"
+              inputmode="numeric"
+              maxlength="11"
+              autocomplete="tel"
+              placeholder="请输入手机号"
+              class="cs-input"
+              :class="{ 'is-error': errors.phone }"
+              :aria-invalid="!!errors.phone"
+              :aria-describedby="errors.phone ? 'cs-phone-err' : undefined"
+              aria-required="true"
+              @blur="validate('phone')"
+            />
+            <p v-if="errors.phone" id="cs-phone-err" class="cs-err">{{ errors.phone }}</p>
           </div>
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="w-full py-3 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            {{ submitting ? '提交中...' : '提交留言' }}
-          </button>
-          <p v-if="sent" class="text-center text-sm text-green-600 font-medium">✓ 留言已提交，我们会尽快与您联系！</p>
-          <p v-if="submitError" class="text-center text-sm text-red-500 font-medium">提交失败，请稍后重试或直接致电我们</p>
-        </form>
-      </div>
+        </div>
+        <div>
+          <label for="cs-content" class="cs-label">留言内容 <span class="cs-req" aria-hidden="true">*</span></label>
+          <textarea
+            id="cs-content"
+            v-model="form.content"
+            rows="5"
+            :maxlength="CONTENT_MAX"
+            placeholder="请描述您的需求或咨询内容"
+            class="cs-input resize-none"
+            :class="{ 'is-error': errors.content }"
+            :aria-invalid="!!errors.content"
+            :aria-describedby="errors.content ? 'cs-content-err' : 'cs-content-count'"
+            aria-required="true"
+            @blur="validate('content')"
+          ></textarea>
+          <div class="flex justify-between gap-4 mt-1">
+            <p v-if="errors.content" id="cs-content-err" class="cs-err !mt-0">{{ errors.content }}</p>
+            <span v-else></span>
+            <span id="cs-content-count" class="text-xs text-ink-500 tabular-nums">{{ form.content.length }}/{{ CONTENT_MAX }}</span>
+          </div>
+        </div>
+        <!-- 告知同意：收集姓名手机号属个人信息处理，须取得单独同意 -->
+        <div>
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input v-model="agreed" type="checkbox" class="cs-check" :aria-invalid="!!errors.agreed" :aria-describedby="errors.agreed ? 'cs-agree-err' : undefined" />
+            <span class="text-[13px] leading-relaxed text-ink-500">
+              我已阅读并同意<RouterLink to="/privacy" target="_blank" class="cs-link">《隐私政策》</RouterLink>，同意贵公司为回应本次咨询而使用我提交的联系方式。
+            </span>
+          </label>
+          <p v-if="errors.agreed" id="cs-agree-err" class="cs-err">{{ errors.agreed }}</p>
+        </div>
+        <button type="submit" :disabled="submitting" class="cs-submit">
+          <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          {{ submitting ? '提交中…' : '提交留言' }}
+        </button>
+        <p v-if="notice" class="text-center text-sm font-medium" :class="notice.ok ? 'text-emerald-700' : 'text-red-600'" role="status">{{ notice.text }}</p>
+      </form>
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
-// 联系信息展示 + 在线留言提交（姓名/电话/留言内容），提交进 admin 留言管理
-import { reactive, ref, computed } from 'vue'
+// 联系方式展示 + 在线留言提交；已登录走会员反馈接口，未登录走匿名接口，均入后台「意见反馈」
+import { reactive, ref, computed, watch } from 'vue'
 import type { SiteInfo } from '@/api/home'
 import { submitAnonymousFeedback, submitMemberFeedback } from '@/api/feedback'
 import { useMemberStore } from '@/stores/member'
+import { useThemeStore } from '@/stores/theme'
 import { API_SUCCESS_CODE } from '@/config'
 import { safeExternalUrl } from '@/utils/sanitize'
+import { PHONE_PATTERN } from '@/utils/validators'
+import { CONTACT_ICONS } from './contactIcons'
 
 const memberStore = useMemberStore()
-
+const theme = useThemeStore()
 const props = defineProps<{ site: Partial<SiteInfo> }>()
 
+/** 留言内容上限，与 SRS 3.5.2、后端 DTO 一致 */
+const CONTENT_MAX = 500
+/** 后端限流的业务码 */
+const THROTTLED_CODE = 429
+/** 参数校验失败的业务码，message 为可直接展示的中文原因 */
+const VALIDATION_CODE = 400
+/** 结果提示停留时长（SRS：约 4 秒后自动消失） */
+const NOTICE_MS = 4000
+
+// 联系方式：未配置的项不渲染（不再显示「暂无」）
 const contactItems = computed(() => [
-  { label: '联系电话', value: props.site.phone, icon: 'M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z', link: '', optional: false },
-  { label: '公司邮箱', value: props.site.contactEmail, icon: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75', link: '', optional: false },
-  {
-    label: '公司地址',
-    value: props.site.address,
-    icon: 'M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z',
-    // 后台配了地图链接时地址可点击跳转，未配保持纯文本
-    link: safeExternalUrl(props.site.mapLink),
-    optional: false,
-  },
-  {
-    label: '招聘邮箱',
-    value: props.site.recruitEmail,
-    icon: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72M18 18.72V14.25a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 9.75a5.995 5.995 0 00-5.059 2.772m0 0A5.971 5.971 0 006 14.25v4.47m0 0a9.09 9.09 0 01-3.741-.479 3 3 0 014.682-2.72M15 6.75a3 3 0 11-6 0 3 3 0 016 0z',
-    link: '',
-    // 招聘邮箱非必填，后台未配时整行不渲染，避免出现「暂无」的无效信息
-    optional: true,
-  },
-  // 电话/邮箱/地址是必填项，缺失时显示「暂无」提示后台补录；可选项直接隐藏
-].filter((item) => !item.optional || !!item.value))
+  { label: '联系电话', value: props.site.phone, icon: CONTACT_ICONS.phone, href: props.site.phone ? `tel:${props.site.phone}` : '', external: false },
+  { label: '联系邮箱', value: props.site.contactEmail, icon: CONTACT_ICONS.mail, href: props.site.contactEmail ? `mailto:${props.site.contactEmail}` : '', external: false },
+  // 后台配了地图链接时地址可点击跳转外部地图
+  { label: '公司地址', value: props.site.address, icon: CONTACT_ICONS.pin, href: safeExternalUrl(props.site.mapLink), external: true },
+  { label: '招聘邮箱', value: props.site.recruitEmail, icon: CONTACT_ICONS.people, href: props.site.recruitEmail ? `mailto:${props.site.recruitEmail}` : '', external: false },
+].filter(item => !!item.value))
 
 const submitting = ref(false)
-const sent = ref(false)
-const submitError = ref(false)
+const notice = ref<{ ok: boolean; text: string } | null>(null)
+let noticeTimer: ReturnType<typeof setTimeout> | undefined
 const form = reactive({ name: '', phone: '', content: '' })
-const errors = reactive({ name: '', phone: '', content: '' })
+// 勾选态独立于 form：它不是要提交的业务字段，只是提交的前置条件
+const agreed = ref(false)
+const errors = reactive({ name: '', phone: '', content: '', agreed: '' })
 
-// 单字段校验：留言必填，手机号须为中国大陆号码；姓名仅未登录时必填
+watch(agreed, (v) => { if (v) errors.agreed = '' })
+
+/** 单字段校验，提示文案取自 SRS 3.5.2 */
 function validate(field: keyof typeof form) {
   if (field === 'name') {
-    // 已登录时姓名由账号昵称提供，不参与校验
     errors.name = memberStore.isLoggedIn || form.name.trim() ? '' : '请输入姓名'
   } else if (field === 'phone') {
-    // 后端反馈接口只接受中国大陆手机号，故不再放行座机
-    if (!form.phone.trim()) errors.phone = '请输入手机号'
-    else if (!/^1[3-9]\d{9}$/.test(form.phone.trim())) errors.phone = '请输入有效的手机号'
-    else errors.phone = ''
-  } else if (field === 'content') {
+    const phone = form.phone.trim()
+    errors.phone = !phone ? '请输入手机号' : PHONE_PATTERN.test(phone) ? '' : '请输入有效的手机号'
+  } else {
     errors.content = form.content.trim() ? '' : '请输入留言内容'
   }
 }
 
-/**
- * 提交留言
- * 已登录会员走会员反馈接口（可在会员中心查看回复），
- * 未登录走匿名反馈接口；两者均入后台「意见反馈」
- */
+function showNotice(ok: boolean, text: string) {
+  notice.value = { ok, text }
+  if (noticeTimer) clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => { notice.value = null }, NOTICE_MS)
+}
+
 async function handleSubmit() {
   ;(['name', 'phone', 'content'] as const).forEach(validate)
+  errors.agreed = agreed.value ? '' : '请阅读并同意《隐私政策》后再提交'
   if (Object.values(errors).some(Boolean)) return
   submitting.value = true
-  submitError.value = false
   try {
     const phone = form.phone.trim()
     const content = form.content.trim()
     const res = memberStore.isLoggedIn
-      ? await submitMemberFeedback({
-          content,
-          // 已过手机号校验，可直接传；姓名由后端按令牌身份取
-          phone,
-          sourcePage: '首页-联系我们',
-        })
-      : await submitAnonymousFeedback({
-          name: form.name.trim(),
-          phone,
-          content,
-          sourcePage: '首页-联系我们',
-        })
+      ? await submitMemberFeedback({ content, phone, sourcePage: '首页-联系我们' })
+      : await submitAnonymousFeedback({ name: form.name.trim(), phone, content, sourcePage: '首页-联系我们' })
     if (res.code === API_SUCCESS_CODE) {
-      sent.value = true
       form.name = ''
       form.phone = ''
       form.content = ''
-      setTimeout(() => (sent.value = false), 4000)
+      showNotice(true, '提交成功，我们将尽快与您联系')
+    } else if (res.code === THROTTLED_CODE) {
+      showNotice(false, '提交过于频繁，请稍后再试')
+    } else if (res.code === VALIDATION_CODE && res.message) {
+      // 校验失败给出具体原因（如手机号格式），用户才知道改哪里；
+      // 只透出 400 的文案——那是后端写给用户看的，5xx 文案不一定适合展示
+      showNotice(false, res.message)
     } else {
-      submitError.value = true
-      setTimeout(() => (submitError.value = false), 4000)
+      showNotice(false, '提交失败，请稍后重试')
     }
   } catch {
-    // 提交失败：提示用户重试，保留已填内容
-    submitError.value = true
-    setTimeout(() => (submitError.value = false), 4000)
+    // 提交失败：保留已填内容，可重新提交
+    showNotice(false, '提交失败，请稍后重试')
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped src="./contact-section.css"></style>

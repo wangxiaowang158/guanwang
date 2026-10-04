@@ -1,9 +1,27 @@
 // 会员认证请求 DTO —— 全部入参在服务端校验，前端校验仅作体验优化
-import { IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator'
+import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength, ValidateIf } from 'class-validator'
 import { LOGIN_METHOD, type LoginMethod } from '../../../common/enums'
 
 /** 手机号格式：中国大陆 11 位 */
 const PHONE_REGEX = /^1[3-9]\d{9}$/
+
+/** 昵称长度提示，SRS 3.5.12 / 3.5.13 原文，注册与账号设置共用 */
+export const NICKNAME_LENGTH_MESSAGE = '昵称长度需为 2-20 个字'
+
+/** 邮箱格式提示，SRS 3.5.12 / 3.5.13 原文 */
+export const EMAIL_FORMAT_MESSAGE = '请输入正确的邮箱地址'
+
+/** 邮箱超长提示 */
+export const EMAIL_LENGTH_MESSAGE = '邮箱长度不能超过 100 个字'
+
+/**
+ * 选填字段是否填了值
+ * 前端表单清空后常提交空串而非不传，@IsOptional 只放行 null/undefined，
+ * 空串会被当成非法邮箱拦下，故用 ValidateIf 把空串也视作未填
+ */
+export function isFilled(_obj: object, value: unknown): boolean {
+  return value !== undefined && value !== null && value !== ''
+}
 
 /** 注册请求 */
 export class RegisterDto {
@@ -11,9 +29,9 @@ export class RegisterDto {
   @Matches(PHONE_REGEX, { message: '请输入正确的手机号' })
   phone!: string
 
-  /** 昵称 */
+  /** 昵称，规则与账号设置（UpdateProfileDto）一致 */
   @IsString()
-  @Length(2, 20, { message: '昵称长度需为 2-20 字' })
+  @Length(2, 20, { message: NICKNAME_LENGTH_MESSAGE })
   nickname!: string
 
   /** 密码，长度与复杂度按注册登录配置校验（在 service 中按配置二次校验） */
@@ -26,10 +44,11 @@ export class RegisterDto {
   @Length(4, 6, { message: '验证码格式不正确' })
   smsCode!: string
 
-  /** 邮箱，选填 */
-  @IsOptional()
+  /** 邮箱，选填；空串视同未填，规则与账号设置一致 */
+  @ValidateIf(isFilled)
   @IsString()
-  @MaxLength(100)
+  @MaxLength(100, { message: EMAIL_LENGTH_MESSAGE })
+  @IsEmail({}, { message: EMAIL_FORMAT_MESSAGE })
   email?: string
 }
 

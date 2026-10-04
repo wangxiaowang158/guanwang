@@ -12,6 +12,7 @@
         </span>
       </template>
     </a-input>
+    <a-button class="preview-btn" @click="pickerOpen = true">选择已有</a-button>
     <a-button class="preview-btn" :disabled="!modelValue" @click="previewVisible = true">
       预览图片
     </a-button>
@@ -30,6 +31,14 @@
     <a-modal v-model:open="previewVisible" title="图片预览" :footer="null" width="640px">
       <img v-if="modelValue" :src="modelValue" alt="预览" class="preview-img" />
     </a-modal>
+
+    <!-- 从素材库挑已上传的图，省掉重复上传 -->
+    <MediaPickerModal
+      v-model:open="pickerOpen"
+      type="image"
+      title="选择已有图片"
+      @pick="(url) => emit('update:modelValue', url)"
+    />
   </div>
 </template>
 
@@ -38,12 +47,14 @@
 import { ref } from 'vue'
 import { UPLOAD_ACCEPT } from '@/config'
 import { useImageUpload } from '@/composables/useImageUpload'
+import MediaPickerModal from '@/views/Media/components/MediaPickerModal.vue'
 
 defineProps<{ modelValue?: string; tip?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
 const fileRef = ref<HTMLInputElement>()
 const previewVisible = ref(false)
+const pickerOpen = ref(false)
 
 const { uploading, pickAndUpload } = useImageUpload()
 

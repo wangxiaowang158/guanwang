@@ -111,4 +111,19 @@ export class SaveSiteConfigDto {
   @IsString()
   @Length(0, 1000)
   heroVideo?: string
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 20, { message: '首屏按钮文字不超过 20 字' })
+  heroPrimaryText?: string
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 20, { message: '首屏按钮文字不超过 20 字' })
+  heroSecondaryText?: string
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 100, { message: '联系板块标题不超过 100 字' })
+  contactHeading?: string
 }

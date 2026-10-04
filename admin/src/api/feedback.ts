@@ -136,7 +136,7 @@ export const getFeedbackDetail = (id: number) =>
  */
 export const replyFeedback = (
   id: number,
-  data: { content: string; repliedBy?: string; visibleToMember?: boolean },
+  data: { content: string; visibleToMember?: boolean },
 ) => axios.post<ApiResult<{ replyId: number } | null>>(`/api/mgmt/feedback/reply/${id}`, data)
 
 /**

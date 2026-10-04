@@ -8,7 +8,7 @@
         placeholder="输入账号/姓名"
         style="width: 240px"
         allow-clear
-        @search="fetchList"
+        @search="search"
       />
       <a-button type="primary" @click="openEdit()">
         <template #icon><PlusOutlined /></template>
@@ -20,9 +20,10 @@
       :columns="columns"
       :data-source="rows"
       :loading="loading"
-      :pagination="{ pageSize: 10 }"
+      :pagination="pagination"
       row-key="id"
       size="middle"
+      @change="onTableChange"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'perms'">
@@ -111,8 +112,9 @@ import {
   getAdminList, addAdmin, updateAdmin, resetAdminPassword, deleteAdmin, type AdminItem
 } from '@/api/admin'
 import { useChannels } from '@/composables/useChannels'
+import { useServerListPage } from '@/composables/useServerListPage'
 import { TOP_MENUS, BOTTOM_MENUS, NON_GRANTABLE_CHANNEL_TYPES } from '@/constants/menu'
-import { DELETE_FAILED, DELETE_SUCCESS, LIST_LOAD_FAILED, SAVE_FAILED, SAVE_SUCCESS } from '@/constants/ui'
+import { DELETE_FAILED, DELETE_SUCCESS, SAVE_FAILED, SAVE_SUCCESS } from '@/constants/ui'
 
 const { load, channels } = useChannels()
 
@@ -125,9 +127,30 @@ const columns = [
   { title: '操作', key: 'action', width: 140 }
 ]
 
-const loading = ref(false)
-const rows = ref<AdminItem[]>([])
 const keyword = ref('')
+
+const {
+  loading, rows, page, pageSize, total,
+  fetchList, search, onPageChange, refreshAfterRemove,
+} = useServerListPage<AdminItem>((query) =>
+  getAdminList({
+    keyword: keyword.value || undefined,
+    page: query.page,
+    pageSize: query.pageSize,
+  }),
+)
+
+const pagination = computed(() => ({
+  current: page.value,
+  pageSize: pageSize.value,
+  total: total.value,
+  showSizeChanger: true,
+  showTotal: (count: number) => `共 ${count} 条`,
+}))
+
+/** 表格分页变更 */
+const onTableChange = (pag: { current?: number; pageSize?: number }) =>
+  onPageChange(pag.current || 1, pag.pageSize || pageSize.value)
 
 // 权限项：与侧边栏一级菜单同序 —— 固定顶部项 + 栏目顶层项 + 固定底部项
 // 基本信息与管理员管理属系统级模块，固定排除在授权范围外
@@ -170,18 +193,6 @@ const rules: Record<string, Rule[]> = {
       value === form.password ? Promise.resolve() : Promise.reject('两次输入的密码不一致'),
     trigger: 'blur'
   }]
-}
-
-const fetchList = async () => {
-  loading.value = true
-  try {
-    const res = await getAdminList({ keyword: keyword.value || undefined })
-    if (res.data.code === 200) rows.value = res.data.data
-  } catch {
-    message.error(LIST_LOAD_FAILED)
-  } finally {
-    loading.value = false
-  }
 }
 
 const openEdit = (record?: AdminItem) => {
@@ -240,7 +251,13 @@ const onSave = async () => {
     }
     message.success(SAVE_SUCCESS)
     editVisible.value = false
-    fetchList()
+    // 新增回到第一页：列表按创建时间倒序，新账号只会落在首页，
+    // 停在原页会让用户以为没保存成功
+    if (editingId) {
+      fetchList()
+    } else {
+      search()
+    }
   } catch {
     message.error(SAVE_FAILED)
   } finally {
@@ -256,16 +273,15 @@ const onDelete = async (id: number) => {
       return
     }
     message.success(DELETE_SUCCESS)
-    fetchList()
+    // 删空当前页时自动回退一页，避免停在空白页
+    refreshAfterRemove(1)
   } catch {
     message.error(DELETE_FAILED)
   }
 }
 
-onMounted(async () => {
-  await load()
-  fetchList()
-})
+// 列表由 useServerListPage 在挂载时自行加载，这里只取栏目数据供权限勾选用
+onMounted(load)
 </script>
 
 <style scoped>

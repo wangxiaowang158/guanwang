@@ -58,7 +58,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .me-link,
@@ -69,7 +69,7 @@ onMounted(() => {
 }
 
 .me-link:hover {
-  color: var(--brand-primary, #0ea5e9);
+  color: var(--nav-accent, var(--brand-primary));
 }
 
 .me-sep {
@@ -88,7 +88,7 @@ onMounted(() => {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--brand-primary, #0ea5e9);
+  background: var(--nav-accent, var(--brand-primary));
   color: #fff;
   font-size: 12px;
   font-weight: 600;

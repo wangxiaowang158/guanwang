@@ -1,7 +1,7 @@
 // 反馈请求 DTO —— 内容按纯文本处理，长度上限防超长输入
 import { Type } from 'class-transformer'
 import {
-  IsBoolean, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength,
+  IsBoolean, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength, MinLength,
 } from 'class-validator'
 import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE } from '../../../common/enums'
 import type { FeedbackSource, FeedbackStatus, FeedbackType } from '../../../common/enums'
@@ -13,18 +13,19 @@ const PHONE_PATTERN = /^1[3-9]\d{9}$/
 export class SubmitAnonymousFeedbackDto {
   /** 单位名称，选填 */
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
+  @IsString({ message: '单位名称格式不正确' })
+  @MaxLength(100, { message: '单位名称不能超过 100 个字' })
   company?: string
 
-  /** 联系人姓名 */
-  @IsString()
-  @Length(1, 50, { message: '请填写姓名' })
+  /** 联系人姓名，SRS 3.5.2：≤20 字 */
+  @IsString({ message: '请输入姓名' })
+  @MinLength(1, { message: '请输入姓名' })
+  @MaxLength(20, { message: '姓名不能超过 20 个字' })
   name!: string
 
-  /** 联系电话 */
-  @IsString()
-  @Matches(PHONE_PATTERN, { message: '手机号格式不正确' })
+  /** 联系电话，提示文案为 SRS 3.5.2 原文 */
+  @IsString({ message: '请输入有效的手机号' })
+  @Matches(PHONE_PATTERN, { message: '请输入有效的手机号' })
   phone!: string
 
   /** 反馈类型 */
@@ -32,15 +33,16 @@ export class SubmitAnonymousFeedbackDto {
   @IsEnum(FEEDBACK_TYPE, { message: '反馈类型不合法' })
   feedbackType?: FeedbackType
 
-  /** 咨询内容 */
-  @IsString()
-  @Length(1, 2000, { message: '内容长度需在 1 到 2000 字之间' })
+  /** 留言内容，SRS 3.5.2：≤500 字 */
+  @IsString({ message: '请输入留言内容' })
+  @MinLength(1, { message: '请输入留言内容' })
+  @MaxLength(500, { message: '留言内容不能超过 500 个字' })
   content!: string
 
   /** 提交来源页面 */
   @IsOptional()
-  @IsString()
-  @MaxLength(200)
+  @IsString({ message: '来源页面格式不正确' })
+  @MaxLength(200, { message: '来源页面不能超过 200 个字' })
   sourcePage?: string
 }
 
@@ -51,21 +53,21 @@ export class SubmitMemberFeedbackDto {
   @IsEnum(FEEDBACK_TYPE, { message: '反馈类型不合法' })
   feedbackType?: FeedbackType
 
-  /** 反馈内容 */
-  @IsString()
+  /** 反馈内容，SRS 3.5.13：≤2000 字 */
+  @IsString({ message: '请输入反馈内容' })
   @Length(1, 2000, { message: '内容长度需在 1 到 2000 字之间' })
   content!: string
 
-  /** 联系电话，选填；不填则沿用账号手机号 */
+  /** 联系电话，选填；不填则沿用账号手机号。提示文案为 SRS 3.5.13 原文 */
   @IsOptional()
-  @IsString()
-  @Matches(PHONE_PATTERN, { message: '手机号格式不正确' })
+  @IsString({ message: '请输入有效的手机号' })
+  @Matches(PHONE_PATTERN, { message: '请输入正确的手机号，或留空使用注册手机号' })
   phone?: string
 
   /** 提交来源页面 */
   @IsOptional()
-  @IsString()
-  @MaxLength(200)
+  @IsString({ message: '来源页面格式不正确' })
+  @MaxLength(200, { message: '来源页面不能超过 200 个字' })
   sourcePage?: string
 }
 
@@ -125,6 +127,7 @@ export class ReplyFeedbackDto {
   content!: string
 
   /** 回复人标识，选填 */
+  /** 回复人：控制器按当前登录管理员覆盖，请求体里传的值不被采信 */
   @IsOptional()
   @IsString()
   @MaxLength(50)

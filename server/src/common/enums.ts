@@ -9,6 +9,13 @@ export const MEMBER_STATUS = {
 } as const
 export type MemberStatus = (typeof MEMBER_STATUS)[keyof typeof MEMBER_STATUS]
 
+/** 内容发布状态：草稿只在后台可见，前台一律只读已发布 */
+export const CONTENT_STATUS = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+} as const
+export type ContentStatus = (typeof CONTENT_STATUS)[keyof typeof CONTENT_STATUS]
+
 /** 反馈来源类型 */
 export const FEEDBACK_SOURCE = {
   /** 匿名咨询：沿用原留言入口，无需登录 */
@@ -58,6 +65,13 @@ export const LOGIN_RESULT = {
 } as const
 export type LoginResult = (typeof LOGIN_RESULT)[keyof typeof LOGIN_RESULT]
 
+/** 管理端操作结果：与登录日志分开定义，两者语义独立、日后可各自扩展取值 */
+export const OP_LOG_RESULT = {
+  SUCCESS: 'success',
+  FAILURE: 'failure',
+} as const
+export type OpLogResult = (typeof OP_LOG_RESULT)[keyof typeof OP_LOG_RESULT]
+
 /** 登录失败原因（仅后台可见，前台响应统一模糊提示） */
 export const LOGIN_FAIL_REASON = {
   WRONG_PASSWORD: 'wrongPassword',
@@ -82,6 +96,7 @@ export const CHANNEL_TYPE = {
   FEEDBACK: 'feedback',
   AUTHCONFIG: 'authconfig',
   LOGINLOG: 'loginlog',
+  OPLOG: 'oplog',
 } as const
 export type ChannelType = (typeof CHANNEL_TYPE)[keyof typeof CHANNEL_TYPE]
 

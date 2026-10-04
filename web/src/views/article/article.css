@@ -1,0 +1,148 @@
+/* 内容详情页 —— 由 views/article/index.vue 以 scoped 方式引入
+   阅读区宽度控制在约 36 个汉字一行，正文 17px / 行高 1.9 */
+
+.article-page {
+  --a-accent: var(--color-brand-600);
+  --a-radius: var(--radius-lg);
+  background: #fff;
+}
+.article-page--style2 { --a-accent: var(--rs-primary); --a-radius: 0; }
+
+.article-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  /* 顶部让出固定顶栏的高度（样式二顶栏 76px，取两者较大值） */
+  padding: calc(76px + 40px) var(--gutter) 96px;
+}
+
+.article-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 32px;
+  font-size: 13px;
+  color: var(--color-ink-500);
+}
+.article-crumb a { flex-shrink: 0; transition: color var(--dur-fast); }
+.article-crumb a:hover { color: var(--a-accent); }
+.article-crumb [aria-current] { color: var(--color-ink-700); }
+
+.article-head {
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--color-line);
+}
+.article-channel {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--a-accent);
+}
+.article-title {
+  margin: 0;
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-ink-900);
+}
+.article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--color-ink-500);
+}
+.article-tag {
+  padding: 2px 8px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--a-accent);
+  border-radius: var(--radius-sm);
+}
+.article-page--style2 .article-tag { border-radius: 0; }
+
+.article-cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 40px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--a-radius);
+}
+
+.article-body {
+  margin-top: 40px;
+  font-size: var(--text-fs-body-lg);
+  line-height: 1.9;
+  color: var(--color-ink-700);
+}
+/* v-html 产出的节点不带 scoped 标记，必须用 :deep */
+.article-body :deep(img),
+.article-body :deep(video) { border-radius: var(--a-radius); }
+.article-body :deep(a) { color: var(--a-accent); }
+.article-body :deep(h2) { color: var(--color-ink-900); margin-top: 2em; }
+.article-body :deep(h3) { color: var(--color-ink-900); margin-top: 1.6em; }
+
+.article-around {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--color-line);
+}
+.article-around-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 16px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--a-radius);
+  transition: border-color var(--dur-fast);
+}
+.article-around-item:hover { border-color: var(--a-accent); }
+.article-around-item--next { text-align: right; }
+.article-around-label { font-size: 12px; color: var(--color-ink-500); }
+.article-around-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-ink-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-fast);
+}
+.article-around-item:hover .article-around-title { color: var(--a-accent); }
+@media (max-width: 639px) {
+  .article-around { grid-template-columns: 1fr; }
+  .article-around-item--next { text-align: left; }
+}
+
+.article-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--a-accent);
+}
+.article-back:hover { text-decoration: underline; }
+
+.article-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  color: var(--color-ink-700);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.article-btn:hover { color: var(--a-accent); border-color: var(--a-accent); }

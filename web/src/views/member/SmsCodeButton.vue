@@ -14,6 +14,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { sendSmsCode, type SmsPurpose } from '@/api/memberAuth'
 import { API_SUCCESS_CODE } from '@/config'
+import { PHONE_PATTERN } from '@/utils/validators'
 
 const props = defineProps<{
   phone: string
@@ -33,8 +34,8 @@ const seconds = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
 const counting = computed(() => seconds.value > 0)
-// 中国大陆手机号：1 开头 11 位
-const phoneValid = computed(() => /^1\d{10}$/.test(props.phone.trim()))
+// 中国大陆手机号，口径与后端一致（第二位 3-9），不合规的号码不发短信
+const phoneValid = computed(() => PHONE_PATTERN.test(props.phone.trim()))
 
 /** 启动倒计时，归零时自行清理定时器 */
 function startCountdown() {

@@ -1,67 +1,46 @@
 <template>
-  <!-- 右侧固定快捷操作：电话 / 微信（二维码已配置才显示）/ 回到顶部 -->
-  <div class="fixed right-4 bottom-24 z-40 flex flex-col gap-2">
-    <!-- 电话 -->
-    <a
-      v-if="site.phone"
-      :href="`tel:${site.phone}`"
-      class="group relative w-11 h-11 rounded-xl bg-white border border-gray-100 shadow-md flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-100 transition-all no-underline"
-      aria-label="联系电话"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-      </svg>
-      <span class="absolute right-full mr-2 px-2.5 py-1 rounded-lg bg-gray-900 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">{{ site.phone }}</span>
+  <!-- 快捷操作区：电话 / 微信（二维码已配置才显示）/ 回到页首；悬停或键盘聚焦都能展开提示 -->
+  <div class="qa fixed right-4 bottom-24 z-40 flex flex-col gap-2" :class="{ 'qa--style2': theme.isStyle2 }">
+    <a v-if="site.phone" :href="`tel:${site.phone}`" class="qa-btn group" :aria-label="`拨打电话 ${site.phone}`">
+      <PhoneIcon class="w-5 h-5" />
+      <span class="qa-tip tabular-nums">{{ site.phone }}</span>
     </a>
 
-    <!-- 微信（仅在二维码已配置时显示） -->
-    <div
-      v-if="site.wechatQr"
-      class="group relative w-11 h-11 rounded-xl bg-white border border-gray-100 shadow-md flex items-center justify-center text-gray-500 hover:text-green-600 hover:border-green-100 transition-all cursor-pointer"
-      aria-label="微信咨询"
-    >
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+    <!-- 用 button 而非 div：键盘可聚焦，聚焦时同样展开二维码 -->
+    <button v-if="site.wechatQr" type="button" class="qa-btn group" aria-label="微信咨询，显示二维码">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-3.898-6.348-7.596-6.348z" />
       </svg>
-      <div class="absolute right-full mr-2 p-2 rounded-xl bg-white border border-gray-100 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        <img :src="site.wechatQr" alt="微信二维码" class="w-28 h-28 object-cover rounded-lg" width="112" height="112" />
-      </div>
-    </div>
+      <span class="qa-tip qa-tip--qr">
+        <img :src="site.wechatQr" alt="微信二维码" class="w-28 h-28 object-contain" width="112" height="112" />
+      </span>
+    </button>
 
-    <!-- 回到顶部（滚动超过一屏才显示） -->
     <Transition name="fade">
-      <button
-        v-if="showTop"
-        class="w-11 h-11 rounded-xl bg-blue-600 shadow-md flex items-center justify-center text-white hover:bg-blue-700 transition-colors"
-        aria-label="回到顶部"
-        @click="scrollTop"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button v-if="showTop" type="button" class="qa-btn qa-btn--primary" aria-label="回到页首" @click="scrollToTop">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
         </svg>
       </button>
     </Transition>
   </div>
 </template>
+
 <script setup lang="ts">
-// 右侧快捷操作：电话/微信/回到顶部；微信二维码未配置时不显示
-import { computed, inject, onMounted } from 'vue'
-import type { Ref } from 'vue'
+// 快捷操作区：电话/微信/回到页首；微信二维码未配置时不显示；配色跟随当前模板
+import { computed, onMounted } from 'vue'
 import { useSiteStore } from '@/stores/site'
+import { useThemeStore } from '@/stores/theme'
+import { useWindowScroll, scrollToTop } from '@/composables/useWindowScroll'
+import PhoneIcon from './PhoneIcon.vue'
 
 const siteStore = useSiteStore()
-// 站点信息取自 site store，多组件共享同一次请求
+const theme = useThemeStore()
 const site = computed(() => siteStore.site)
+const { scrollY } = useWindowScroll()
 
-// 注入 App.vue 提供的滚动位置与回顶方法（页面用 el-scrollbar 承载滚动）
-const scrollY = inject<Ref<number>>('scrollY')
-const scrollToTop = inject<() => void>('scrollToTop')
-
-const showTop = computed(() => (scrollY?.value ?? 0) > 600)
-
-function scrollTop() {
-  scrollToTop?.()
-}
+/** 滚动超过一屏左右才出现回到页首 */
+const showTop = computed(() => scrollY.value > 600)
 
 onMounted(() => {
   // store 内部已做去重，重复调用不会产生额外请求
@@ -70,12 +49,50 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
+.qa { --qa-accent: var(--color-brand-600); --qa-radius: var(--radius-md); }
+.qa--style2 { --qa-accent: var(--rs-primary); --qa-radius: 0; }
+
+.qa-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: var(--qa-radius);
+  box-shadow: var(--shadow-2);
+  color: var(--color-ink-500);
+  cursor: pointer;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
 }
-.fade-enter-from,
-.fade-leave-to {
+.qa-btn:hover,
+.qa-btn:focus-visible { color: var(--qa-accent); border-color: var(--qa-accent); }
+.qa-btn--primary { background: var(--qa-accent); border-color: var(--qa-accent); color: #fff; }
+.qa-btn--primary:hover,
+.qa-btn--primary:focus-visible { color: #fff; filter: brightness(1.1); }
+
+/* 提示气泡：悬停与键盘聚焦都显示 */
+.qa-tip {
+  position: absolute;
+  right: calc(100% + 8px);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #fff;
+  white-space: nowrap;
+  background: var(--color-ink-900);
+  border-radius: var(--radius-sm);
   opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast);
 }
+.qa-tip--qr { padding: 8px; background: #fff; border: 1px solid var(--color-line); box-shadow: var(--shadow-2); }
+.qa-btn:hover .qa-tip,
+.qa-btn:focus-visible .qa-tip { opacity: 1; }
+
+.fade-enter-active,
+.fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from,
+.fade-leave-to { opacity: 0; }
 </style>

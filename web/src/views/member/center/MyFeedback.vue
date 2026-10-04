@@ -123,7 +123,7 @@ onMounted(load)
 .mf-time {
   margin-left: auto;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 
 .mf-content {
@@ -148,7 +148,7 @@ onMounted(load)
   display: flex;
   gap: 10px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 
 .mf-reply-by {
@@ -168,6 +168,6 @@ onMounted(load)
 .mf-pending {
   margin: 12px 0 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-ink-500);
 }
 </style>

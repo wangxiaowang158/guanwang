@@ -25,7 +25,7 @@
       </el-form-item>
 
       <el-form-item label="昵称">
-        <el-input v-model="form.nickname" maxlength="20" placeholder="请输入昵称" />
+        <el-input v-model="form.nickname" :maxlength="NICKNAME_MAX" placeholder="2-20 个字" />
       </el-form-item>
 
       <el-form-item label="密码">
@@ -37,8 +37,13 @@
       </el-form-item>
 
       <el-form-item label="邮箱（选填）">
-        <el-input v-model="form.email" maxlength="60" placeholder="用于接收反馈通知" />
+        <el-input v-model="form.email" :maxlength="EMAIL_MAX" placeholder="用于接收反馈通知" />
       </el-form-item>
+
+      <!-- 注册收集手机号等个人信息，须取得明示同意；口径与首页留言一致 -->
+      <el-checkbox v-model="agreed" class="auth-agree">
+        我已阅读并同意<RouterLink to="/privacy" target="_blank" @click.stop>《隐私政策》</RouterLink>
+      </el-checkbox>
 
       <el-button type="primary" class="auth-submit" :loading="submitting" @click="onSubmit">
         注册并登录
@@ -63,6 +68,7 @@ import SmsCodeButton from './SmsCodeButton.vue'
 import { fetchAuthConfig, register, isAuthSuccess, type PortalAuthConfig } from '@/api/memberAuth'
 import { useMemberStore } from '@/stores/member'
 import { API_SUCCESS_CODE } from '@/config'
+import { PHONE_PATTERN, NICKNAME_MAX, EMAIL_MAX, checkNickname, checkOptionalEmail } from '@/utils/validators'
 
 const router = useRouter()
 const memberStore = useMemberStore()
@@ -75,6 +81,8 @@ const tipText = ref('')
 const form = reactive({
   phone: '', smsCode: '', nickname: '', password: '', confirm: '', email: '',
 })
+/** 是否勾选同意隐私政策；默认不勾，须用户主动同意 */
+const agreed = ref(false)
 
 // 配置未回来前先允许填写，提交时由后端把关
 const registerOpen = computed(() => config.value?.registerOpen !== false)
@@ -98,18 +106,19 @@ function onSmsFail(msg: string) {
  * @returns 不合规时返回中文提示，合规返回空串
  */
 function validate(): string {
-  if (!/^1\d{10}$/.test(form.phone.trim())) return '请输入正确的手机号'
+  // 手机号、昵称、邮箱口径与后端注册 DTO 一致（utils/validators），提示文案取自 SRS 3.5.12
+  if (!PHONE_PATTERN.test(form.phone.trim())) return '请输入正确的手机号'
   if (!form.smsCode.trim()) return '请输入短信验证码'
-  if (!form.nickname.trim()) return '请输入昵称'
+  const nicknameError = checkNickname(form.nickname)
+  if (nicknameError) return nicknameError
   if (form.password.length < minLength.value) return `密码长度不得少于 ${minLength.value} 位`
   if (requireMixed.value && !(/[A-Za-z]/.test(form.password) && /\d/.test(form.password))) {
     return '密码需同时包含字母与数字'
   }
   if (form.password !== form.confirm) return '两次输入的密码不一致'
-  if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-    return '请输入正确的邮箱地址'
-  }
-  return ''
+  const emailError = checkOptionalEmail(form.email)
+  if (emailError) return emailError
+  return agreed.value ? '' : '请阅读并同意《隐私政策》后再注册'
 }
 
 /** 注册成功后端直接下发令牌，无需再走一次登录 */
@@ -171,5 +180,12 @@ onMounted(async () => {
 .auth-submit {
   width: 100%;
   margin-top: 8px;
+}
+
+/* 协议文字较长，允许换行，避免挤出表单宽度 */
+.auth-agree {
+  height: auto;
+  white-space: normal;
+  line-height: 1.6;
 }
 </style>

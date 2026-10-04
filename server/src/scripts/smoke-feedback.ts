@@ -10,11 +10,15 @@ import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { DataSource } from 'typeorm'
 import type { NestExpressApplication } from '@nestjs/platform-express'
+import type { KvStore } from '../modules/kv/kv-store.interface'
 
 config()
 process.env.DB_TYPE = 'sqlite'
 process.env.DB_SQLITE_PATH = 'data/smoke-feedback.sqlite'
 process.env.DB_SYNCHRONIZE = 'true'
+// 钉死种子超管口令：未配置时 app.config 会每次启动随机生成一个，
+// 而 sqlite 文件跨次运行留存——上一轮入库的口令与本轮生成的对不上，登录直接失败
+process.env.ADMIN_SEED_PASSWORD = 'smoke-test-admin-pwd'
 
 const PORT = 3997
 const BASE = `http://127.0.0.1:${PORT}/api`
@@ -71,7 +75,8 @@ async function main(): Promise<void> {
   const { TransformInterceptor } = await import('../common/interceptors/transform.interceptor')
   const { AllExceptionFilter } = await import('../common/filters/all-exception.filter')
   const { ADMIN_SEED } = await import('../config/app.config')
-  const { SmsCodeService } = await import('../modules/member/sms-code.service')
+  const { SmsCodeService, smsCodeKey } = await import('../modules/member/sms-code.service')
+  const { KV_STORE } = await import('../modules/kv/kv-store.interface')
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false })
   app.setGlobalPrefix('api')
@@ -99,13 +104,21 @@ async function main(): Promise<void> {
   await ds.query('DELETE FROM auth_config')
 
   const sms = app.get(SmsCodeService)
-  const smsStore = (sms as any).store as Map<string, { code: string }>
+  const kv = app.get<KvStore>(KV_STORE)
 
-  /** 注册一个会员并返回其令牌 */
+  /**
+   * 注册一个会员并返回其令牌
+   * 绕过短信通道：先清键避开一分钟频次限制，发码后从存储读回
+   * @param phone 手机号
+   * @param nickname 昵称
+   */
   async function registerMember(phone: string, nickname: string): Promise<string> {
-    smsStore.delete(`register:${phone}`)
-    sms.send(phone, 'register')
-    const code = smsStore.get(`register:${phone}`)!.code
+    const key = smsCodeKey(phone, 'register')
+    await kv.del(key)
+    await sms.send(phone, 'register')
+    const raw = await kv.get(key)
+    if (!raw) throw new Error('发码后未能从存储读回验证码')
+    const code = (JSON.parse(raw) as { code: string }).code
     const res = await call('POST', '/portal/auth/register', {
       phone, nickname, password: 'Passw0rd123', smsCode: code,
     })

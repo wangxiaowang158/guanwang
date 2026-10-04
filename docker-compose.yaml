@@ -2,11 +2,20 @@
 # 端口只绑 127.0.0.1，公网流量统一经宿主机宝塔 Nginx 反代进来
 # 数据落在命名卷，容器重建不丢
 
+# 容器日志轮转：json-file 默认不限大小，小内存机器上会把磁盘慢慢吃满。
+# 每个容器最多保留 3 个 10MB 的文件
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mysql:
     image: mysql:8.0
     container_name: zrh-mysql
     restart: unless-stopped
+    logging: *default-logging
     command:
       # utf8mb4 保证中文与 emoji 正常；后端实体用 datetime，时区统一为 UTC
       - --character-set-server=utf8mb4
@@ -37,15 +46,25 @@ services:
     image: redis:7-alpine
     container_name: zrh-redis
     restart: unless-stopped
-    # 密码通过命令行传入；requirepass 为空会导致未授权访问
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?必须在 .env 中设置}",
-              "--appendonly", "yes"]
-    volumes:
-      - redis-data:/data
+    logging: *default-logging
+    command:
+      # 只存图形/短信验证码这类分钟级过期的临时键，重启丢了也只是让用户重取一次，
+      # 故不开持久化（免去 AOF 落盘与 fork 开销）
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      # 键有 TTL 会自然回收，上限只是兜底防内存失控；触顶时先淘汰将过期的键
+      - --maxmemory
+      - 64mb
+      - --maxmemory-policy
+      - volatile-ttl
+    # 不映射端口：仅 backend 经内部网络访问，不对宿主机暴露
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 6
       start_period: 10s
     networks:
@@ -60,6 +79,7 @@ services:
       dockerfile: docker/server.Dockerfile
     container_name: zrh-backend
     restart: unless-stopped
+    logging: *default-logging
     depends_on:
       mysql:
         condition: service_healthy
@@ -73,25 +93,38 @@ services:
       DB_USERNAME: ${MYSQL_USER:-zrh}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_DATABASE: ${MYSQL_DATABASE:-zrh_website}
-      # 项目无迁移脚本，表结构靠启动时自动同步。
-      # 首次部署置 true 建表，建成后改 false 再重启，避免后续启动改动线上表结构。
-      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
+      # 表结构一律走 TypeORM 迁移，不靠 synchronize。
+      # 容器每次启动先自动执行迁移（见 docker/server-entrypoint.sh），
+      # 全新库会建出完整结构并写入初始栏目与站点信息，无需手工操作。
+      # 此处固定 false 且不给覆盖口子：synchronize 会按实体差异改线上表，删列即丢数据
+      DB_SYNCHRONIZE: "false"
       JWT_MEMBER_SECRET: ${JWT_MEMBER_SECRET:?必须在 .env 中设置}
       JWT_MEMBER_EXPIRES_IN: ${JWT_MEMBER_EXPIRES_IN:-2h}
       # 管理员令牌密钥：必填。缺省会回落到源码内的开发默认值，令牌可被任意伪造
       JWT_ADMIN_SECRET: ${JWT_ADMIN_SECRET:?必须在 .env 中设置}
       JWT_ADMIN_EXPIRES_IN: ${JWT_ADMIN_EXPIRES_IN:-8h}
-      # 首个管理员账号：仅在管理员表为空时创建，建成后改密码即与此处无关
+      # 首个管理员账号：仅在管理员表为空时创建，建成后改密码即与此处无关。
+      # 密码留空时后端随机生成强口令，只在首次启动日志里出现一次：
+      #   docker compose logs backend | grep 初始管理员
       ADMIN_SEED_ACCOUNT: ${ADMIN_SEED_ACCOUNT:-admin}
-      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:?必须在 .env 中设置}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-}
       # 上传目录：与下方 backend-uploads 卷的挂载点一致，容器重建不丢图
       UPLOAD_DIR: data/uploads
       UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-2}
       UPLOAD_VIDEO_MAX_MB: ${UPLOAD_VIDEO_MAX_MB:-100}
       THROTTLE_TTL: ${THROTTLE_TTL:-60}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:-60}
+      # 验证码存储指向上方 redis 服务。默认值写死 redis://redis:6379/0：
+      # 这里若留空，验证码会退回进程内存，backend 重启即全部失效
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-zrh:}
+      REDIS_COMMAND_TIMEOUT_MS: ${REDIS_COMMAND_TIMEOUT_MS:-2000}
       # 留空即不启用跨域：两个前端都经 gateway 同源访问 /api，本就无跨域
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      # 新反馈群通知：留空即不推送，客户留言照常落库
+      FEEDBACK_NOTIFY_WEBHOOK: ${FEEDBACK_NOTIFY_WEBHOOK:-}
+      FEEDBACK_NOTIFY_TYPE: ${FEEDBACK_NOTIFY_TYPE:-wecom}
+      FEEDBACK_NOTIFY_TIMEOUT_MS: ${FEEDBACK_NOTIFY_TIMEOUT_MS:-3000}
     volumes:
       # 后台上传的图片落在容器内，不挂卷则重建容器即全部丢失。
       # 路径须与上方 UPLOAD_DIR 一致（相对镜像 WORKDIR /app）
@@ -106,6 +139,7 @@ services:
       dockerfile: docker/gateway.Dockerfile
     container_name: zrh-gateway
     restart: unless-stopped
+    logging: *default-logging
     depends_on:
       backend:
         condition: service_healthy
@@ -122,5 +156,4 @@ networks:
 
 volumes:
   mysql-data:
-  redis-data:
   backend-uploads:

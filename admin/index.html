@@ -3,10 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WEB端原型框架</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <title>中瑞恒官网管理后台</title>
+    <!--
+      原先这里引了 Google Fonts 的 Sora 字体，但 CSS 里没有任何地方用到它——
+      纯粹是一次到外部域名的阻塞请求，且会迫使 CSP 为 fonts.googleapis.com
+      与 fonts.gstatic.com 开白名单。一并删掉
+    -->
   </head>
   <body>
     <div id="app"></div>

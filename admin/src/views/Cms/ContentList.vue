@@ -9,14 +9,23 @@
           v-model:value="dateRange"
           value-format="YYYY-MM-DD"
           :placeholder="['创建日期', '']"
-          @change="fetchList"
+          @change="onFilterChange"
+        />
+        <a-select
+          v-model:value="status"
+          placeholder="发布状态"
+          style="width: 130px"
+          allow-clear
+          :options="STATUS_OPTIONS"
+          @change="onFilterChange"
         />
         <a-input-search
           v-model:value="keyword"
           placeholder="输入关键字"
           style="width: 240px"
           allow-clear
-          @search="fetchList"
+          :maxlength="100"
+          @search="onFilterChange"
         />
       </a-space>
       <a-space :size="12">
@@ -39,7 +48,7 @@
     <!-- 列表 -->
     <a-table
       :columns="columns"
-      :data-source="pagedData"
+      :data-source="rows"
       :loading="loading"
       :pagination="false"
       row-key="id"
@@ -71,6 +80,12 @@
         <template v-else-if="column.key === 'brand'">
           <a-button type="link" size="small" disabled>品牌管理</a-button>
         </template>
+        <!-- 发布状态：草稿不在前台展示，需明确区分 -->
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="record.status === 'draft' ? 'orange' : 'green'">
+            {{ record.status === 'draft' ? '草稿' : '已发布' }}
+          </a-tag>
+        </template>
         <!-- 置顶 -->
         <template v-else-if="column.key === 'isTop'">
           <a-tooltip :title="record.isTop ? '取消置顶' : '置顶'">
@@ -101,7 +116,10 @@
         :total="total"
         :show-size-changer="true"
         :page-size-options="['10', '20', '50']"
+        :show-total="(t: number) => `共 ${t} 条`"
         show-less-items
+        @change="fetchList"
+        @show-size-change="onPageSizeChange"
       />
     </div>
   </div>
@@ -119,9 +137,15 @@ import {
 } from '@ant-design/icons-vue'
 import {
   getContentList, deleteContent, toggleContentTop, updateContentSort,
-  type Channel, type Content
+  type Channel, type Content, type ContentStatus
 } from '@/api/cms'
 import { COLUMN_LABELS } from './fieldDefs'
+
+/** 发布状态筛选项 */
+const STATUS_OPTIONS = [
+  { value: 'published', label: '已发布' },
+  { value: 'draft', label: '草稿' }
+]
 
 const props = defineProps<{ channel: Channel }>()
 const router = useRouter()
@@ -130,16 +154,14 @@ const loading = ref(false)
 const rows = ref<Content[]>([])
 const keyword = ref('')
 const dateRange = ref<[string, string]>()
+const status = ref<ContentStatus>()
 const selectedKeys = ref<number[]>([])
 const tableWrap = ref<HTMLElement>()
 
-// 分页（前端分页，接口返回该栏目全量内容）
+// 分页（服务端分页，rows 即当前页数据）
 const page = ref(1)
 const pageSize = ref(10)
-const total = computed(() => rows.value.length)
-const pagedData = computed(() =>
-  rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value)
-)
+const total = ref(0)
 
 // 动态列：按栏目 listColumns + 固定操作列（sort 不再单列，拖拽手柄并入标题/名称列）
 const columns = computed(() => {
@@ -151,6 +173,8 @@ const columns = computed(() => {
       if (key === 'createTime') return { title: '创建日期', dataIndex: 'createTime', key: 'createTime', width: 180 }
       return { title: COLUMN_LABELS[key] || key, key, dataIndex: key }
     })
+  // 状态列不进 listColumns 配置：每个栏目都需要区分草稿与已发布，无须逐栏目开关
+  cols.push({ title: '状态', key: 'status', width: 90, align: 'center' as const })
   cols.push({ title: '修改', key: 'edit', width: 70, align: 'center' as const })
   cols.push({ title: '删除', key: 'delete', width: 70, align: 'center' as const })
   return cols
@@ -163,18 +187,38 @@ const fetchList = async () => {
       channelKey: props.channel.key,
       keyword: keyword.value || undefined,
       startDate: dateRange.value?.[0],
-      endDate: dateRange.value?.[1]
+      endDate: dateRange.value?.[1],
+      status: status.value,
+      page: page.value,
+      pageSize: pageSize.value
     })
     if (res.data.code === 200) {
-      rows.value = res.data.data
-      page.value = 1
+      rows.value = res.data.data.list
+      total.value = res.data.data.total
       selectedKeys.value = []
+      // 末页删空后当前页会越界，回退一页重取
+      if (!rows.value.length && total.value && page.value > 1) {
+        page.value -= 1
+        await fetchList()
+      }
     }
   } catch {
     message.error('获取列表失败')
   } finally {
     loading.value = false
   }
+}
+
+// 筛选条件变化：回到首页再查，否则在第 3 页改条件会看到空列表
+const onFilterChange = () => {
+  page.value = 1
+  fetchList()
+}
+
+// 每页条数变化：条数变了原页码可能越界，一并回到首页
+const onPageSizeChange = () => {
+  page.value = 1
+  fetchList()
 }
 
 const onSelectChange = (keys: (string | number)[]) => {
@@ -199,9 +243,8 @@ const onToggleTop = async (record: Content) => {
 // 拖拽结束：以 DOM 的 data-row-key 顺序为准重排当前页，并把排序值降序回写
 // 用 key 定位而非位置索引，规避 a-table tbody 中的 measure-row 造成的索引错位
 const onDragReorder = async (tbody: HTMLElement) => {
-  const base = (page.value - 1) * pageSize.value
-  const list = rows.value
-  const oldPageRows = list.slice(base, base + pageSize.value)
+  // 服务端分页后 rows 就是当前页，不再需要按页码切片
+  const oldPageRows = [...rows.value]
 
   // 读取拖拽后真实数据行的 id 顺序（仅 tr[data-row-key]，排除测量行）
   const keyOrder = Array.from(tbody.querySelectorAll('tr[data-row-key]'))
@@ -222,8 +265,8 @@ const onDragReorder = async (tbody: HTMLElement) => {
     return
   }
 
-  // 把新顺序写回全量数组当前页区间
-  list.splice(base, oldPageRows.length, ...newPageRows)
+  // 把新顺序写回当前页数据
+  rows.value = newPageRows
 
   // 取当前页排序值池，按降序重新分配给新顺序（保持数值池不变）
   const sortPool = newPageRows.map((r) => r.sort ?? 0).sort((a, b) => b - a)
@@ -285,6 +328,8 @@ onMounted(fetchList)
 watch(() => props.channel.key, () => {
   keyword.value = ''
   dateRange.value = undefined
+  status.value = undefined
+  page.value = 1
   fetchList()
 })
 // 行集合变化（翻页/页容量/重载）后重建拖拽实例；纯排序拖动不触发，避免打断动画

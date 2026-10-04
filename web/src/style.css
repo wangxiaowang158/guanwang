@@ -1,22 +1,104 @@
 @import "tailwindcss";
 
-/* Element Plus 变量覆盖 */
+/* ============================================================
+   设计 token（样式一 / 全站通用）
+   写在 @theme 里：Tailwind v4 会据此生成 bg-brand-600、text-fs-h2 这类工具类，
+   组件里用工具类与 CSS 里用 var() 取到的是同一个值，两边不会各写各的。
+   ============================================================ */
+@theme {
+  /* 品牌色阶：深蓝为主，取代原先 sky-500 与 blue-600 两套蓝并存的状况 */
+  --color-brand-50:  #eef5ff;
+  --color-brand-100: #d9e8ff;
+  --color-brand-200: #b8d4ff;
+  --color-brand-300: #86b6fb;
+  --color-brand-400: #4d8ff2;
+  --color-brand-500: #1f6fe5;
+  --color-brand-600: #0b57d0;
+  --color-brand-700: #0a45a8;
+  --color-brand-800: #0c3a85;
+  --color-brand-900: #0b2a5b;
+  --color-navy-950:  #071a36;
+  /* 辅助强调色：只用于数据与高亮，不作为按钮等大面积色块 */
+  --color-accent:    #00b8d9;
+
+  /*
+   * 存量组件里写死了约 70 处 blue-*（text-blue-600 等），逐个改名收益低、易漏。
+   * 把 Tailwind 的 blue 色阶整体指到品牌色阶上，存量写法自动变成品牌蓝；
+   * 新代码一律写 brand-*，blue-* 只作为兼容层存在
+   */
+  --color-blue-50:  var(--color-brand-50);
+  --color-blue-100: var(--color-brand-100);
+  --color-blue-200: var(--color-brand-200);
+  --color-blue-300: var(--color-brand-300);
+  --color-blue-400: var(--color-brand-400);
+  --color-blue-500: var(--color-brand-500);
+  --color-blue-600: var(--color-brand-600);
+  --color-blue-700: var(--color-brand-700);
+
+  /* 中性色：正文与辅助文字，白底对比度均 ≥ 4.5:1 */
+  --color-ink-900: #0f172a;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-ink-400: #94a3b8;
+  --color-line:    #e2e8f0;
+  --color-surface: #f5f7fa;
+
+  /* 字号阶梯：标题行高 1.25，正文 1.75 */
+  --text-fs-display: clamp(40px, 5vw, 64px);
+  --text-fs-h1: clamp(32px, 3.6vw, 48px);
+  --text-fs-h2: clamp(26px, 2.6vw, 36px);
+  --text-fs-h3: 20px;
+  --text-fs-h4: 18px;
+  --text-fs-body-lg: 17px;
+  --text-fs-body: 15px;
+  --text-fs-sm: 14px;
+  --text-fs-xs: 12px;
+
+  /* 圆角：B2B 官网取 8-12px，偏克制 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* 阴影三档：只用中性色，不做彩色光晕 */
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-2: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-3: 0 16px 40px rgba(15, 23, 42, 0.12);
+
+  /* 动效时长与缓动：全站统一三档 */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 :root {
-  --el-color-primary: var(--brand-primary, #0ea5e9);
-  --el-border-radius-base: 8px;
+  /* 布局尺度：容器、页边距、导航高度、区块纵向留白 */
+  --container: 1280px;
+  --gutter: clamp(20px, 4vw, 40px);
+  --nav-h: 72px;
+  --section-py: clamp(64px, 8vw, 112px);
+  /* 区块标题到内容的统一间距 */
+  --head-gap: 48px;
+
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 500ms;
+}
+
+/* Element Plus 变量覆盖：主色跟随品牌色阶 */
+:root {
+  --el-color-primary: var(--color-brand-600);
+  --el-border-radius-base: var(--radius-md);
   --el-font-size-base: 14px;
 }
 
 /* ============================================================
-   全局品牌主题色（可由后台 SiteConfig 通过 JS 动态覆盖）
-   默认：天蓝科技色 #0ea5e9
+   品牌主题色别名（存量组件在用，值统一指向品牌色阶）
    ============================================================ */
 :root {
-  --brand-primary:        #0ea5e9;
-  --brand-primary-dark:   #0284c7;
-  --brand-primary-light:  #38bdf8;
-  --brand-primary-glow:   rgba(14, 165, 233, 0.20);
-  --brand-primary-subtle: rgba(14, 165, 233, 0.08);
+  --brand-primary:        var(--color-brand-600);
+  --brand-primary-dark:   var(--color-brand-700);
+  --brand-primary-light:  var(--color-brand-300);
+  --brand-primary-glow:   rgba(11, 87, 208, 0.20);
+  --brand-primary-subtle: rgba(11, 87, 208, 0.08);
 }
 
 /* ============================================================
@@ -24,33 +106,33 @@
    ============================================================ */
 :root {
   /* 背景层次 */
-  --zrh-bg-page:       #f8fafc;
+  --zrh-bg-page:       #ffffff;
   --zrh-bg-white:      #ffffff;
-  --zrh-bg-surface:    #f1f5f9;
-  --zrh-bg-dark:       #0f172a;
-  --zrh-bg-dark-soft:  #1e293b;
+  --zrh-bg-surface:    var(--color-surface);
+  --zrh-bg-dark:       var(--color-navy-950);
+  --zrh-bg-dark-soft:  #0e2548;
 
   /* 文字 */
-  --zrh-text-h:        #0f172a;
-  --zrh-text-body:     #334155;
-  --zrh-text-muted:    #64748b;
-  --zrh-text-light:    #94a3b8;
+  --zrh-text-h:        var(--color-ink-900);
+  --zrh-text-body:     var(--color-ink-700);
+  --zrh-text-muted:    var(--color-ink-500);
+  --zrh-text-light:    var(--color-ink-400);
 
   /* 边框 */
-  --zrh-border:        #e2e8f0;
-  --zrh-border-light:  #f1f5f9;
+  --zrh-border:        var(--color-line);
+  --zrh-border-light:  #eef2f6;
 
-  /* 板块节奏 */
-  --zrh-section-py:    96px;
-  --zrh-content-max:   1200px;
-  --zrh-content-px:    24px;
-  --zrh-card-radius:   16px;
-  --zrh-nav-height:    68px;
+  /* 板块节奏：统一指向全站布局尺度，首页与栏目页不再是两套口径 */
+  --zrh-section-py:    var(--section-py);
+  --zrh-content-max:   var(--container);
+  --zrh-content-px:    var(--gutter);
+  --zrh-card-radius:   var(--radius-lg);
+  --zrh-nav-height:    var(--nav-h);
 
-  /* 字号（流体排版） */
-  --zrh-text-hero:     clamp(38px, 5.5vw, 68px);
-  --zrh-text-h2:       clamp(26px, 3vw, 38px);
-  --zrh-text-h3:       clamp(18px, 2vw, 22px);
+  /* 字号 */
+  --zrh-text-hero:     var(--text-fs-display);
+  --zrh-text-h2:       var(--text-fs-h2);
+  --zrh-text-h3:       var(--text-fs-h3);
 }
 
 /* ============================================================
@@ -66,7 +148,8 @@
   --rs-bg-dark-soft:   #232323;
   --rs-text-dark:      #1a1a1a;
   --rs-text-body:      #4a4a4a;
-  --rs-text-muted:     #8a8a8a;
+  /* 原 #8a8a8a 白底对比度约 3.4:1，不达正文 4.5:1，加深到 #6b6b6b（约 5.3:1） */
+  --rs-text-muted:     #6b6b6b;
   --rs-text-light:     #ffffff;
   --rs-text-light-sub: #b8b8b8;
   --rs-border:         #e6e2db;
@@ -85,8 +168,9 @@
 html {
   font-size: 16px;
   line-height: 1.6;
-  height: 100%;
-  scroll-padding-top: var(--zrh-nav-height);
+  /* 整页滚动交给原生窗口：锚点偏移由此统一补偿固定导航高度 */
+  scroll-padding-top: calc(var(--nav-h) + 16px);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -101,11 +185,34 @@ body {
   min-height: 100%;
 }
 
+/* 统计类数字等宽，滚动计数时不左右跳动 */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* 键盘焦点：统一可见的焦点环，鼠标点击不出现（:focus-visible） */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 通用容器：与导航、页脚同一宽度与页边距 */
+.site-container {
+  max-width: var(--container);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 #app { min-height: 100%; }
 
-a { color: inherit; text-decoration: none; }
+/* 必须放进 base 层：不分层的规则优先级高于 Tailwind 工具类（utilities 层），
+   写在外面会让所有 <a> 上的 text-white / text-brand-600 等颜色类全部失效 */
+@layer base {
+  a { color: inherit; text-decoration: none; }
+}
 
 /* ============================================================
    进入视口淡入动画工具类
@@ -113,7 +220,7 @@ a { color: inherit; text-decoration: none; }
 .fade-up {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
 }
 .fade-up.visible {
   opacity: 1;
@@ -126,6 +233,79 @@ a { color: inherit; text-decoration: none; }
 .delay-300 { transition-delay: 0.3s; }
 .delay-400 { transition-delay: 0.4s; }
 .delay-500 { transition-delay: 0.5s; }
+
+/* ============================================================
+   富文本正文排版
+   后台富文本编辑器产出的标签没有 class，只能靠后代选择器命中；
+   放全局而非组件 scoped：v-html 节点不带 scoped 标记，
+   多处渲染正文（栏目页 rich 板块、文章详情页）共用同一套排版
+   ============================================================ */
+.rich-html p {
+  margin-bottom: 1.2em;
+}
+
+.rich-html p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-html h2,
+.rich-html h3 {
+  font-weight: 600;
+  color: inherit;
+  margin: 1.4em 0 0.6em;
+}
+
+.rich-html h2 {
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.rich-html h3 {
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.rich-html ul,
+.rich-html ol {
+  margin: 0 0 1em 1.4em;
+}
+
+.rich-html ul {
+  list-style: disc;
+}
+
+.rich-html ol {
+  list-style: decimal;
+}
+
+.rich-html li {
+  margin-bottom: 0.4em;
+}
+
+.rich-html blockquote {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 3px solid var(--color-brand-100);
+  color: var(--color-ink-500);
+}
+
+.rich-html a {
+  color: var(--color-brand-600);
+  text-decoration: underline;
+}
+
+.rich-html img,
+.rich-html video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.2em 0;
+}
+
+.rich-html video {
+  width: 100%;
+  background: #000;
+}
 
 /* ============================================================
    尊重减少动效偏好

@@ -2,6 +2,10 @@
 // 原 mock 里「前台怎么展示」写死在 web 代码里，这里把它归位到栏目配置上
 import channels from '../../modules/cms/seed/channels.json'
 import pageContents from '../../modules/cms/seed/page-contents.json'
+import { HOME_FORM_FIELDS, HOME_HEADINGS, HOME_LIST_COLUMNS } from './home-form-fields'
+import {
+  FLATTEN_TO_LIST, FLATTEN_TO_SINGLE, FLATTENED_FORM_FIELDS, FLATTENED_KEYS, FLATTENED_LIST_COLUMNS,
+} from './flatten-groups'
 
 /** 顶级栏目 → 前台路由路径。不在表内的栏目不对前台开放 */
 export const PORTAL_PATHS: Record<string, string> = {
@@ -93,6 +97,10 @@ export function buildChannelRows(): ChannelRow[] {
   for (const c of channels) {
     const parent = c.parentId ? byId.get(c.parentId) : undefined
     const parentKey = parent?.key ?? null
+    // 被拍平区块的孙栏目前台不读，不再建出来（见 flatten-groups.ts）
+    if (parentKey && FLATTENED_KEYS.has(parentKey)) continue
+    const flattenedType = FLATTEN_TO_LIST.includes(c.key) ? 'list'
+      : FLATTEN_TO_SINGLE.includes(c.key) ? 'single' : null
     const isPortalTop = !parentKey && PORTAL_PATHS[c.key] !== undefined
     const page = isPortalTop ? PAGES[c.key] : undefined
 
@@ -107,18 +115,23 @@ export function buildChannelRows(): ChannelRow[] {
       parentKey,
       key: c.key,
       // 前台区块标题即用户可见文案，与 mock 里的后台栏目名不一致时以前台为准
-      name: block?.heading ?? c.name,
-      type: c.type,
+      // 首页板块不走页面区块数据，标题取 HOME_HEADINGS（与改版前前台写死的文案一致）
+      name: block?.heading ?? HOME_HEADINGS[c.key]?.name ?? c.name,
+      type: flattenedType ?? c.type,
       icon: c.icon ?? null,
       sort: c.sort,
-      formFields: c.formFields ?? [],
-      listColumns: c.listColumns ?? [],
+      formFields: flattenedType
+        ? FLATTENED_FORM_FIELDS[flattenedType]
+        : HOME_FORM_FIELDS[c.key] ?? c.formFields ?? [],
+      listColumns: flattenedType
+        ? FLATTENED_LIST_COLUMNS
+        : HOME_LIST_COLUMNS[c.key] ?? c.listColumns ?? [],
       seoTitle: c.seoTitle ?? null,
       seoKeywords: c.seoKeywords ?? null,
       seoDescription: c.seoDescription ?? null,
       portalPath: isPortalTop ? PORTAL_PATHS[c.key] : null,
       anchor,
-      subheading: block?.subheading ?? null,
+      subheading: block?.subheading ?? HOME_HEADINGS[c.key]?.subheading ?? null,
       layout: block?.layout ?? null,
       heroEyebrow: page?.hero.eyebrow ?? null,
       heroTitle: page?.hero.title ?? null,
@@ -164,18 +177,18 @@ function buildNewHomeRows(): ChannelRow[] {
   return NEW_HOME_CHANNELS.map((def, index) => ({
     parentKey: 'home',
     key: def.key,
-    name: def.name,
+    name: HOME_HEADINGS[def.key]?.name ?? def.name,
     type: 'list',
     icon: null,
     sort: 10 + index,
-    formFields: DEFAULT_FORM_FIELDS,
-    listColumns: DEFAULT_LIST_COLUMNS,
+    formFields: HOME_FORM_FIELDS[def.key] ?? DEFAULT_FORM_FIELDS,
+    listColumns: HOME_LIST_COLUMNS[def.key] ?? DEFAULT_LIST_COLUMNS,
     seoTitle: null,
     seoKeywords: null,
     seoDescription: null,
     portalPath: null,
     anchor: null,
-    subheading: null,
+    subheading: HOME_HEADINGS[def.key]?.subheading ?? null,
     layout: null,
     heroEyebrow: null,
     heroTitle: null,

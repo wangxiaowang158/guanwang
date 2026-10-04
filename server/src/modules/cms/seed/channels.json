@@ -840,6 +840,7 @@
     "type": "list",
     "formFields": [
       "title",
+      "category",
       "keywords",
       "description",
       "content",
@@ -1166,9 +1167,34 @@
     "name": "智能设备 Banner"
   },
   {
-    "id": 1051,
+    "id": 1062,
     "parentId": 1043,
     "sort": 5,
+    "type": "single",
+    "formFields": [
+      "title",
+      "keywords",
+      "description",
+      "link",
+      "cover",
+      "updateTime",
+      "author",
+      "source",
+      "isTop"
+    ],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "banner-household",
+    "name": "智能家居 Banner"
+  },
+  {
+    "id": 1051,
+    "parentId": 1043,
+    "sort": 6,
     "type": "single",
     "formFields": [
       "title",
@@ -1193,7 +1219,7 @@
   {
     "id": 1052,
     "parentId": 1043,
-    "sort": 6,
+    "sort": 7,
     "type": "single",
     "formFields": [
       "title",
@@ -1218,7 +1244,7 @@
   {
     "id": 1053,
     "parentId": 1043,
-    "sort": 7,
+    "sort": 8,
     "type": "single",
     "formFields": [
       "title",
@@ -1243,7 +1269,7 @@
   {
     "id": 1054,
     "parentId": 1043,
-    "sort": 8,
+    "sort": 9,
     "type": "single",
     "formFields": [
       "title",
@@ -1356,5 +1382,21 @@
     "key": "admin",
     "name": "管理员管理",
     "icon": "UserOutlined"
+  },
+  {
+    "id": 1061,
+    "parentId": null,
+    "sort": 14,
+    "type": "oplog",
+    "formFields": [],
+    "listColumns": [
+      "sort",
+      "title",
+      "createTime",
+      "isTop"
+    ],
+    "key": "op-log",
+    "name": "操作日志",
+    "icon": "FileSearchOutlined"
   }
 ]

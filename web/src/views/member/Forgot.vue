@@ -50,6 +50,7 @@ import AuthShell from './AuthShell.vue'
 import SmsCodeButton from './SmsCodeButton.vue'
 import { fetchAuthConfig, resetPassword, type PortalAuthConfig } from '@/api/memberAuth'
 import { API_SUCCESS_CODE } from '@/config'
+import { PHONE_PATTERN } from '@/utils/validators'
 
 const router = useRouter()
 
@@ -84,7 +85,7 @@ function onSmsFail(msg: string) {
  * @returns 不合规时返回中文提示，合规返回空串
  */
 function validate(): string {
-  if (!/^1\d{10}$/.test(form.phone.trim())) return '请输入正确的手机号'
+  if (!PHONE_PATTERN.test(form.phone.trim())) return '请输入正确的手机号'
   if (!form.smsCode.trim()) return '请输入短信验证码'
   if (form.password.length < minLength.value) return `密码长度不得少于 ${minLength.value} 位`
   if (requireMixed.value && !(/[A-Za-z]/.test(form.password) && /\d/.test(form.password))) {

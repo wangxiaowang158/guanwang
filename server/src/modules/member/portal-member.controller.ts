@@ -1,8 +1,9 @@
 // 前台会员资料接口 —— /api/portal/member/*
 // 全部需登录；会员 id 一律取自令牌，不接受前端传入
-import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Put, Req, UseGuards } from '@nestjs/common'
 import { MemberService } from './member.service'
-import { MemberGuard, type MemberTokenPayload } from '../../common/guards/member.guard'
+import { MemberGuard, type MemberTokenPayload, type RequestWithMember } from '../../common/guards/member.guard'
+import { TokenRevocationService } from '../kv/token-revocation.service'
 import { CurrentMember } from '../../common/decorators/current-member.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
 import { ChangePasswordDto, UpdateProfileDto } from './dto/member-manage.dto'
@@ -14,7 +15,15 @@ export class PortalMemberController {
   constructor(
     private readonly memberService: MemberService,
     private readonly authConfig: AuthConfigService,
+    private readonly revocation: TokenRevocationService,
   ) {}
+
+  /** 退出登录：吊销当前令牌，此后即便令牌被截获也不可再用 */
+  @Post('logout')
+  async logout(@Req() req: RequestWithMember) {
+    if (req.token) await this.revocation.revoke(req.token.raw, req.token.exp)
+    return raw(null, '退出成功')
+  }
 
   /** 读取当前会员资料 */
   @Get('profile')

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { fetchProfile } from '@/api/member'
+import { fetchProfile, logoutRemote } from '@/api/member'
 import type { MemberProfile } from '@/api/memberAuth'
 import { MEMBER_TOKEN_KEY, API_SUCCESS_CODE } from '@/config'
 
@@ -36,8 +36,15 @@ export const useMemberStore = defineStore('member', () => {
     profile.value = next
   }
 
-  /** 清空登录态并清除本地令牌 */
-  function logout(): void {
+  /**
+   * 清空登录态并清除本地令牌
+   * @param revoke 是否通知服务端吊销当前令牌。会员主动退出时为真；
+   *   令牌已失效（401）或改密后（服务端已令其失效）时传 false，免得多发一次注定失败的请求
+   */
+  function logout(revoke = true): void {
+    // 先发请求再清令牌：请求头在发起时同步取令牌，清在前就带不上了。
+    // 不等结果：退出不能因网络问题卡住，吊销失败最坏是令牌按原有效期自然过期
+    if (revoke && token.value) void logoutRemote().catch(() => {})
     token.value = ''
     profile.value = null
     restored.value = true
@@ -64,7 +71,7 @@ export const useMemberStore = defineStore('member', () => {
           profile.value = res.data
         } else {
           // 令牌已失效（过期或会员被禁用），清空登录态
-          logout()
+          logout(false)
         }
       } catch {
         // 网络层失败不动令牌，下次进入再试

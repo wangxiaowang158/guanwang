@@ -40,6 +40,14 @@ COPY --from=build-admin /app/dist /usr/share/nginx/html/admin
 COPY --from=build-web   /app/dist /usr/share/nginx/html/web
 COPY docker/nginx/gateway.conf /etc/nginx/conf.d/gateway.conf
 
+# 安全响应头片段落在 snippets/ 而非 conf.d/：
+# nginx.conf 用 include conf.d/*.conf 自动载入该目录，片段若放那里会在 http 级
+# 也生效一遍，且 security-headers.conf 引用的 $hsts_value（map 定义在 gateway.conf）
+# 是否已定义要靠文件名字母序碰巧保证——顺序不对直接启动失败。
+# 放 snippets/ 则只由 gateway.conf 显式 include，时序确定
+COPY docker/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY docker/nginx/hide-upstream-security-headers.conf /etc/nginx/snippets/hide-upstream-security-headers.conf
+
 EXPOSE 8080 8081
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \

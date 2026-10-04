@@ -6,19 +6,25 @@
 //    之前设置好，AppModule 只能用动态 import 引入，否则改的是「已经读完的值」，不生效。
 // 2. 登录接口限流写在 @Throttle 装饰器上（10 次/60 秒），无法从配置放宽。ThrottlerGuard
 //    以 req.ip 计数，故此处开启 trust proxy 并为每个请求分配独立 X-Forwarded-For，
-//    使每次请求落到不同计数桶。仅测试实例如此，不改动业务代码。
+//    使每次请求落到不同计数桶。此处用 true（信任整条 XFF 链）以便自造地址；
+//    生产入口 main.ts 用 1（只信任网关那一跳），两者档位不同，互不影响。
 import 'reflect-metadata'
 import { config } from 'dotenv'
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { DataSource } from 'typeorm'
 import type { NestExpressApplication } from '@nestjs/platform-express'
+import type { KvStore } from '../modules/kv/kv-store.interface'
+import type { SmsPurpose } from '../modules/member/sms-code.service'
 
 config()
 // 强制使用独立数据文件与 sqlite，避免污染开发库
 process.env.DB_TYPE = 'sqlite'
 process.env.DB_SQLITE_PATH = 'data/smoke-lockout.sqlite'
 process.env.DB_SYNCHRONIZE = 'true'
+// 钉死种子超管口令：未配置时 app.config 会每次启动随机生成一个，
+// 而 sqlite 文件跨次运行留存——上一轮入库的口令与本轮生成的对不上，登录直接失败
+process.env.ADMIN_SEED_PASSWORD = 'smoke-test-admin-pwd'
 
 const PORT = 3998
 const BASE = `http://127.0.0.1:${PORT}/api`
@@ -65,15 +71,16 @@ async function main(): Promise<void> {
   const { TransformInterceptor } = await import('../common/interceptors/transform.interceptor')
   const { AllExceptionFilter } = await import('../common/filters/all-exception.filter')
   const { ADMIN_SEED } = await import('../config/app.config')
-  const { SmsCodeService } = await import('../modules/member/sms-code.service')
-  const { CaptchaService } = await import('../modules/member/captcha.service')
+  const { SmsCodeService, smsCodeKey } = await import('../modules/member/sms-code.service')
+  const { CAPTCHA_KEY_PREFIX } = await import('../modules/member/captcha.service')
+  const { KV_STORE } = await import('../modules/kv/kv-store.interface')
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false })
   app.setGlobalPrefix('api')
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
   app.useGlobalInterceptors(new TransformInterceptor())
   app.useGlobalFilters(new AllExceptionFilter())
-  // 仅测试实例：使 req.ip 采信 X-Forwarded-For，从而让限流按请求分桶
+  // 测试实例信任整条 XFF 链，使自造的 X-Forwarded-For 生效、限流按请求分桶
   app.set('trust proxy', true)
   await app.listen(PORT)
 
@@ -96,22 +103,33 @@ async function main(): Promise<void> {
   await ds.query('DELETE FROM auth_config')
 
   const sms = app.get(SmsCodeService)
-  const captcha = app.get(CaptchaService)
-  const smsStore = (sms as any).store as Map<string, { code: string }>
-  const captchaStore = (captcha as any).store as Map<string, { answer: string }>
+  const kv = app.get<KvStore>(KV_STORE)
 
-  /** 直接取用服务内验证码，绕过短信通道 */
-  function issueSmsCode(phone: string, purpose: 'register' | 'login' | 'reset'): string {
-    smsStore.delete(`${purpose}:${phone}`)
-    const err = sms.send(phone, purpose)
+  /**
+   * 直接取用验证码，绕过短信通道
+   * 先清键再发码：否则一分钟内第二次发码会被频次限制挡下
+   * @param phone 手机号
+   * @param purpose 验证码用途
+   */
+  async function issueSmsCode(phone: string, purpose: SmsPurpose): Promise<string> {
+    const key = smsCodeKey(phone, purpose)
+    await kv.del(key)
+    const err = await sms.send(phone, purpose)
     if (err) throw new Error(`发码失败：${err}`)
-    return smsStore.get(`${purpose}:${phone}`)!.code
+    const raw = await kv.get(key)
+    if (!raw) throw new Error('发码后未能从存储读回验证码')
+    return (JSON.parse(raw) as { code: string }).code
   }
 
-  /** 取一组可通过校验的图形验证码，模拟用户正确识图 */
+  /**
+   * 取一组可通过校验的图形验证码，模拟用户正确识图
+   * 用 get 而非 getAndDel：答案随后要交给登录接口去校验，此处不能消费掉
+   */
   async function issueCaptcha(): Promise<{ captchaId: string; captcha: string }> {
     const res = await call('GET', '/portal/auth/captcha')
-    return { captchaId: res.data.captchaId, captcha: captchaStore.get(res.data.captchaId)!.answer }
+    const answer = await kv.get(`${CAPTCHA_KEY_PREFIX}${res.data.captchaId as string}`)
+    if (!answer) throw new Error('下发验证码后未能从存储读回答案')
+    return { captchaId: res.data.captchaId, captcha: answer }
   }
 
   /** 设定阈值并断言写入成功，避免测试静默依赖旧配置 */
@@ -130,7 +148,7 @@ async function main(): Promise<void> {
   await setThresholds(2, 20)
 
   const reg = await call('POST', '/portal/auth/register', {
-    phone, nickname: '锁定测试', password: 'Passw0rd123', smsCode: issueSmsCode(phone, 'register'),
+    phone, nickname: '锁定测试', password: 'Passw0rd123', smsCode: await issueSmsCode(phone, 'register'),
   })
   check('前置：注册成功', reg.code === 200, reg)
 
@@ -200,7 +218,7 @@ async function main(): Promise<void> {
 
   console.info('\n【重置密码】')
   const reset = await call('POST', '/portal/auth/reset-password', {
-    phone, smsCode: issueSmsCode(phone, 'reset'), newPassword: 'NewPass456',
+    phone, smsCode: await issueSmsCode(phone, 'reset'), newPassword: 'NewPass456',
   })
   check('重置密码成功', reset.code === 200, reset)
 
@@ -212,7 +230,7 @@ async function main(): Promise<void> {
 
   const ghostPhone = '13500135000'
   const ghost = await call('POST', '/portal/auth/reset-password', {
-    phone: ghostPhone, smsCode: issueSmsCode(ghostPhone, 'reset'), newPassword: 'NewPass456',
+    phone: ghostPhone, smsCode: await issueSmsCode(ghostPhone, 'reset'), newPassword: 'NewPass456',
   })
   check('未注册号码重置返回成功（防账号枚举）', ghost.code === 200, ghost)
 

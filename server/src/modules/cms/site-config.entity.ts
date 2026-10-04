@@ -96,6 +96,18 @@ export class SiteConfig {
   @Column({ type: 'text', nullable: true })
   heroVideo!: string | null
 
+  /** 首屏主按钮文字（滚动至业务板块）；为空时前台用内置文案 */
+  @Column({ type: 'varchar', length: 20, default: '' })
+  heroPrimaryText!: string
+
+  /** 首屏次按钮文字（滚动至联系板块）；为空时前台用内置文案 */
+  @Column({ type: 'varchar', length: 20, default: '' })
+  heroSecondaryText!: string
+
+  /** 首页联系板块主标题；为空时前台用内置文案 */
+  @Column({ type: 'varchar', length: 100, default: '' })
+  contactHeading!: string
+
   /** 更新时间 */
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt!: Date

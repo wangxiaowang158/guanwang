@@ -35,7 +35,7 @@ export class PortalAuthController {
   /** 获取图形验证码 */
   @Get('captcha')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  captchaChallenge() {
+  async captchaChallenge() {
     return this.captcha.issue()
   }
 

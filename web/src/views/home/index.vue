@@ -4,10 +4,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+// 两套首页按需异步加载：访客只会用到其中一套，合计近千行不必都进首屏包
+import { computed, defineAsyncComponent } from 'vue'
 import { useThemeStore } from '@/stores/theme'
-import Style1Home from './Style1Home.vue'
-import Style2Home from './Style2Home.vue'
+
+const Style1Home = defineAsyncComponent(() => import('./Style1Home.vue'))
+const Style2Home = defineAsyncComponent(() => import('./Style2Home.vue'))
 
 const theme = useThemeStore()
 const homeComp = computed(() => (theme.isStyle2 ? Style2Home : Style1Home))

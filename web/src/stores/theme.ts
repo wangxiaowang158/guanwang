@@ -5,6 +5,9 @@ import { useSiteStore } from './site'
 /** 网站模板取值 */
 export type TemplateKey = '1' | '2'
 
+/** 等待站点配置确定模板的上限，超时按样式一先渲染 */
+const THEME_WAIT_MS = 3000
+
 /**
  * 主题 store —— 决定前台启用哪套模板
  * 数据源：站点配置 /api/site/detail 的 template 字段
@@ -40,9 +43,19 @@ export const useThemeStore = defineStore('theme', () => {
       return
     }
     const siteStore = useSiteStore()
-    await siteStore.fetchSite()
+    // 根组件在模板确定前不渲染页面，站点接口挂起（弱网/代理卡死）不能让整站白屏：
+    // 超时后按样式一放行，站点配置晚到时再切过去
+    let timer: ReturnType<typeof setTimeout> | undefined
+    await Promise.race([
+      siteStore.fetchSite(),
+      new Promise<void>((resolve) => { timer = setTimeout(resolve, THEME_WAIT_MS) }),
+    ])
+    if (timer) clearTimeout(timer)
     template.value = normalize(siteStore.site.template)
     loaded.value = true
+    if (!siteStore.siteLoaded) {
+      void siteStore.fetchSite().then(() => { template.value = normalize(siteStore.site.template) })
+    }
   }
 
   return { template, loaded, isStyle2, loadTheme }

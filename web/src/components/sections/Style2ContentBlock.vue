@@ -1,34 +1,43 @@
 <template>
   <!-- 样式二内容块：按 layout 渲染 cards/list/tags/steps/rich，集团红风格；onDark 用于背景图板块 -->
   <section :id="block.anchor" class="scroll-mt-20" :class="{ 'rs-block--ondark': onDark }">
-    <p class="rs-block-eyebrow">{{ block.heading }}</p>
-    <h2 v-if="block.subheading" class="rs-block-sub">{{ block.subheading }}</h2>
+    <!-- 区块名是这一段的标题，读屏与大纲都靠 h2；副标题是说明文字 -->
+    <h2 class="rs-block-eyebrow">{{ block.heading }}</h2>
+    <p v-if="block.subheading" class="rs-block-sub">{{ block.subheading }}</p>
     <div class="rs-block-bar"></div>
 
-    <EmptyState v-if="!sorted.length" />
+    <slot name="filter" />
+    <slot v-if="!sorted.length" name="empty"><EmptyState :on-dark="onDark" /></slot>
 
-    <!-- cards：编号卡片网格 -->
+    <!-- 图文条目：有图显示配图，无图显示编号；可点击时整卡为入口 -->
     <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px" style="background: var(--rs-border)">
-      <article v-for="(item, i) in sorted" :key="item.id" class="rs-card">
-        <span class="rs-card-index">{{ String(i + 1).padStart(2, '0') }}</span>
+      <ItemLink v-for="item in sorted" :key="item.id" :item="item" link-class="rs-card--link" class="rs-card block">
+        <div v-if="item.image" class="rs-card-media">
+          <SafeImage :src="item.image" :alt="item.title" :width="480" :height="300" />
+        </div>
+        <span v-else class="rs-card-index">{{ String(item.sort).padStart(2, '0') }}</span>
+        <div v-if="item.tag || item.date" class="flex items-center gap-3 mb-3 text-xs">
+          <span v-if="item.tag" class="px-2.5 py-0.5 font-medium text-white" style="background: var(--rs-primary)">{{ item.tag }}</span>
+          <time v-if="item.date" :datetime="item.date" class="tabular-nums" style="color: var(--rs-text-muted)">{{ item.date }}</time>
+        </div>
         <h3 class="rs-card-title">{{ item.title }}</h3>
         <p v-if="item.desc" class="rs-card-desc">{{ item.desc }}</p>
-      </article>
+      </ItemLink>
     </div>
 
-    <!-- list：左红条横向列表 -->
+    <!-- 条目列表：左红条 + 标题摘要 + 日期；可点击时整行为入口 -->
     <div v-else-if="block.layout === 'list'" class="divide-y" style="border-color: var(--rs-border)">
-      <article v-for="item in sorted" :key="item.id" class="flex items-start gap-5 py-6 first:pt-0">
+      <ItemLink v-for="item in sorted" :key="item.id" :item="item" link-class="rs-row--link" class="rs-row flex items-start gap-5 py-6 first:pt-0">
         <div class="w-1 self-stretch shrink-0" style="background: var(--rs-primary)"></div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-3 flex-wrap mb-1.5">
             <span v-if="item.tag" class="px-2.5 py-0.5 text-xs font-medium text-white" style="background: var(--rs-primary)">{{ item.tag }}</span>
-            <h3 class="text-base font-bold" style="color: var(--rs-text-dark)">{{ item.title }}</h3>
+            <h3 class="rs-row-title text-base font-bold">{{ item.title }}</h3>
           </div>
-          <p v-if="item.desc" class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ item.desc }}</p>
+          <p v-if="item.desc" class="text-sm leading-relaxed" style="color: var(--rs-text-body)">{{ item.desc }}</p>
         </div>
-        <span v-if="item.date" class="text-xs shrink-0 whitespace-nowrap" style="color: var(--rs-text-muted)">{{ item.date }}</span>
-      </article>
+        <time v-if="item.date" :datetime="item.date" class="text-xs shrink-0 whitespace-nowrap tabular-nums" style="color: var(--rs-text-muted)">{{ item.date }}</time>
+      </ItemLink>
     </div>
     <!-- tags：标签云 -->
     <div v-else-if="block.layout === 'tags'" class="flex flex-wrap gap-3">
@@ -87,13 +96,15 @@
 import { computed } from 'vue'
 import type { PageBlock } from '@/api/page'
 import { sanitizeRichText } from '@/utils/sanitize'
+import SafeImage from '@/components/common/SafeImage.vue'
 import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
+import ItemLink from './ItemLink.vue'
 
 const props = defineProps<{ block: PageBlock; onDark?: boolean }>()
 
-// 按 sort 升序展示（与后台排序语义一致）
-const sorted = computed(() => [...props.block.items].sort((a, b) => a.sort - b.sort))
+// 顺序以后端下发为准（置顶优先、再按后台排序），前端不再二次排序：分页后会在单页内打乱
+const sorted = computed(() => props.block.items)
 
 // 视频板块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
 const playable = computed(() => sorted.value.filter(item => item.video))
@@ -104,18 +115,21 @@ const richHtml = (html: string) => sanitizeRichText(html)
 
 <style scoped>
 .rs-block-eyebrow {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--rs-primary);
-  margin-bottom: 10px;
-}
-.rs-block-sub {
   font-size: var(--rs-text-h2);
   font-weight: 700;
   color: var(--rs-text-dark);
   line-height: 1.3;
+  margin: 0;
+}
+.rs-block-sub {
+  margin: 12px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--rs-text-body);
+  max-width: 48rem;
+}
+.rs-block--ondark .rs-block-eyebrow {
+  color: #fff;
 }
 .rs-block-bar {
   width: 48px;
@@ -129,8 +143,29 @@ const richHtml = (html: string) => sanitizeRichText(html)
   padding: 32px 28px;
   transition: background 0.25s ease;
 }
-.rs-card:hover {
+/* 只有可点击的条目给悬停反馈，不可点击的条目悬停变色会让人以为能点 */
+.rs-card--link:hover {
   background: var(--rs-bg-cream);
+}
+.rs-card--link:hover .rs-card-title,
+.rs-row--link:hover .rs-row-title {
+  color: var(--rs-primary);
+}
+.rs-card-media {
+  margin: -32px -28px 24px;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--rs-bg-cream);
+}
+.rs-row-title {
+  color: var(--rs-text-dark);
+  transition: color 0.2s ease;
+}
+/* 背景图区块上的列表：行底加白，避免深色文字压在图片上看不清 */
+.rs-block--ondark .rs-row {
+  background: #fff;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 .rs-card-index {
   font-size: 24px;
@@ -146,8 +181,8 @@ const richHtml = (html: string) => sanitizeRichText(html)
 }
 .rs-card-desc {
   font-size: 14px;
-  line-height: 1.6;
-  color: var(--rs-text-muted);
+  line-height: 1.7;
+  color: var(--rs-text-body);
 }
 .rs-tag {
   padding: 10px 22px;
@@ -242,7 +277,7 @@ const richHtml = (html: string) => sanitizeRichText(html)
 
 /* 背景图板块：标题与富文本切换浅色，卡片/列表保持白底悬浮于图上 */
 .rs-block--ondark .rs-block-sub {
-  color: #fff;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* 深色板块上富文本内的标题同样要提亮 */

@@ -31,6 +31,9 @@ export const API_BASE_URL = trimTrailingSlash((import.meta.env.VITE_API_BASE_URL
  */
 export const LOGIN_SUBPATH = '/mgmt/auth/login'
 
+/** 退出接口子路径：其 401 同样不触发「登录已过期」处理，见 utils/request.ts */
+export const LOGOUT_SUBPATH = '/mgmt/auth/logout'
+
 /** 解析正数型环境变量，非法值回退默认 */
 function toPositiveNumber(value: string | undefined, fallback: number): number {
   const num = Number(value)

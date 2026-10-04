@@ -11,6 +11,7 @@ import { CaptchaService } from './captcha.service'
 import { AuthConfigService } from '../auth-config/auth-config.service'
 import { LoginLogService } from '../login-log/login-log.service'
 import { JWT_MEMBER, SCOPE_MEMBER } from '../../config/app.config'
+import { passwordFingerprint } from '../../common/utils/password-fingerprint'
 import { LOGIN_FAIL_REASON, LOGIN_METHOD, LOGIN_RESULT, MEMBER_STATUS } from '../../common/enums'
 import type { LoginFailReason } from '../../common/enums'
 import { toMemberProfileVo, type MemberProfileVo } from './vo/member.vo'
@@ -66,7 +67,7 @@ export class MemberAuthService {
     const cfg = await this.authConfig.get()
     if (!cfg.registerOpen) return { ok: false, message: '当前未开放注册' }
 
-    const codeError = this.smsCode.verify(dto.phone, 'register', dto.smsCode)
+    const codeError = await this.smsCode.verify(dto.phone, 'register', dto.smsCode)
     if (codeError) return { ok: false, message: codeError }
 
     const pwdError = await this.authConfig.validatePassword(dto.password)
@@ -79,7 +80,8 @@ export class MemberAuthService {
     const member = this.repo.create({
       phone: dto.phone,
       nickname: dto.nickname,
-      email: dto.email ?? null,
+      // 空串与未填同义，落库为 null，与账号设置的清空口径一致
+      email: dto.email || null,
       passwordHash: await hash(dto.password, BCRYPT_ROUNDS),
       status: MEMBER_STATUS.NORMAL,
       registerIp: ctx.ip,
@@ -131,7 +133,7 @@ export class MemberAuthService {
     // 失败次数达阈值后强制图形验证码，且必须校验答案正确性
     const captchaRequired = member.failedAttempts >= cfg.captchaThreshold
     if (captchaRequired) {
-      const captchaError = this.captcha.verify(dto.captchaId, dto.captcha)
+      const captchaError = await this.captcha.verify(dto.captchaId, dto.captcha)
       if (captchaError) {
         await this.logFailure(member.id, dto.phone, dto, ctx, LOGIN_FAIL_REASON.WRONG_CAPTCHA)
         return { ok: false, message: captchaError }
@@ -168,7 +170,8 @@ export class MemberAuthService {
   /** 校验登录凭证，返回失败原因或 null */
   private async verifyCredential(member: Member, dto: LoginDto): Promise<LoginFailReason | null> {
     if (dto.method === LOGIN_METHOD.SMS_CODE) {
-      return this.smsCode.verify(dto.phone, 'login', dto.smsCode) ? LOGIN_FAIL_REASON.WRONG_CAPTCHA : null
+      const smsError = await this.smsCode.verify(dto.phone, 'login', dto.smsCode)
+      return smsError ? LOGIN_FAIL_REASON.WRONG_CAPTCHA : null
     }
     if (!dto.password) return LOGIN_FAIL_REASON.WRONG_PASSWORD
     const matched = await compare(dto.password, member.passwordHash)
@@ -204,10 +207,15 @@ export class MemberAuthService {
     })
   }
 
-  /** 签发会员令牌，scope 固定为 member */
+  /** 签发会员令牌，scope 固定为 member；pwd 为密码指纹，改密后旧令牌由 MemberGuard 拒绝 */
   private sign(member: Member): Promise<string> {
     return this.jwtService.signAsync(
-      { sub: member.id, phone: member.phone, scope: SCOPE_MEMBER },
+      {
+        sub: member.id,
+        phone: member.phone,
+        scope: SCOPE_MEMBER,
+        pwd: passwordFingerprint(member.passwordHash, JWT_MEMBER.secret),
+      },
       {
         secret: JWT_MEMBER.secret,
         // 配置读出为宽泛 string，jsonwebtoken 要求时长字面量类型，此处按其签名收窄
@@ -223,14 +231,14 @@ export class MemberAuthService {
       const existing = await this.findByPhone(phone)
       if (existing) return { ok: false, message: '该手机号已注册' }
     }
-    const error = this.smsCode.send(phone, purpose)
+    const error = await this.smsCode.send(phone, purpose)
     if (error) return { ok: false, message: error }
     return { ok: true, data: null }
   }
 
   /** 重置密码 */
   async resetPassword(dto: ResetPasswordDto): Promise<Result<null>> {
-    const codeError = this.smsCode.verify(dto.phone, 'reset', dto.smsCode)
+    const codeError = await this.smsCode.verify(dto.phone, 'reset', dto.smsCode)
     if (codeError) return { ok: false, message: codeError }
 
     const pwdError = await this.authConfig.validatePassword(dto.newPassword)

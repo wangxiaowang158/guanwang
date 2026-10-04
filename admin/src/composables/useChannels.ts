@@ -15,7 +15,8 @@ const loaded = ref(false)
  * siteconfig 后端仅要求登录，admins 后端要求超管，前端按同一口径放行
  */
 const LOGIN_ONLY_TYPES: readonly string[] = ['siteconfig']
-const SUPER_ONLY_TYPES: readonly string[] = ['admins']
+// oplog 含全部管理员的操作行踪，后端同样要求超管
+const SUPER_ONLY_TYPES: readonly string[] = ['admins', 'oplog']
 
 /** 渲染图标：按名称从 antd icons 取，取不到用默认 */
 function renderIcon(name?: string) {

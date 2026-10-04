@@ -4,12 +4,50 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 移动端浏览器地址栏配色，取品牌主色 -->
+    <meta name="theme-color" content="#0b57d0" />
+    <meta property="og:site_name" content="中瑞恒" />
+    <meta property="og:locale" content="zh_CN" />
+    <!-- 页面级 TDK：由网关 SSI 按当前路径向后端取（见 docker/nginx/gateway.conf 的 /__prerender_head），
+         不执行 JS 的抓取方拿到的就是该页自己的标题与描述，而不是全站同一套。
+         取数失败（后端异常）或无网关（本地 npm run dev）时，用下面 block 里的站点默认值兜底 -->
+    <!--# block name="default_head" -->
     <title>中瑞恒——让建筑更节能 让环境更舒适</title>
     <meta name="keywords" content="暖通空调系统集成,EMC合同能源管理,综合能源节能服务,能源托管运营,智慧能源管理" />
     <meta name="description" content="国家高新技术企业、国家专精特新小巨人企业，立足智慧能源领域，以数字化方式重构能源系统。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="中瑞恒——让建筑更节能 让环境更舒适" />
+    <meta property="og:description" content="国家高新技术企业、国家专精特新小巨人企业，立足智慧能源领域，以数字化方式重构能源系统。" />
+    <!--# endblock -->
+    <!--# include virtual="/__prerender_head?path=$request_uri" stub="default_head" -->
+    <!-- 预渲染片段在 JS 接管前会真实显示一瞬，给最基本的排版，
+         否则是一片贴边裸文本。Vue mount() 会清空 #app，故这些样式只在那一瞬生效 -->
+    <style>
+      .prerender-shell {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 1.5rem;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        line-height: 1.7;
+        color: #1f2937;
+      }
+      .prerender-shell ul {
+        list-style: none;
+        padding: 0;
+      }
+      .prerender-shell img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <!-- 首屏预渲染片段由网关的 SSI 在此处展开（见 docker/nginx/gateway.conf）。
+         web 是纯客户端渲染，#app 原本是空的——不执行 JS 的抓取方（百度、社交卡片、
+         各类无头爬虫）看到的就是一个空壳。片段由后端按当前路径生成语义 HTML，
+         Vue mount() 时会把它清掉，对真实用户只是极短一瞬的纯文本。
+         网关不在时（本地 npm run dev）此注释只是普通注释，不影响任何行为 -->
+    <div id="app"><!--# include virtual="/__prerender?path=$request_uri" --></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

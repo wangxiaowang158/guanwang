@@ -21,6 +21,7 @@ import MemberList from './MemberList.vue'
 import FeedbackList from './FeedbackList.vue'
 import AuthConfig from './AuthConfig.vue'
 import LoginLogList from './LoginLogList.vue'
+import OpLogList from './OpLogList.vue'
 
 const route = useRoute()
 const { load, loaded, findByKey } = useChannels()
@@ -37,7 +38,8 @@ const COMP_MAP = {
   members: MemberList,
   feedback: FeedbackList,
   authconfig: AuthConfig,
-  loginlog: LoginLogList
+  loginlog: LoginLogList,
+  oplog: OpLogList
 } as const
 
 const currentComp = computed(() => {

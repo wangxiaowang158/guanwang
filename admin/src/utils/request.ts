@@ -2,7 +2,7 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 import router from '@/router'
-import { API_BASE_URL, API_PREFIX, DECLARED_API_PREFIX, LOGIN_SUBPATH } from '@/config'
+import { API_BASE_URL, API_PREFIX, DECLARED_API_PREFIX, LOGIN_SUBPATH, LOGOUT_SUBPATH } from '@/config'
 import { useUserStore } from '@/store'
 
 let redirecting = false
@@ -26,7 +26,9 @@ function isLoginPath(url: string | undefined): boolean {
   if (!url) return false
   // 去掉查询串再比对，避免带参调用漏判
   const path = url.split('?')[0]
-  return path === `${API_PREFIX}${LOGIN_SUBPATH}`
+  // 退出接口同理：令牌已失效时它会回 401，而退出流程自己会清凭证并跳登录，
+  // 再走一遍过期处理会同时弹出「登录已过期」与「退出成功」两条提示
+  return path === `${API_PREFIX}${LOGIN_SUBPATH}` || path === `${API_PREFIX}${LOGOUT_SUBPATH}`
 }
 
 /** 安装 axios 基础地址与拦截器（在应用启动时调用一次） */

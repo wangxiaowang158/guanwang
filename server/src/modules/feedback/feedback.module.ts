@@ -6,6 +6,7 @@ import { FeedbackReply } from './feedback-reply.entity'
 import { Member } from '../member/member.entity'
 import { FeedbackService } from './feedback.service'
 import { FeedbackExportService } from './feedback-export.service'
+import { FeedbackNotifyService } from './feedback-notify.service'
 import { PortalFeedbackController } from './portal-feedback.controller'
 import { MgmtFeedbackController } from './mgmt-feedback.controller'
 import { MemberModule } from '../member/member.module'
@@ -20,7 +21,7 @@ import { AdminModule } from '../admin/admin.module'
     AdminModule,
   ],
   controllers: [PortalFeedbackController, MgmtFeedbackController],
-  providers: [FeedbackService, FeedbackExportService],
+  providers: [FeedbackService, FeedbackExportService, FeedbackNotifyService],
   exports: [FeedbackService],
 })
 export class FeedbackModule {}

@@ -1,7 +1,7 @@
 // 访问采集与汇总服务 —— 前台埋点落库 + 按日期范围聚合供后台查阅
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { IsNull, Repository } from 'typeorm'
+import { IsNull, LessThan, Repository } from 'typeorm'
 import { Channel } from '../cms/channel.entity'
 import { VisitLog } from './visit-log.entity'
 
@@ -28,6 +28,9 @@ export interface VisitSummary {
 
 /** 统计范围上限：避免自定义日期跨度过大拖慢查询与图表渲染 */
 const MAX_RANGE_DAYS = 90
+
+/** 纯日期格式，清理操作的入参兜底校验用 */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 @Injectable()
 export class VisitService {
@@ -84,6 +87,39 @@ export class VisitService {
   /** 累计访问量（不限日期） */
   async countAll(): Promise<number> {
     return this.repo.count()
+  }
+
+  /**
+   * 清理指定日期之前的访问日志（不含该日）
+   * 访问日志只增不减会拖慢仪表盘与统计聚合，故提供按日期清理。
+   * 比 visitedDate 字符串而非 visitedAt 时间戳：该列是 YYYY-MM-DD 定长字符串，
+   * 字典序即时间序，且与联合索引的首列一致，不必对时间戳做函数运算。
+   * @param beforeDate 分界日期 YYYY-MM-DD，早于该日的记录被删除
+   * @returns 实际删除条数
+   */
+  async clearBefore(beforeDate: string): Promise<number> {
+    // 不可逆的批量删除，不把安全性全押在 DTO 上：
+    // 本方法也被定时任务路径调用（不过 DTO 校验），格式不合即拒绝执行。
+    // 空串在字典序比较下小于任何日期，若放过则 LessThan('') 匹配不到行还算幸运，
+    // 但格式错误的值（如 '2026-9-1'）会因字典序错位删掉不该删的区间
+    if (!DATE_ONLY_PATTERN.test(beforeDate)) {
+      throw new BadRequestException('清理分界日期格式应为 YYYY-MM-DD')
+    }
+    const result = await this.repo.delete({ visitedDate: LessThan(beforeDate) })
+    return result.affected ?? 0
+  }
+
+  /**
+   * 按保留天数清理访问日志
+   * 供定时任务调用：只保留最近 days 天（含今日），更早的删除
+   * @param days 保留天数，须为正整数
+   * @returns 实际删除条数
+   */
+  async clearOlderThanDays(days: number): Promise<number> {
+    // 保留窗口的起始日即分界日：早于它的删除，它自身及之后保留。
+    // 复用 rangeOfLastDays 而非另算一遍，保证「最近 N 天」的口径与统计查询完全一致
+    const { startDate } = rangeOfLastDays(days)
+    return this.clearBefore(startDate)
   }
 
   /** 指定日期的访问量 */

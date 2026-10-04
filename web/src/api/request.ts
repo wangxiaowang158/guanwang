@@ -66,11 +66,13 @@ function authHeaders(withBody: boolean): Record<string, string> {
  * @param method HTTP 方法
  * @param url 接口层声明的相对路径
  * @param body 请求体，GET 与 DELETE 不传
+ * @param options.skipAuthExpired 为真时 401 不触发全局「登录失效」处理（退出接口用）
  */
 export async function authRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   url: string,
   body?: unknown,
+  options: { skipAuthExpired?: boolean } = {},
 ): Promise<ApiResult<T>> {
   const hasBody = body !== undefined
   const res = await fetch(resolveUrl(url), {
@@ -79,5 +81,25 @@ export async function authRequest<T>(
     body: hasBody ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) throw new Error(`请求失败：${res.status}`)
-  return res.json() as Promise<ApiResult<T>>
+  const result = (await res.json()) as ApiResult<T>
+  // 走到 authRequest 的都是需登录的会员接口，401 只可能是凭证失效（登录接口走的是 post）。
+  // 在此统一通知，而不是让每个页面各自判断：否则页头一直显示已登录、操作却全部失败
+  if (result.code === AUTH_EXPIRED_CODE && !options.skipAuthExpired) authExpiredHandler?.()
+  return result
+}
+
+/** 会员凭证失效的业务码，后端以 HTTP 200 + code 401 返回 */
+export const AUTH_EXPIRED_CODE = 401
+
+/** 凭证失效时的回调，由应用入口注册 */
+let authExpiredHandler: (() => void) | null = null
+
+/**
+ * 注册会员凭证失效的处理（清登录态并跳登录页）
+ * 用注册而非直接 import store/router：request 是最底层模块，
+ * 反向依赖它们会形成 store → api → request → store 的循环引用
+ * @param handler 失效时执行的回调
+ */
+export function onAuthExpired(handler: () => void): void {
+  authExpiredHandler = handler
 }

@@ -36,7 +36,7 @@
                   <span class="node-ops">
                     <PlusOutlined title="新增子栏目" @click.stop="openAdd(node.id)" />
                     <EditOutlined title="编辑" @click.stop="openEdit(node)" />
-                    <DeleteOutlined title="删除" @click.stop="onDelete(node)" />
+                    <DeleteOutlined v-if="canDelete(node)" title="删除" @click.stop="onDelete(node)" />
                   </span>
                 </span>
               </template>
@@ -52,14 +52,23 @@
               <a-input v-model:value="form.name" placeholder="请输入栏目名称" />
             </a-form-item>
             <a-form-item label="栏目标识">
-              <a-input v-model:value="form.key" placeholder="路由标识，留空自动生成" :disabled="!!form.id" />
+              <a-input
+                v-model:value="form.key"
+                placeholder="小写字母开头，只含小写字母、数字与连字符，如 news-list"
+                :disabled="!!form.id"
+              />
             </a-form-item>
-            <a-form-item label="栏目类型">
-              <a-select v-model:value="form.type" :options="typeOptions" />
+            <!-- 类型与上级栏目创建后不可改：后端不接收这两项，改了内容会与栏目失联 -->
+            <a-form-item label="栏目类型" :extra="form.id ? '创建后不可修改' : undefined">
+              <a-select v-model:value="form.type" :options="typeOptions" :disabled="!!form.id" />
             </a-form-item>
-            <a-form-item label="上级栏目">
+            <a-form-item
+              label="上级栏目"
+              :extra="form.id ? '创建后不可修改' : '不选则为后台顶级菜单；官网前台的一级页面固定，不会因此新增'"
+            >
               <a-tree-select
                 v-model:value="form.parentId"
+                :disabled="!!form.id"
                 :tree-data="treeData"
                 :field-names="{ label: 'name', value: 'id', children: 'children' }"
                 placeholder="不选则为顶级"
@@ -76,8 +85,16 @@
             <a-form-item v-if="form.type === 'list'" label="列表列">
               <a-checkbox-group v-model:value="form.listColumns" :options="columnOptions" />
             </a-form-item>
+            <!-- 首页板块：版式固定，不需要锚点与展示形态，只配两行标题 -->
+            <template v-if="isHomeSection">
+              <a-divider style="margin: 4px 0 16px">首页板块标题</a-divider>
+              <div class="field-tip" style="margin: -8px 0 12px">上方「栏目名称」即板块小标题</div>
+              <a-form-item label="板块主标题">
+                <a-input v-model:value="form.subheading" placeholder="选填，留空时前台显示内置文案" :maxlength="100" />
+              </a-form-item>
+            </template>
             <!-- 前台区块配置：子栏目会作为父页面的一个内容区块呈现 -->
-            <template v-if="showBlockConfig">
+            <template v-else-if="showBlockConfig">
               <a-divider style="margin: 4px 0 16px">前台区块</a-divider>
               <a-form-item label="区块锚点">
                 <a-input
@@ -192,6 +209,16 @@ const SEO_EXCLUDE_TYPES = [
   'members', 'feedback', 'authconfig', 'loginlog',
 ]
 const SEO_EXCLUDE_KEYS = ['banner']
+
+/** 后端拒删的系统功能栏目类型，须与 server channel.service.ts remove() 的清单一致 */
+const UNDELETABLE_TYPES = [
+  'siteconfig', 'admins', 'members', 'feedback', 'authconfig', 'loginlog', 'oplog',
+]
+/**
+ * 是否显示删除入口：官网一级页面与系统栏目后端必拒，不给入口免得点了才被告知不行。
+ * 「后代含系统栏目」这类需要查整棵树的情况仍交给后端判断并提示
+ */
+const canDelete = (node: Channel) => !node.portalPath && !UNDELETABLE_TYPES.includes(node.type)
 const showSeo = computed(() =>
   form.parentId === null &&
   !SEO_EXCLUDE_TYPES.includes(form.type) &&
@@ -207,6 +234,12 @@ const HERO_EXCLUDE_KEYS = ['home']
 const showHero = computed(() =>
   !!editingPortalPath.value && !HERO_EXCLUDE_KEYS.includes(form.key)
 )
+
+/** 是否首页板块栏目（父级为 home）：前台由固定版式渲染，只有标题可配 */
+const isHomeSection = computed(() => {
+  const parent = flat.value.find(c => c.id === form.parentId)
+  return parent?.key === 'home'
+})
 
 // 区块配置只对「挂在某个页面下的内容栏目」开放：
 // 顶级栏目本身是页面而非区块，系统类栏目不进前台
@@ -361,8 +394,13 @@ const onSave = async () => {
       delete heroPayload.heroTitle
       delete heroPayload.heroDesc
     }
-    // 顶级栏目本身是页面不是区块，不保存区块字段
-    if (!showBlockConfig.value) {
+    // 首页板块只提交主标题：锚点与展示形态界面上不展示，提交空值会把库里的值清掉
+    if (isHomeSection.value) {
+      const homePayload = payload as Partial<typeof payload>
+      delete homePayload.anchor
+      delete homePayload.layout
+    } else if (!showBlockConfig.value) {
+      // 顶级栏目本身是页面不是区块，不保存区块字段
       const blockPayload = payload as Partial<typeof payload>
       delete blockPayload.anchor
       delete blockPayload.subheading
@@ -395,7 +433,12 @@ const onDelete = (node: Channel) => {
     cancelText: '取消',
     onOk: async () => {
       try {
-        await deleteChannel(node.id)
+        const res = await deleteChannel(node.id)
+        // 后端异常恒回 HTTP 200，须按 code 判断，否则被拒绝删除也会提示成功
+        if (res.data.code !== 200) {
+          message.error(res.data.message || '删除失败')
+          return
+        }
         message.success('删除成功')
         editing.value = false
         await fetchList()

@@ -13,11 +13,13 @@ import { Channel } from '../modules/cms/channel.entity'
 import { Content } from '../modules/cms/content.entity'
 import { SiteConfig } from '../modules/cms/site-config.entity'
 import { VisitLog } from '../modules/visit/visit-log.entity'
+import { AdminOpLog } from '../modules/op-log/op-log.entity'
+import { MIGRATIONS } from '../migrations'
 
 /** 全部实体，集中登记避免 glob 扫描在打包后失效 */
 export const ENTITIES = [
   Member, Feedback, FeedbackReply, MemberLoginLog, AuthConfig,
-  Admin, Channel, Content, SiteConfig, VisitLog,
+  Admin, Channel, Content, SiteConfig, VisitLog, AdminOpLog,
 ]
 
 /** 构建 TypeORM 配置 */
@@ -31,6 +33,7 @@ export function buildDataSourceOptions(): TypeOrmModuleOptions {
       password: MYSQL.password,
       database: MYSQL.database,
       entities: ENTITIES,
+      migrations: MIGRATIONS,
       synchronize: DB_SYNCHRONIZE,
       timezone: 'Z',
     }
@@ -44,6 +47,7 @@ export function buildDataSourceOptions(): TypeOrmModuleOptions {
     type: 'better-sqlite3',
     database: filePath,
     entities: ENTITIES,
+    migrations: MIGRATIONS,
     synchronize: DB_SYNCHRONIZE,
   }
 }

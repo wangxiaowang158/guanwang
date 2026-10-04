@@ -17,6 +17,7 @@ export const TOP_MENUS: readonly FixedMenuMeta[] = [
 
 /** 排在栏目菜单之后的固定项 */
 export const BOTTOM_MENUS: readonly FixedMenuMeta[] = [
+  { path: '/media', name: '素材库' },
   { path: '/channel-manage', name: '栏目管理' }
 ]
 
@@ -25,6 +26,6 @@ export const FIXED_MENU_PATHS: readonly string[] = [...TOP_MENUS, ...BOTTOM_MENU
 
 /**
  * 不参与权限分配的栏目类型：
- * 基本信息与管理员管理属系统级模块，按需求固定排除在授权范围之外
+ * 基本信息、管理员管理、操作日志属系统级模块，按需求固定排除在授权范围之外
  */
-export const NON_GRANTABLE_CHANNEL_TYPES: readonly string[] = ['siteconfig', 'admins']
+export const NON_GRANTABLE_CHANNEL_TYPES: readonly string[] = ['siteconfig', 'admins', 'oplog']

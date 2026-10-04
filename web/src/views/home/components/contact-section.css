@@ -1,0 +1,135 @@
+/* 首页联系我们 —— 由 ContactSection.vue 以 scoped 方式引入；样式二通过 .cs--style2 换品牌红与直角 */
+
+.cs {
+  --cs-accent: var(--color-brand-600);
+  --cs-accent-soft: var(--color-brand-50);
+  --cs-radius: var(--radius-lg);
+  --cs-input-radius: var(--radius-md);
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 40px;
+}
+.cs--style2 {
+  --cs-accent: var(--rs-primary);
+  --cs-accent-soft: rgba(200, 22, 29, 0.06);
+  --cs-radius: 0;
+  --cs-input-radius: 0;
+}
+@media (max-width: 1023px) {
+  .cs { grid-template-columns: 1fr; }
+}
+
+.cs-info {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cs-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: var(--cs-radius);
+}
+.cs-info-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cs-accent);
+  background: var(--cs-accent-soft);
+  border-radius: var(--cs-input-radius);
+}
+.cs-info-label {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--color-ink-500);
+}
+.cs-info-value {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-ink-900);
+  word-break: break-all;
+}
+.cs-info-value--link:hover { color: var(--cs-accent); text-decoration: underline; }
+
+.cs-form-card {
+  padding: 32px;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: var(--cs-radius);
+  box-shadow: var(--shadow-1);
+}
+@media (max-width: 639px) {
+  .cs-form-card { padding: 24px 20px; }
+}
+.cs-form-title {
+  margin: 0 0 24px;
+  font-size: var(--text-fs-h3);
+  font-weight: 700;
+  color: var(--color-ink-900);
+}
+.cs-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink-700);
+}
+.cs-req { color: #dc2626; }
+.cs-input {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 15px;
+  color: var(--color-ink-900);
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--cs-input-radius);
+  outline: none;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.cs-input::placeholder { color: var(--color-ink-400); }
+.cs-input:focus { border-color: var(--cs-accent); box-shadow: 0 0 0 3px var(--cs-accent-soft); }
+.cs-input.is-error { border-color: #dc2626; background: #fef2f2; }
+.cs-input--readonly { color: var(--color-ink-500); background: var(--color-surface); }
+.cs-err {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #dc2626;
+}
+.cs-check {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--cs-accent);
+  cursor: pointer;
+}
+.cs-link { color: var(--cs-accent); }
+.cs-link:hover { text-decoration: underline; }
+.cs-submit {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--cs-accent);
+  border: none;
+  border-radius: var(--cs-input-radius);
+  cursor: pointer;
+  transition: filter var(--dur-fast);
+}
+.cs-submit:hover:not(:disabled) { filter: brightness(1.1); }
+.cs-submit:disabled { opacity: 0.6; cursor: not-allowed; }

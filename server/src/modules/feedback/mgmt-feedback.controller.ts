@@ -6,7 +6,8 @@ import {
 import type { Response } from 'express'
 import { FeedbackService } from './feedback.service'
 import { FeedbackExportService } from './feedback-export.service'
-import { AdminGuard } from '../../common/guards/admin.guard'
+import { AdminGuard, type CurrentAdminInfo } from '../../common/guards/admin.guard'
+import { CurrentAdmin } from '../../common/decorators/current-admin.decorator'
 import { PermGuard } from '../../common/guards/perm.guard'
 import { PERM, RequirePerm } from '../../common/decorators/require-perm.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
@@ -60,8 +61,13 @@ export class MgmtFeedbackController {
 
   /** 回复反馈 */
   @Post('reply/:id')
-  async reply(@Param('id', ParseIntPipe) id: number, @Body() dto: ReplyFeedbackDto) {
-    const result = await this.service.reply(id, dto)
+  async reply(
+    @CurrentAdmin() admin: CurrentAdminInfo,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReplyFeedbackDto,
+  ) {
+    // 回复人以登录身份为准，不采信请求体：前端传什么都能冒名，审计就没有意义
+    const result = await this.service.reply(id, { ...dto, repliedBy: admin.name || admin.account })
     return result.ok ? raw(result.data, '回复成功') : raw(null, result.message, 400)
   }
 

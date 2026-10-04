@@ -1,6 +1,6 @@
 // 访问统计请求 DTO
 import { Type } from 'class-transformer'
-import { IsIn, IsOptional, IsString, Length, Matches } from 'class-validator'
+import { IsIn, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator'
 
 /** 日期格式 YYYY-MM-DD */
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -30,6 +30,20 @@ export class VisitStatsQueryDto {
   @IsOptional()
   @Matches(DATE_PATTERN, { message: '结束日期格式应为 YYYY-MM-DD' })
   endDate?: string
+}
+
+/** 访问日志清理：删除该日期之前的记录，不含该日 */
+export class ClearVisitLogDto {
+  /**
+   * 分界日期，必填；与登录日志清理的参数形状保持一致
+   * 这是不可逆的批量删除，故显式叠加非空与类型校验：
+   * 只靠 @Matches 时，参数缺失虽也会被拒，但失败原因含糊，
+   * 且一旦后续有人误加 @IsOptional 就会变成「不传即删全表」
+   */
+  @IsString({ message: '日期须为字符串' })
+  @IsNotEmpty({ message: '必须指定清理的分界日期' })
+  @Matches(DATE_PATTERN, { message: '日期格式应为 YYYY-MM-DD' })
+  before!: string
 }
 
 /** 仪表盘趋势查询 */

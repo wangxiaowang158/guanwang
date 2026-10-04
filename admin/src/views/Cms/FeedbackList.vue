@@ -39,6 +39,7 @@
           placeholder="姓名 / 单位 / 内容"
           style="width: 220px"
           allow-clear
+          :maxlength="50"
           @search="search"
         />
       </a-space>
@@ -188,11 +189,9 @@ import {
 } from '@/api/feedback'
 import { useRoute } from 'vue-router'
 import { useServerListPage } from '@/composables/useServerListPage'
-import { useUserStore } from '@/store/modules/user'
 import { readBlobError, parseFileName, saveBlob } from '@/utils/download'
 import { DELETE_SUCCESS, DELETE_FAILED, SAVE_SUCCESS, SAVE_FAILED, EXPORT_FAILED } from '@/constants/ui'
 
-const userStore = useUserStore()
 const route = useRoute()
 
 /** 时间展示：空值补占位，避免表格出现空白单元格 */
@@ -366,10 +365,9 @@ const onReply = async () => {
   }
   submitting.value = true
   try {
-    // 回复人取当前登录管理员，供回复记录追溯
+    // 回复人由服务端按登录身份记录，前端不传，免得被改包冒名
     const res = await replyFeedback(current.value.id, {
       content,
-      repliedBy: userStore.state.value.username || undefined,
       visibleToMember: visibleToMember.value,
     })
     if (res.data.code !== 200) {

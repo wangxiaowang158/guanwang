@@ -14,6 +14,8 @@
           value-format="YYYY-MM-DD"
           @change="fetchData"
         />
+        <!-- 清理入口右对齐，与左侧筛选拉开距离 -->
+        <a-button danger class="clear-btn" @click="clearOpen = true">清理历史记录</a-button>
       </div>
 
       <a-spin :spinning="loading">
@@ -48,17 +50,46 @@
         </div>
       </a-spin>
     </div>
+
+    <a-modal
+      v-model:open="clearOpen"
+      title="清理历史访问记录"
+      :confirm-loading="clearing"
+      ok-text="确认清理"
+      :ok-button-props="{ danger: true }"
+      @ok="onClear"
+    >
+      <a-alert
+        type="warning"
+        show-icon
+        message="清理不可撤销"
+        description="将永久删除所选日期之前的全部访问记录，已清理的日期区间不再计入统计。"
+        style="margin-bottom: 16px"
+      />
+      <a-form :label-col="{ style: { width: '110px' } }">
+        <a-form-item label="清理截止日期" required>
+          <a-date-picker
+            v-model:value="clearBefore"
+            value-format="YYYY-MM-DD"
+            placeholder="选择日期"
+            style="width: 100%"
+            :disabled-date="disabledClearDate"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-// 访问统计：按日期范围聚合访问趋势与板块关注度（只读）
+// 访问统计：按日期范围聚合访问趋势与板块关注度，并支持按日期清理历史记录
 import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import dayjs, { type Dayjs } from 'dayjs'
 import PageContainer from '@/components/PageContainer/index.vue'
 import EChart from '@/components/EChart/index.vue'
 import type { EChartsOption } from 'echarts'
-import { getVisitSummary, type VisitSummary, type VisitQuery } from '@/api/visitStats'
+import { getVisitSummary, clearVisitLog, type VisitSummary, type VisitQuery } from '@/api/visitStats'
 import { toAxisDateLabels } from '@/utils/chart'
 import { LIST_LOAD_FAILED } from '@/constants/ui'
 
@@ -66,6 +97,19 @@ const loading = ref(false)
 const range = ref<7 | 30 | 'custom'>(7)
 const customRange = ref<[string, string]>()
 const summary = ref<VisitSummary | null>(null)
+
+// 清理历史记录：弹窗开关、截止日期与提交中状态
+const clearOpen = ref(false)
+const clearBefore = ref<string>()
+const clearing = ref(false)
+
+/**
+ * 禁用今天及以后的日期
+ * 清理语义是「删除该日之前」，选今天就会把今日之前的全部访问记录删光，
+ * 这几乎不会是运营的真实意图，且操作不可逆，故从选择器层面挡掉
+ * @param current 待判定的日期
+ */
+const disabledClearDate = (current: Dayjs) => !!current && current >= dayjs().startOf('day')
 
 const hasData = computed(() => !!summary.value && summary.value.values.length > 0)
 
@@ -132,6 +176,30 @@ const onRangeChange = () => {
   if (range.value !== 'custom') fetchData()
 }
 
+/** 清理历史访问记录：成功后重拉当前范围的统计，图表随之回落 */
+const onClear = async () => {
+  if (!clearBefore.value) {
+    message.warning('请选择清理截止日期')
+    return
+  }
+  clearing.value = true
+  try {
+    const res = await clearVisitLog(clearBefore.value)
+    if (res.data.code !== 200) {
+      message.error(res.data.message || '清理失败，请稍后重试')
+      return
+    }
+    message.success(res.data.message || '清理完成')
+    clearOpen.value = false
+    clearBefore.value = undefined
+    await fetchData()
+  } catch {
+    message.error('清理失败，请稍后重试')
+  } finally {
+    clearing.value = false
+  }
+}
+
 onMounted(fetchData)
 </script>
 
@@ -145,6 +213,11 @@ onMounted(fetchData)
   gap: 16px;
   align-items: center;
   margin-bottom: 16px;
+}
+
+/* 清理按钮推到行尾，与左侧筛选区分主次 */
+.clear-btn {
+  margin-left: auto;
 }
 
 .metric-row {

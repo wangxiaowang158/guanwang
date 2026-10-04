@@ -23,9 +23,11 @@
           placeholder="昵称 / 登录账号 / IP"
           style="width: 220px"
           allow-clear
+          :maxlength="50"
           @search="search"
         />
-        <a-button danger @click="clearOpen = true">清理历史日志</a-button>
+        <!-- 登录日志属审计数据，仅超管可清理（后端同口径拦截） -->
+        <a-button v-if="isSuper" danger @click="clearOpen = true">清理历史日志</a-button>
       </a-space>
     </div>
     <a-table
@@ -61,6 +63,7 @@
       ok-text="确认清理"
       :ok-button-props="{ danger: true }"
       @ok="onClear"
+      @cancel="clearBefore = undefined"
     >
       <a-alert
         type="warning"
@@ -92,6 +95,9 @@ import {
   type LoginFailReason, type LoginLogItem, type LoginMethod, type LoginResult,
 } from '@/api/loginLog'
 import { useServerListPage } from '@/composables/useServerListPage'
+import { useUserStore } from '@/store/modules/user'
+
+const { isSuper } = useUserStore()
 
 /** 时间展示：空值补占位，避免表格出现空白单元格 */
 const formatTime = (value: string | null) =>

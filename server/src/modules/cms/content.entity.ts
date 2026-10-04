@@ -1,6 +1,7 @@
 // 内容记录实体 —— 一张宽表承载所有栏目的内容
 // 各栏目按自己的 formFields 取用其中一部分字段，未启用的字段留空，避免每个栏目建一张表
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { CONTENT_STATUS, type ContentStatus } from '../../common/enums'
 
 @Entity('content')
 export class Content {
@@ -80,6 +81,15 @@ export class Content {
   /** 来源 */
   @Column({ type: 'varchar', length: 100, nullable: true })
   source!: string | null
+
+  /**
+   * 发布状态：草稿仅后台可见，前台只读已发布
+   * 默认 published——存量数据与「填完就上线」的既有习惯都按已发布处理，
+   * 想暂存才显式改草稿
+   */
+  @Index()
+  @Column({ type: 'varchar', length: 16, default: CONTENT_STATUS.PUBLISHED })
+  status!: ContentStatus
 
   /** 排序值，同栏目内降序排列（值大者靠前） */
   @Column({ type: 'int', default: 0 })

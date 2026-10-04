@@ -41,6 +41,26 @@ export class Admin {
   @Column({ type: 'boolean', default: false })
   wechatBound!: boolean
 
+  /**
+   * 密码最后变更时刻的 Unix 秒
+   * 用于让改密前签发的令牌立即失效：令牌载荷带签发时的该值，
+   * 守卫比对不一致即拒绝。不存 Date 而存整数，是为了与 JWT 载荷里的
+   * 数字直接比较，避免时区与毫秒精度带来的边界歧义。
+   * 默认 0：存量账号未改过密码，而旧令牌载荷里也没有该字段（按 0 处理），
+   * 两边相等，故加列后存量令牌不会被误踢，可平滑上线
+   */
+  @Column({
+    type: 'bigint',
+    default: 0,
+    // MySQL 的 bigint 经驱动取出是字符串，直接与载荷里的数字比较会恒不相等，
+    // 导致每个请求都被判成「密码已变更」而全员登出。此处强制收成数字
+    transformer: {
+      to: (v: number) => v,
+      from: (v: string | number | null) => Number(v ?? 0),
+    },
+  })
+  pwdChangedAt!: number
+
   /** 创建时间 */
   @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date

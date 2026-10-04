@@ -15,12 +15,24 @@ export function useHeroVideo() {
     ? window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px), (prefers-reduced-motion: reduce)`)
     : null
 
+  /** 视频源已加载失败；单独记，跨断点回调重算 blocked 时不能把它冲掉 */
+  let failed = false
+
   const sync = () => {
-    blocked.value = !!query?.matches
+    blocked.value = failed || !!query?.matches
   }
   sync()
   query?.addEventListener('change', sync)
   onBeforeUnmount(() => query?.removeEventListener('change', sync))
 
-  return { blocked }
+  /**
+   * 视频源加载失败：作为 video 的 @error 处理。
+   * 置位后与 blocked 同样处理，首屏回落到背景图，不留一层黑底
+   */
+  const markFailed = () => {
+    failed = true
+    blocked.value = true
+  }
+
+  return { blocked, markFailed }
 }
