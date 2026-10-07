@@ -48,9 +48,13 @@
       @change="onTableChange"
     >
       <template #bodyCell="{ column, record }">
+        <!-- 有姓名时「姓名 + 账号」，无姓名时只显示账号，不重复出现两次（SRS 3.5.18） -->
         <template v-if="column.key === 'operator'">
-          {{ record.adminName || record.adminAccount }}
-          <span class="account">{{ record.adminAccount }}</span>
+          <template v-if="record.adminName">
+            {{ record.adminName }}
+            <span class="account">{{ record.adminAccount }}</span>
+          </template>
+          <template v-else>{{ record.adminAccount }}</template>
         </template>
         <template v-else-if="column.key === 'result'">
           <a-tag :color="record.result === 'success' ? 'green' : 'red'">
@@ -94,7 +98,7 @@
     <a-modal v-model:open="detailOpen" title="操作详情" :footer="null" width="640px">
       <a-descriptions v-if="detail" :column="1" size="small" bordered>
         <a-descriptions-item label="操作人">
-          {{ detail.adminName || '-' }}（{{ detail.adminAccount }}）
+          {{ detail.adminName ? `${detail.adminName}（${detail.adminAccount}）` : detail.adminAccount }}
         </a-descriptions-item>
         <a-descriptions-item label="操作">{{ detail.action }}</a-descriptions-item>
         <a-descriptions-item label="模块">{{ detail.module }}</a-descriptions-item>

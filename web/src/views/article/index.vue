@@ -98,6 +98,8 @@ import EmptyState from '@/components/sections/EmptyState.vue'
 import VideoPlayer from '@/components/sections/VideoPlayer.vue'
 import { useBrokenImages } from '@/composables/useBrokenImages'
 
+defineOptions({ name: 'ArticlePage' })
+
 /** 文章封面失效登记 */
 const imgs = useBrokenImages()
 

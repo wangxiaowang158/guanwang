@@ -6,7 +6,7 @@
         <ContentForm
           :fields="channel.formFields"
           :channel-key="channel.key"
-          :model="model"
+          v-model:model="model"
           :saving="saving"
           @save="onSave"
         />
@@ -19,13 +19,13 @@
 // single 栏目：单条富文本内容，进入即载入、就地保存
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { getContentDetail, saveContent, type Channel, type Content } from '@/api/cms'
+import { getContentDetail, saveContent, type Channel, type Content, type ContentFormModel } from '@/api/cms'
 import { sanitizeHtml } from '@/utils/sanitize'
 import ContentForm from './ContentForm.vue'
 
 const props = defineProps<{ channel: Channel }>()
 
-const model = ref<Record<string, any>>({
+const model = ref<ContentFormModel>({
   channelKey: props.channel.key, author: '管理员', source: '本站', isTop: false,
   // 新增默认已发布，需要暂存时手动改草稿
   status: 'published'

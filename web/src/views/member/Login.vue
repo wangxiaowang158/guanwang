@@ -73,6 +73,8 @@ import { useMemberStore } from '@/stores/member'
 import { API_SUCCESS_CODE } from '@/config'
 import { PHONE_PATTERN } from '@/utils/validators'
 
+defineOptions({ name: 'MemberLoginPage' })
+
 const route = useRoute()
 const router = useRouter()
 const memberStore = useMemberStore()

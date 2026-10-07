@@ -46,9 +46,7 @@ export class PortalCmsController {
   /** 站点基本信息 */
   @Get('site/detail')
   async siteDetail() {
-    const config = await this.siteConfig.get()
-    const { id: _id, updatedAt: _updatedAt, ...rest } = config
-    return rest
+    return this.siteConfig.getPublic()
   }
 
   /** 前台导航菜单 */

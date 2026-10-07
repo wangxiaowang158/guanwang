@@ -37,12 +37,18 @@ export interface LoginResponse {
  * @returns 令牌、账号与身份权限；凭证错误返回 code:401
  */
 export const login = (data: LoginParams) => {
+  // 成功时 data 为 LoginResponse；锁定（code:423）时 data 为 LoginLocked，由调用方按 code 区分后断言
   return axios.post<ApiResult<LoginResponse | null>>('/api/mgmt/auth/login', data)
 }
 
+/** 登录被锁定（code:423）时返回的数据：剩余锁定秒数，供登录页显示冷却倒计时 */
+export interface LoginLocked {
+  retryAfterSeconds: number
+}
+
 /**
- * 退出登录
- * 令牌为无状态 JWT，服务端不维护会话，实际由前端清除本地凭证
+ * 退出登录：服务端吊销当前令牌，此后该令牌即便被截获也不可再用；
+ * 前端无论结果如何都清除本地凭证
  * @returns 统一响应结构
  */
 export const logout = () => {

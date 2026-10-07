@@ -115,6 +115,8 @@ import { computed, onMounted } from 'vue'
 import { useSiteStore } from '@/stores/site'
 import { COMPANY_NAME } from '@/config/brand'
 
+defineOptions({ name: 'PrivacyPage' })
+
 /** 条款最近更新日期，修改正文时须同步此处 */
 const UPDATED_AT = '2026 年 10 月 2 日'
 

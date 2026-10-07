@@ -70,6 +70,8 @@ import { useMemberStore } from '@/stores/member'
 import { API_SUCCESS_CODE } from '@/config'
 import { PHONE_PATTERN, NICKNAME_MAX, EMAIL_MAX, checkNickname, checkOptionalEmail } from '@/utils/validators'
 
+defineOptions({ name: 'MemberRegisterPage' })
+
 const router = useRouter()
 const memberStore = useMemberStore()
 

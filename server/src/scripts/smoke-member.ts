@@ -1,5 +1,6 @@
 // 会员模块冒烟测试 —— 进程内启动应用、实测接口、跑完退出（不常驻）
 // 用法：npx ts-node src/scripts/smoke-member.ts
+import type { SmokeItem, SmokeResponse } from './smoke-types'
 import 'reflect-metadata'
 import { config } from 'dotenv'
 import { ValidationPipe, type INestApplication } from '@nestjs/common'
@@ -42,13 +43,13 @@ async function call(
   path: string,
   body?: unknown,
   headers: Record<string, string> = {},
-): Promise<{ code: number; message: string; data: any }> {
+): Promise<SmokeResponse> {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { 'Content-Type': 'application/json', ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  return (await res.json()) as { code: number; message: string; data: any }
+  return (await res.json()) as SmokeResponse
 }
 
 async function main(): Promise<void> {
@@ -71,9 +72,8 @@ async function main(): Promise<void> {
   await ds.query('DELETE FROM member')
 
   // 绕过短信通道取码：验证码只存在于 KvStore，从存储层读回即可
-  const { SmsCodeService, smsCodeKey } = await import('../modules/member/sms-code.service')
+  const { smsCodeKey } = await import('../modules/member/sms-code.service')
   const { KV_STORE } = await import('../modules/kv/kv-store.interface')
-  const smsService = app.get(SmsCodeService)
   const kv = app.get<KvStore>(KV_STORE)
 
   /**
@@ -191,7 +191,7 @@ async function main(): Promise<void> {
   say('\n【登录日志】')
   const logs = await call('GET', '/mgmt/login-log/list', undefined, MGMT_HEADERS)
   check('登录日志已记录', logs.code === 200 && logs.data?.total >= 3, { total: logs.data?.total })
-  const hasNotFoundReason = logs.data?.list?.some((l: any) => l.failReason === 'accountNotFound')
+  const hasNotFoundReason = logs.data?.list?.some((l: SmokeItem) => l.failReason === 'accountNotFound')
   check('失败原因已留痕（后台可见）', hasNotFoundReason === true)
 
   say('\n【图形验证码】')

@@ -30,17 +30,23 @@
         placeholder="请输入链接地址"
       />
       <!-- 富文本 -->
-      <RichEditor v-else-if="defOf(key).widget === 'richtext'" v-model="model[key]" />
+      <RichEditor
+        v-else-if="defOf(key).widget === 'richtext'"
+        :model-value="textOf(key)"
+        @update:model-value="(v) => (model[key] = v)"
+      />
       <!-- 图片 -->
       <ImageUpload
         v-else-if="defOf(key).widget === 'image'"
-        v-model="model[key]"
+        :model-value="textOf(key)"
+        @update:model-value="(v) => (model[key] = v)"
         :tip="defOf(key).tip"
       />
       <!-- 视频 -->
       <VideoUpload
         v-else-if="defOf(key).widget === 'video'"
-        v-model="model[key]"
+        :model-value="textOf(key)"
+        @update:model-value="(v) => (model[key] = v)"
         :tip="defOf(key).tip"
       />
       <!-- 文件 -->
@@ -111,6 +117,7 @@
 // 通用内容表单：按栏目 formFields 渲染字段，保存前做必填校验
 import { ref } from 'vue'
 import type { Rule } from 'ant-design-vue/es/form'
+import type { ContentFormModel } from '@/api/cms'
 import { getFieldDef } from './fieldDefs'
 import RichEditor from './components/RichEditor.vue'
 import ImageUpload from './components/ImageUpload.vue'
@@ -120,7 +127,6 @@ const props = defineProps<{
   fields: string[]
   /** 所属栏目 key，用于按栏目覆盖字段标签（见 fieldDefs.ts） */
   channelKey?: string
-  model: Record<string, any>
   saving?: boolean
   showBack?: boolean
   /** 是否显示「发布时间」，列表类栏目开启 */
@@ -130,9 +136,18 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ save: []; back: [] }>()
 
+/** 表单模型由父级持有，经 v-model:model 双向绑定，字段在此就地编辑 */
+const model = defineModel<ContentFormModel>('model', { required: true })
+
 const formRef = ref()
 
 const defOf = (key: string) => getFieldDef(key, props.channelKey)
+
+/** 富文本、图片、视频字段的值只会是字符串，空值统一成 undefined 交给控件 */
+const textOf = (key: string) => {
+  const v = model.value[key]
+  return typeof v === 'string' ? v : undefined
+}
 
 /** 图片/视频/下拉控件自带提示位，其余控件的提示走表单项的 extra，避免重复显示 */
 const hasInlineTip = (key: string) => ['image', 'video', 'select'].includes(defOf(key).widget)

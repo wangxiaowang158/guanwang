@@ -8,6 +8,8 @@
 import { computed, defineAsyncComponent } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 
+defineOptions({ name: 'HomePage' })
+
 const Style1Home = defineAsyncComponent(() => import('./Style1Home.vue'))
 const Style2Home = defineAsyncComponent(() => import('./Style2Home.vue'))
 

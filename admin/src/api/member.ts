@@ -95,9 +95,16 @@ export const updateMemberStatus = (id: number, status: MemberStatus) =>
   axios.put<ApiResult<null>>(`/api/mgmt/member/status/${id}`, { status })
 
 /**
+ * 解除会员风控锁定：只清锁定时间与失败计数，不改变启用/禁用状态
+ * @param id 会员 id
+ */
+export const unlockMember = (id: number) =>
+  axios.put<ApiResult<null>>(`/api/mgmt/member/unlock/${id}`)
+
+/**
  * 重置会员密码为指定值
  * @param id 会员 id
- * @param newPassword 新密码，长度 6-64
+ * @param newPassword 新密码，长度 6-50（与服务端校验一致）
  */
 export const resetMemberPassword = (id: number, newPassword: string) =>
   axios.put<ApiResult<null>>(`/api/mgmt/member/reset-password/${id}`, { newPassword })

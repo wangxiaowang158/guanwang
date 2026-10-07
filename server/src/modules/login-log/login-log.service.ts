@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { In, LessThan, Like, Repository } from 'typeorm'
 import { MemberLoginLog } from './login-log.entity'
 import { Member } from '../member/member.entity'
+import { maskPhone } from '../member/vo/member.vo'
 import type { LoginFailReason, LoginMethod, LoginResult } from '../../common/enums'
 import { LOGIN_RESULT } from '../../common/enums'
 import { resolvePaging } from '../../common/pagination'
@@ -113,7 +114,9 @@ export class LoginLogService {
         id: r.id,
         memberId: r.memberId,
         nickname: r.memberId ? (nameMap.get(r.memberId) ?? '已删除会员') : null,
-        loginAccount: r.loginAccount,
+        // 登录账号即会员手机号，与会员管理、意见反馈口径一致隐去中间四位（SRS 4.3）；
+        // 按账号搜索仍在库内原值上匹配，不受遮蔽影响
+        loginAccount: r.loginAccount ? maskPhone(r.loginAccount) : r.loginAccount,
         loginMethod: r.loginMethod,
         loginIp: r.loginIp,
         deviceInfo: r.deviceInfo,

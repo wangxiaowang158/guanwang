@@ -76,8 +76,10 @@ import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { Rule } from 'ant-design-vue/es/form'
 import { UserOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons-vue'
-import { login } from '@/api/auth'
+import { login, type LoginLocked } from '@/api/auth'
 import { useUserStore } from '@/store'
+
+defineOptions({ name: 'LoginPage' })
 
 // 站点品牌文案（实际公司名后续由站点配置维护）
 const BRAND_TITLE = '中瑞恒后台管理'
@@ -90,6 +92,8 @@ const isDev = import.meta.env.DEV
 // 登录失败限流配置：默认 5 次 / 10 分钟，达阈值后按钮冷却禁用
 const MAX_FAIL_COUNT = 5
 const COOLDOWN_SECONDS = 10 * 60
+/** 服务端锁定中的业务码（与 server mgmt-auth.controller 一致） */
+const LOCKED_CODE = 423
 
 const router = useRouter()
 const route = useRoute()
@@ -118,11 +122,14 @@ const buttonText = computed(() => {
 const usernameRules: Rule[] = [{ required: true, message: '请输入用户名', trigger: 'blur' }]
 const passwordRules: Rule[] = [{ required: true, message: '请输入密码', trigger: 'blur' }]
 
-/** 启动冷却倒计时，结束后自动恢复可点击并清零失败计数 */
-const startCooldown = () => {
+/**
+ * 启动冷却倒计时，结束后自动恢复可点击并清零失败计数
+ * @param seconds 冷却秒数；服务端给出剩余锁定秒数时以它为准，否则按完整冷却时长
+ */
+const startCooldown = (seconds: number = COOLDOWN_SECONDS) => {
   // 先清除可能存在的旧定时器，防重复调用导致倒计时叠加与内存泄漏
   clearCooldown()
-  cooldownLeft.value = COOLDOWN_SECONDS
+  cooldownLeft.value = seconds
   errorMsg.value = '操作过于频繁，请稍后再试'
   cooldownTimer = setInterval(() => {
     cooldownLeft.value -= 1
@@ -181,6 +188,11 @@ const handleLogin = async () => {
       // 优先回跳拦截前的目标页；用同源校验防开放重定向（拦截 //evil.com、/\evil.com）
       const redirect = route.query.redirect
       router.push(resolveRedirect(typeof redirect === 'string' ? redirect : ''))
+    } else if (res.code === LOCKED_CODE) {
+      // 服务端已锁定（含刷新页面后本地计数清零的情况）：按服务端剩余时间进入冷却
+      form.password = ''
+      const left = (res.data as unknown as LoginLocked | null)?.retryAfterSeconds
+      startCooldown(typeof left === 'number' && left > 0 ? left : COOLDOWN_SECONDS)
     } else {
       // 失败：清空密码、保留用户名、统一脱敏提示
       form.password = ''

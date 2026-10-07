@@ -351,7 +351,9 @@ const loadDetail = async (id: number): Promise<boolean> => {
 const openDetail = async (id: number) => {
   if (!(await loadDetail(id))) return
   replyContent.value = ''
-  visibleToMember.value = true
+  // 默认可见性按来源（SRS 3.5.10）：会员反馈默认对会员可见；
+  // 匿名咨询没有会员可看，默认仅内部留痕，免得管理员不留意时误以为回复已送达
+  visibleToMember.value = current.value?.source === 'member'
   detailOpen.value = true
 }
 

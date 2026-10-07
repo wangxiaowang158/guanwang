@@ -8,6 +8,7 @@
 //    以 req.ip 计数，故此处开启 trust proxy 并为每个请求分配独立 X-Forwarded-For，
 //    使每次请求落到不同计数桶。此处用 true（信任整条 XFF 链）以便自造地址；
 //    生产入口 main.ts 用 1（只信任网关那一跳），两者档位不同，互不影响。
+import type { SmokeResponse } from './smoke-types'
 import 'reflect-metadata'
 import { config } from 'dotenv'
 import { ValidationPipe } from '@nestjs/common'
@@ -56,13 +57,13 @@ async function call(
   path: string,
   body?: unknown,
   headers: Record<string, string> = {},
-): Promise<{ code: number; message: string; data: any }> {
+): Promise<SmokeResponse> {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': nextIp(), ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  return (await res.json()) as { code: number; message: string; data: any }
+  return (await res.json()) as SmokeResponse
 }
 
 async function main(): Promise<void> {

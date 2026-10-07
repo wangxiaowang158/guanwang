@@ -14,9 +14,7 @@ export class MgmtSiteController {
   /** 读取站点基本信息 */
   @Get('detail')
   async detail() {
-    const config = await this.service.get()
-    const { id: _id, updatedAt: _updatedAt, ...rest } = config
-    return rest
+    return this.service.getPublic()
   }
 
   /** 保存站点基本信息 */

@@ -52,6 +52,8 @@ import { fetchAuthConfig, resetPassword, type PortalAuthConfig } from '@/api/mem
 import { API_SUCCESS_CODE } from '@/config'
 import { PHONE_PATTERN } from '@/utils/validators'
 
+defineOptions({ name: 'ForgotPasswordPage' })
+
 const router = useRouter()
 
 const config = ref<PortalAuthConfig | null>(null)

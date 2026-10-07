@@ -5,4 +5,6 @@
 
 <script setup lang="ts">
 import ChannelPage from '@/components/sections/ChannelPage.vue'
+
+defineOptions({ name: 'SmartPage' })
 </script>

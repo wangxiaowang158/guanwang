@@ -50,14 +50,16 @@
         <template v-else-if="column.key === 'action'">
           <a-space :size="4">
             <a-button type="link" size="small" @click="openDetail(record.id)">详情</a-button>
-            <a-button
+            <!-- 禁用会让该会员在所有设备上立即退出，先确认；启用无副作用，直接执行 -->
+            <a-popconfirm
               v-if="record.status === 'normal'"
-              type="link"
-              size="small"
-              @click="onToggleStatus(record.id, 'disabled')"
+              title="确认禁用该会员？禁用后其将无法登录，已登录的设备立即退出。"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="onToggleStatus(record.id, 'disabled')"
             >
-              禁用
-            </a-button>
+              <a-button type="link" size="small">禁用</a-button>
+            </a-popconfirm>
             <a-button v-else type="link" size="small" @click="onToggleStatus(record.id, 'normal')">
               启用
             </a-button>
@@ -113,7 +115,7 @@
         <a-form-item label="新密码" required>
           <a-input-password
             v-model:value="newPassword"
-            placeholder="6-64 位，建议包含字母与数字"
+            placeholder="6-50 位，建议包含字母与数字"
             autocomplete="new-password"
           />
         </a-form-item>
@@ -126,7 +128,7 @@
 import { computed, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import {
-  getMemberList, getMemberDetail, updateMemberStatus, resetMemberPassword, deleteMember,
+  getMemberList, getMemberDetail, updateMemberStatus, unlockMember, resetMemberPassword, deleteMember,
   isLocked, MEMBER_STATUS_COLOR, MEMBER_STATUS_LABEL,
   type MemberDetail, type MemberListItem, type MemberStatus,
 } from '@/api/member'
@@ -140,7 +142,11 @@ const formatTime = (value: string | null) =>
 const columns = [
   { title: '昵称', dataIndex: 'nickname', key: 'nickname', width: 140 },
   { title: '手机号', dataIndex: 'phoneMasked', key: 'phoneMasked', width: 140 },
-  { title: '邮箱', dataIndex: 'emailMasked', key: 'emailMasked', width: 200 },
+  {
+    title: '邮箱', dataIndex: 'emailMasked', key: 'emailMasked', width: 200,
+    // 选填项，未填时按 SRS 3.5.14 显示「-」，不留空格子
+    customRender: ({ text }: { text: string | null }) => text || '-',
+  },
   { title: '状态', key: 'status', width: 90 },
   {
     title: '最近登录', dataIndex: 'lastLoginAt', key: 'lastLoginAt', width: 170,
@@ -220,12 +226,12 @@ const onToggleStatus = async (id: number, next: MemberStatus) => {
   }
 }
 
-/** 解除风控锁定：复用状态接口置为 normal，后端会清空锁定时间与失败计数 */
+/** 解除风控锁定：只清锁定与失败计数，账号若是禁用状态则保持禁用 */
 const onUnlock = async () => {
   if (!current.value) return
   acting.value = true
   try {
-    const res = await updateMemberStatus(current.value.id, 'normal')
+    const res = await unlockMember(current.value.id)
     if (res.data.code !== 200) {
       message.error(res.data.message || SAVE_FAILED)
       return
@@ -249,8 +255,9 @@ const openReset = () => {
 const onReset = async () => {
   if (!current.value) return
   const value = newPassword.value.trim()
-  if (value.length < 6 || value.length > 64) {
-    message.warning('新密码长度需为 6-64 位')
+  // 上限与服务端及会员端注册/改密一致（50），否则 51-64 位前端放行、提交后被拒
+  if (value.length < 6 || value.length > 50) {
+    message.warning('新密码长度需为 6-50 位')
     return
   }
   acting.value = true

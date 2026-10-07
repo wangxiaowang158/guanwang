@@ -8,14 +8,19 @@
           <a-radio-button :value="30">近 30 日</a-radio-button>
           <a-radio-button value="custom">自定义</a-radio-button>
         </a-radio-group>
+        <!-- 跨度限制在 90 天内且不可选未来日期：服务端统计上限即 90 天，界面不限的话所选范围与统计口径对不上 -->
         <a-range-picker
           v-if="range === 'custom'"
           v-model:value="customRange"
           value-format="YYYY-MM-DD"
+          :disabled-date="disabledCustomDate"
+          @calendar-change="onCalendarChange"
+          @open-change="onPickerOpenChange"
           @change="fetchData"
         />
+        <span v-if="range === 'custom'" class="range-tip">最长可选 90 天</span>
         <!-- 清理入口右对齐，与左侧筛选拉开距离 -->
-        <a-button danger class="clear-btn" @click="clearOpen = true">清理历史记录</a-button>
+        <a-button v-if="isSuper" danger class="clear-btn" @click="clearOpen = true">清理历史记录</a-button>
       </div>
 
       <a-spin :spinning="loading">
@@ -92,10 +97,40 @@ import type { EChartsOption } from 'echarts'
 import { getVisitSummary, clearVisitLog, type VisitSummary, type VisitQuery } from '@/api/visitStats'
 import { toAxisDateLabels } from '@/utils/chart'
 import { LIST_LOAD_FAILED } from '@/constants/ui'
+import { useUserStore } from '@/store/modules/user'
+
+defineOptions({ name: 'VisitStatsPage' })
+
+// 清理入口与登录日志、操作日志同口径，仅超管可见
+const { isSuper } = useUserStore()
 
 const loading = ref(false)
 const range = ref<7 | 30 | 'custom'>(7)
 const customRange = ref<[string, string]>()
+
+/** 自定义范围最大跨度（含两端），与服务端统计上限一致 */
+const MAX_RANGE_DAYS = 90
+/** 选择过程中已点下的第一个日期，用于限制另一端的可选范围 */
+const pickingFrom = ref<Dayjs | null>(null)
+
+/** 记下正在选择的一端：选了开始日期后，结束日期只能落在 90 天内（反之亦然） */
+const onCalendarChange = (dates: [Dayjs | null, Dayjs | null] | [string, string] | null) => {
+  const first = Array.isArray(dates) ? (dates[0] ?? dates[1]) : null
+  pickingFrom.value = first ? dayjs(first) : null
+}
+
+/** 面板关闭时清空，下次打开不受上次选择约束 */
+const onPickerOpenChange = (open: boolean) => {
+  if (!open) pickingFrom.value = null
+}
+
+/** 不可选：未来日期；已选一端时，与之相距超过 90 天的日期 */
+const disabledCustomDate = (current: Dayjs) => {
+  if (current.isAfter(dayjs(), 'day')) return true
+  const from = pickingFrom.value
+  if (!from) return false
+  return Math.abs(current.diff(from, 'day')) >= MAX_RANGE_DAYS
+}
 const summary = ref<VisitSummary | null>(null)
 
 // 清理历史记录：弹窗开关、截止日期与提交中状态
@@ -216,6 +251,10 @@ onMounted(fetchData)
 }
 
 /* 清理按钮推到行尾，与左侧筛选区分主次 */
+.range-tip {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
 .clear-btn {
   margin-left: auto;
 }

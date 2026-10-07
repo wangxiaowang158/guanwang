@@ -43,6 +43,8 @@ import {
 } from '@ant-design/icons-vue'
 import { useChannels } from '@/composables/useChannels'
 
+defineOptions({ name: 'PageHeader' })
+
 const isFullscreen = inject<Ref<boolean>>('isFullscreen', ref(false))
 const toggleFullscreen = inject<() => void>('toggleFullscreen', () => {})
 

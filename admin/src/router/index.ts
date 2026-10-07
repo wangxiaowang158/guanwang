@@ -63,6 +63,15 @@ function resolveAccess(to: RouteLocationNormalized): { allowed: boolean; fallbac
   return { allowed: true, fallback }
 }
 
+/**
+ * 跳登录页时记录的回跳地址：取重定向之前的原始地址
+ * 守卫执行时根路径 `/` 已被路由记录上的 redirect 换成 `/dashboard`，
+ * 若记录后者，登录后回跳成了直达仪表盘，无仪表盘权限的账号会多弹一次「无访问权限」
+ */
+function loginRedirectOf(to: RouteLocationNormalized): string {
+  return to.redirectedFrom?.fullPath ?? to.fullPath
+}
+
 // 路由守卫：未登录拦截跳转登录页；已登录则确保权限就绪后按权限放行
 router.beforeEach(async (to, from, next) => {
   const rawToken = localStorage.getItem('token')
@@ -84,7 +93,7 @@ router.beforeEach(async (to, from, next) => {
     if (from.name) {
       message.warning('登录已过期，请重新登录')
     }
-    return next({ path: '/login', query: { redirect: to.fullPath } })
+    return next({ path: '/login', query: { redirect: loginRedirectOf(to) } })
   }
 
   // 刷新页面后内存中的权限会丢失，菜单与路由判权都依赖它，故先补拉
@@ -93,7 +102,7 @@ router.beforeEach(async (to, from, next) => {
   if (!profile) {
     userStore.clearUser()
     message.warning('登录已过期，请重新登录')
-    return next({ path: '/login', query: { redirect: to.fullPath } })
+    return next({ path: '/login', query: { redirect: loginRedirectOf(to) } })
   }
 
   // 栏目树同时决定菜单与栏目页权限，需在判权前就位
@@ -107,7 +116,9 @@ router.beforeEach(async (to, from, next) => {
     message.error('当前账号未被授予任何功能模块权限，请联系管理员')
     return from.name ? next(false) : next()
   }
-  message.error('无访问权限')
+  // 经根路径默认重定向而来（登录后、点首页 Logo）不是管理员主动访问：
+  // 没有仪表盘权限时静默进入有权限的首个页面，不弹「无访问权限」（SRS 3.5.3 / 3.5.4）
+  if (to.redirectedFrom?.path !== '/') message.error('无访问权限')
   return next(fallback)
 })
 

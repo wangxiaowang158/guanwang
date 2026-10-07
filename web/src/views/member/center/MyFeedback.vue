@@ -1,8 +1,10 @@
 <template>
   <!-- 我的反馈：按时间倒序列出反馈与管理员回复 -->
   <div class="mf">
+    <!-- 加载失败给出重试入口（SRS 3.5.13），不必让会员刷新整页 -->
     <el-alert v-if="errorText" type="error" :closable="false" show-icon class="mf-alert">
       {{ errorText }}
+      <el-button link type="primary" :loading="loading" class="mf-retry" @click="load">重新加载</el-button>
     </el-alert>
 
     <div v-if="loading" class="mf-loading">
@@ -91,6 +93,11 @@ onMounted(load)
 <style scoped>
 .mf-alert {
   margin-bottom: 16px;
+}
+
+.mf-retry {
+  margin-left: 8px;
+  vertical-align: baseline;
 }
 
 .mf-list {

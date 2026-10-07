@@ -38,6 +38,8 @@ import MyFeedback from './MyFeedback.vue'
 import AccountSettings from './AccountSettings.vue'
 import { useMemberStore } from '@/stores/member'
 
+defineOptions({ name: 'MemberCenterPage' })
+
 const router = useRouter()
 const memberStore = useMemberStore()
 

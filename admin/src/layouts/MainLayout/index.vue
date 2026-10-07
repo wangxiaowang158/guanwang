@@ -71,6 +71,8 @@ import AppSidebar from '../components/AppSidebar/index.vue'
 import PageHeader from '../components/PageHeader/index.vue'
 import { useTheme } from '@/composables/useTheme'
 
+defineOptions({ name: 'MainLayout' })
+
 const showSettings = ref(false)
 const collapsed = ref(false)
 const isFullscreen = ref(false)

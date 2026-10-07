@@ -14,9 +14,9 @@ export interface OpLogMeta {
  * 新增用 `@Res()` 手写响应的写接口时要留意：那种接口绕过统一响应拦截器，
  * 审计侧拿不到业务码，失败会被记成成功，需在接口内自行调 OpLogService.write()
  *
- * 不含 `POST /mgmt/auth/login` 与 `POST /mgmt/auth/logout`：
- * 两者都不挂 AdminGuard，拦截器取不到操作人因而不记录。
- * 登录成败由登录日志单独记，登出对无状态 JWT 而言服务端无状态变更，无可审计内容
+ * 不含 `POST /mgmt/auth/login` 与 `POST /mgmt/auth/logout`（SRS 3.5.18：登录与退出不记入操作日志）：
+ * 登录不挂 AdminGuard，拦截器取不到操作人，天然不记；登录成败由服务日志单独记。
+ * 退出为吊销令牌挂了 AdminGuard，能取到操作人，须由拦截器的 SKIP_PATHS 显式排除
  */
 const CATALOG: Record<string, OpLogMeta> = {
   'PUT /mgmt/auth/password': { module: '个人设置', action: '修改自己的密码' },
@@ -45,6 +45,7 @@ const CATALOG: Record<string, OpLogMeta> = {
   'DELETE /mgmt/feedback/batch': { module: '意见反馈', action: '批量删除反馈' },
 
   'PUT /mgmt/member/status/:id': { module: '会员管理', action: '修改会员状态' },
+  'PUT /mgmt/member/unlock/:id': { module: '会员管理', action: '解除会员锁定' },
   'PUT /mgmt/member/reset-password/:id': { module: '会员管理', action: '重置会员密码' },
   'DELETE /mgmt/member/delete/:id': { module: '会员管理', action: '删除会员' },
 

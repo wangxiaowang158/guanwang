@@ -24,10 +24,10 @@
             <a-input v-model:value="form.webTitle" :maxlength="100" />
           </a-form-item>
           <a-form-item label="网站关键字" name="keywords">
-            <a-textarea v-model:value="form.keywords" :rows="2" />
+            <a-textarea v-model:value="form.keywords" :rows="2" :maxlength="500" />
           </a-form-item>
           <a-form-item label="网站描述" name="description">
-            <a-textarea v-model:value="form.description" :rows="3" />
+            <a-textarea v-model:value="form.description" :rows="3" :maxlength="1000" />
           </a-form-item>
           <a-form-item label="首页主标语" name="slogan" extra="官网首屏的大标题">
             <a-input v-model:value="form.slogan" :maxlength="200" />
@@ -40,28 +40,28 @@
             <a-input v-model:value="form.phone" :maxlength="20" />
           </a-form-item>
           <a-form-item label="网址" name="website">
-            <a-input v-model:value="form.website" />
+            <a-input v-model:value="form.website" :maxlength="200" />
           </a-form-item>
           <a-form-item label="招聘邮箱" name="recruitEmail">
-            <a-input v-model:value="form.recruitEmail" />
+            <a-input v-model:value="form.recruitEmail" :maxlength="100" />
           </a-form-item>
           <a-form-item label="联系邮箱" name="contactEmail">
-            <a-input v-model:value="form.contactEmail" />
+            <a-input v-model:value="form.contactEmail" :maxlength="100" />
           </a-form-item>
           <a-form-item label="地址" name="address">
             <a-input v-model:value="form.address" :maxlength="100" />
           </a-form-item>
           <a-form-item label="地图经度" name="mapLng">
-            <a-input v-model:value="form.mapLng" />
+            <a-input v-model:value="form.mapLng" :maxlength="32" />
           </a-form-item>
           <a-form-item label="地图纬度" name="mapLat">
-            <a-input v-model:value="form.mapLat" />
+            <a-input v-model:value="form.mapLat" :maxlength="32" />
           </a-form-item>
           <a-form-item label="地图链接地址" name="mapLink">
-            <a-input v-model:value="form.mapLink" />
+            <a-input v-model:value="form.mapLink" :maxlength="500" />
           </a-form-item>
           <a-form-item label="版权信息" name="copyright">
-            <a-textarea v-model:value="form.copyright" :rows="3" />
+            <a-textarea v-model:value="form.copyright" :rows="3" :maxlength="300" />
           </a-form-item>
           <a-form-item label="ICP 备案号" name="icpCode">
             <a-input v-model:value="form.icpCode" :maxlength="100" placeholder="如 京ICP备12345678号" />

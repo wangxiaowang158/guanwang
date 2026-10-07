@@ -1,6 +1,7 @@
 // 后台访问统计接口 —— /api/mgmt/visit-stats/*
-import { Controller, Delete, Get, Query, UseGuards } from '@nestjs/common'
-import { AdminGuard } from '../../common/guards/admin.guard'
+import { Controller, Delete, ForbiddenException, Get, Query, UseGuards } from '@nestjs/common'
+import { AdminGuard, type CurrentAdminInfo } from '../../common/guards/admin.guard'
+import { CurrentAdmin } from '../../common/decorators/current-admin.decorator'
 import { PermGuard } from '../../common/guards/perm.guard'
 import { PERM, RequirePerm } from '../../common/decorators/require-perm.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
@@ -33,10 +34,12 @@ export class MgmtVisitStatsController {
   /**
    * 清理指定日期之前的访问日志
    * 访问日志只增不减，长期运行后会拖慢统计聚合，由管理员按需清理。
-   * 与登录日志的清理一致：不可撤销，前端须二次确认
+   * 与登录日志、操作日志的清理一致：不可撤销，前端须二次确认，且只许超管清理——
+   * 清掉的区间会从统计与仪表盘中消失，不宜随访问统计权限一并下放
    */
   @Delete('clear')
-  async clear(@Query() query: ClearVisitLogDto) {
+  async clear(@CurrentAdmin() admin: CurrentAdminInfo, @Query() query: ClearVisitLogDto) {
+    if (!admin.isSuper) throw new ForbiddenException('仅超级管理员可清理访问日志')
     const count = await this.service.clearBefore(query.before)
     return raw({ count }, `已清理 ${count} 条访问日志`)
   }

@@ -76,6 +76,8 @@ import {
 import { toAxisDateLabels } from '@/utils/chart'
 import { LIST_LOAD_FAILED } from '@/constants/ui'
 
+defineOptions({ name: 'DashboardPage' })
+
 const router = useRouter()
 
 const loading = ref(false)

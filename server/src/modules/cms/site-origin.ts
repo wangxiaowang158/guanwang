@@ -2,11 +2,17 @@
 // 三处都要把后台录入的域名拼成绝对地址，口径必须一致，否则 canonical 与 sitemap 的 loc 会对不上
 
 /**
- * 控制字符（含换行）
- * 用字符串构造而非正则字面量：模式里是转义序列而非真实字符，
- * 避免源码文件本身混入不可见字节
+ * 剔除控制字符（U+0000–U+001F 与 U+007F，含换行）
+ * 按字符码判断而非正则：控制字符正则会被 lint 视为可疑写法，也避免源码混入不可见字节
  */
-const CONTROL_CHARS = new RegExp('[\\u0000-\\u001F\\u007F]', 'g')
+function stripControlChars(value: string): string {
+  return Array.from(value)
+    .filter((ch) => {
+      const code = ch.charCodeAt(0)
+      return code > 0x1f && code !== 0x7f
+    })
+    .join('')
+}
 
 /**
  * 把后台填写的站点域名规整成可用的 origin
@@ -18,8 +24,7 @@ export function normalizeOrigin(website: string): string {
   // 先剔不可见字符：各处的转义函数只管 & < > " '，管不了这一类。
   // 后台若在域名里粘进换行或不可见字节，转义后原样进 sitemap 的 loc 节点，
   // 整份 sitemap 会变成 not well-formed 被搜索引擎丢弃，而后台界面看不出异常
-  const trimmed = website
-    .replace(CONTROL_CHARS, '')
+  const trimmed = stripControlChars(website)
     .trim()
     .replace(/\/+$/, '')
   if (!trimmed) return ''

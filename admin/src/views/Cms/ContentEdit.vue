@@ -14,7 +14,7 @@
           v-if="channel"
           :fields="channel.formFields"
           :channel-key="channel.key"
-          :model="model"
+          v-model:model="model"
           :saving="saving"
           :field-options="fieldOptions"
           show-back
@@ -34,7 +34,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import PageContainer from '@/components/PageContainer/index.vue'
 import { useChannels } from '@/composables/useChannels'
-import { getContentDetail, getContentList, saveContent, type Channel, type Content } from '@/api/cms'
+import { getContentDetail, getContentList, saveContent, type Channel, type Content, type ContentFormModel } from '@/api/cms'
 import { sanitizeHtml } from '@/utils/sanitize'
 import { categorySourceOf } from './categorySources'
 import ContentForm from './ContentForm.vue'
@@ -47,7 +47,7 @@ const channelKey = route.params.channelKey as string
 const contentId = route.params.id ? Number(route.params.id) : undefined
 
 const channel = ref<Channel | null>(null)
-const model = ref<Record<string, any>>({})
+const model = ref<ContentFormModel>({})
 const saving = ref(false)
 // 下拉字段选项，目前只有「产品类别」需要，取自对应分类栏目的条目名
 const fieldOptions = ref<Record<string, { label: string; value: string }[]>>({})
@@ -93,7 +93,7 @@ onMounted(async () => {
   void loadCategoryOptions()
   // 初始化表单默认值
   // 新增默认已发布：沿用「填完即上线」的既有习惯，需要暂存时手动改草稿
-  const base: Record<string, any> = {
+  const base: ContentFormModel = {
     channelKey, author: '管理员', source: '本站', isTop: false, status: 'published'
   }
   if (contentId) {

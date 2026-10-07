@@ -67,10 +67,13 @@ export class VisitService {
    * @param endDate 结束日期 YYYY-MM-DD（含）
    */
   async summary(startDate: string, endDate: string): Promise<VisitSummary> {
-    const daily = await this.countByDate(startDate, endDate)
-    const sections = await this.countByChannel(startDate, endDate)
     // 趋势要补齐无访问的日期，否则折线图的日期轴会跳段
     const dates = enumerateDates(startDate, endDate)
+    // 所有指标共用截取后的同一段日期：超过 90 天时 enumerateDates 只保留近 90 天，
+    // 板块关注度若仍按原始范围统计，同一屏上两组数字口径不一、对不上总数
+    const effectiveStart = dates[0] ?? startDate
+    const daily = await this.countByDate(effectiveStart, endDate)
+    const sections = await this.countByChannel(effectiveStart, endDate)
     const countMap = new Map(daily.map((d) => [d.date, d.count]))
     const values = dates.map((d) => countMap.get(d) ?? 0)
     const total = values.reduce((sum, v) => sum + v, 0)

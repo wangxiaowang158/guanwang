@@ -19,6 +19,14 @@ export class SiteConfigService {
     return this.repo.save(this.repo.create({ id: SINGLETON_ID }))
   }
 
+  /** 读取对外展示的站点信息：去掉主键与更新时间这类内部字段 */
+  async getPublic(): Promise<Omit<SiteConfig, 'id' | 'updatedAt'>> {
+    const config: Partial<SiteConfig> = { ...(await this.get()) }
+    delete config.id
+    delete config.updatedAt
+    return config as Omit<SiteConfig, 'id' | 'updatedAt'>
+  }
+
   /** 保存站点信息，只覆盖传过来的字段 */
   async save(dto: SaveSiteConfigDto): Promise<void> {
     const entity = await this.get()

@@ -58,6 +58,8 @@ import { getSiteInfo } from '@/api/cms'
 import { useUserStore } from '@/store'
 import ChangePasswordModal from './ChangePasswordModal.vue'
 
+defineOptions({ name: 'AppHeader' })
+
 defineEmits(['openSettings'])
 
 // 改密弹窗开关

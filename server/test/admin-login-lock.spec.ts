@@ -24,7 +24,7 @@ describe('AdminAuthService 登录锁定', () => {
     for (let i = 0; i < 5; i += 1) {
       await expect(svc.login('admin', 'bad', '1.1.1.1')).resolves.toBe('invalid')
     }
-    await expect(svc.login('admin', 'good', '1.1.1.1')).resolves.toEqual({ lockedMinutes: 10 })
+    await expect(svc.login('admin', 'good', '1.1.1.1')).resolves.toMatchObject({ lockedMinutes: 10 })
     kv.onModuleDestroy()
   })
 
@@ -51,23 +51,43 @@ describe('AdminAuthService 登录锁定', () => {
   it('不存在的账号同样计数并锁定，账号名大小写视为同一个', async () => {
     const { svc, kv } = build()
     for (let i = 0; i < 5; i += 1) await svc.login('Ghost', 'x', null)
-    await expect(svc.login('ghost', 'x', null)).resolves.toEqual({ lockedMinutes: 10 })
+    await expect(svc.login('ghost', 'x', null)).resolves.toMatchObject({ lockedMinutes: 10 })
     kv.onModuleDestroy()
   })
 
   it('他人 IP 的失败不会锁住本人（防恶意锁号）', async () => {
     const { svc, kv } = build()
     for (let i = 0; i < 5; i += 1) await svc.login('admin', 'bad', '6.6.6.6')
-    await expect(svc.login('admin', 'good', '6.6.6.6')).resolves.toEqual({ lockedMinutes: 10 })
+    await expect(svc.login('admin', 'good', '6.6.6.6')).resolves.toMatchObject({ lockedMinutes: 10 })
     const ok = await svc.login('admin', 'good', '1.2.3.4')
     expect(typeof ok === 'object' && 'token' in ok).toBe(true)
+    kv.onModuleDestroy()
+  })
+
+  it('锁定结果带剩余秒数，刷新登录页后仍能显示准确倒计时', async () => {
+    const { svc, kv } = build()
+    for (let i = 0; i < 5; i += 1) await svc.login('admin', 'bad', '7.7.7.7')
+    const res = await svc.login('admin', 'good', '7.7.7.7')
+    expect(res).toMatchObject({ lockedMinutes: 10 })
+    const left = (res as { retryAfterSeconds: number }).retryAfterSeconds
+    // 窗口从第一次失败起算，刚锁定时剩余接近 10 分钟，且不超过 10 分钟
+    expect(left).toBeGreaterThan(590)
+    expect(left).toBeLessThanOrEqual(600)
+    kv.onModuleDestroy()
+  })
+
+  it('成功登录同时清掉窗口起点，下一轮失败重新起算', async () => {
+    const { svc, kv } = build()
+    await svc.login('admin', 'bad', '8.8.8.8')
+    await svc.login('admin', 'good', '8.8.8.8')
+    await expect(kv.get('admin-login-fail:admin:8.8.8.8:since')).resolves.toBeNull()
     kv.onModuleDestroy()
   })
 
   it('并发错误请求逐次计数，不会因读写竞态少记', async () => {
     const { svc, kv } = build()
     await Promise.all(Array.from({ length: 5 }, () => svc.login('admin', 'bad', '9.9.9.9')))
-    await expect(svc.login('admin', 'good', '9.9.9.9')).resolves.toEqual({ lockedMinutes: 10 })
+    await expect(svc.login('admin', 'good', '9.9.9.9')).resolves.toMatchObject({ lockedMinutes: 10 })
     kv.onModuleDestroy()
   })
 })

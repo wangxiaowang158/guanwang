@@ -130,17 +130,6 @@
       </div>
     </section>
 
-    <!-- 公司业绩 -->
-    <section id="achievement" class="s1-section s1-section--dark">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('achievement')" on-dark />
-        <div v-if="sections?.achievements.length" class="s1-achievement-grid">
-          <AchievementStat v-for="a in sections.achievements" :key="a.id" :value="a.value" :suffix="a.suffix" :label="a.label" on-dark />
-        </div>
-        <EmptyState v-else-if="!loading" on-dark />
-      </div>
-    </section>
-
     <!-- 合作伙伴：有 Logo 展示 Logo（灰度，悬停恢复彩色），无 Logo 展示名称 -->
     <section id="partner" class="s1-section s1-section--white">
       <div class="s1-container">
@@ -161,6 +150,17 @@
           </component>
         </div>
         <EmptyState v-else-if="!loading" />
+      </div>
+    </section>
+
+    <!-- 公司业绩 -->
+    <section id="achievement" class="s1-section s1-section--dark">
+      <div class="s1-container">
+        <Style1Heading v-bind="heading('achievement')" on-dark />
+        <div v-if="sections?.achievements.length" class="s1-achievement-grid">
+          <AchievementStat v-for="a in sections.achievements" :key="a.id" :value="a.value" :suffix="a.suffix" :label="a.label" on-dark />
+        </div>
+        <EmptyState v-else-if="!loading" on-dark />
       </div>
     </section>
 

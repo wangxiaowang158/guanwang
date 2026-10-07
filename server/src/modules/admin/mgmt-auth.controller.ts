@@ -32,8 +32,9 @@ export class MgmtAuthController {
     const result = await this.authService.login(dto.username, dto.password, extractContext(req).ip)
     if (result === 'invalid') return raw(null, '账号或密码错误，请重新输入', 401)
     if ('lockedMinutes' in result) {
-      // 文案取 SRS 3.5.4 原文；前端登录页按失败次数另有冷却倒计时
-      return raw(null, '操作过于频繁，请稍后再试', 423)
+      // 文案取 SRS 3.5.3 原文；带上剩余秒数，登录页据此显示冷却倒计时——
+      // 否则刷新登录页后前端计数清零，按钮看似可点、点了却仍被拒，体验与 SRS 不符
+      return raw({ retryAfterSeconds: result.retryAfterSeconds }, '操作过于频繁，请稍后再试', 423)
     }
     return raw(result, '登录成功')
   }

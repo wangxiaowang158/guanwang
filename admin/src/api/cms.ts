@@ -92,6 +92,12 @@ export interface Content {
 /** 内容发布状态 */
 export type ContentStatus = 'draft' | 'published'
 
+/**
+ * 内容编辑表单的模型：字段随栏目 formFields 动态取用，按字段 key 读写
+ * 值只会是文本（含日期串）、数字或置顶开关；空值为 null / undefined
+ */
+export type ContentFormModel = Record<string, string | number | boolean | null | undefined>
+
 /** 站点基本信息（单例） */
 export interface SiteInfo {
   webTitle: string

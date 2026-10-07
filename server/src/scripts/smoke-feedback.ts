@@ -4,6 +4,7 @@
 // 沿用 smoke-lockout.ts 的两条约束（详见该文件头部注释）：
 // 1. 环境变量必须在 import AppModule 之前设置，AppModule 只能动态 import
 // 2. 测试实例开启 trust proxy + 每请求独立 X-Forwarded-For，规避按 IP 限流
+import type { SmokeItem, SmokeResponse } from './smoke-types'
 import 'reflect-metadata'
 import { config } from 'dotenv'
 import { ValidationPipe } from '@nestjs/common'
@@ -61,13 +62,13 @@ async function call(
   path: string,
   body?: unknown,
   headers: Record<string, string> = {},
-): Promise<{ code: number; message: string; data: any }> {
+): Promise<SmokeResponse> {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': nextIp(), ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  return (await res.json()) as { code: number; message: string; data: any }
+  return (await res.json()) as SmokeResponse
 }
 
 async function main(): Promise<void> {
@@ -185,9 +186,9 @@ async function main(): Promise<void> {
 
   const list = await call('GET', '/mgmt/feedback/list', undefined, MGMT)
   check('管理端可读列表', list.code === 200 && list.data.total === 2, list.data?.total)
-  check('列表手机号已遮蔽', list.data.list.every((i: any) => i.phoneMasked?.includes('****')), list.data.list)
-  check('列表不含原始手机号', list.data.list.every((i: any) => i.phone === undefined), list.data.list)
-  check('列表不含提交 IP（运维字段不出列表）', list.data.list.every((i: any) => i.submitIp === undefined), list.data.list)
+  check('列表手机号已遮蔽', list.data.list.every((i: SmokeItem) => i.phoneMasked?.includes('****')), list.data.list)
+  check('列表不含原始手机号', list.data.list.every((i: SmokeItem) => i.phone === undefined), list.data.list)
+  check('列表不含提交 IP（运维字段不出列表）', list.data.list.every((i: SmokeItem) => i.submitIp === undefined), list.data.list)
 
   const byAnon = await call('GET', '/mgmt/feedback/list?source=anonymous', undefined, MGMT)
   check('按来源筛选：匿名 1 条', byAnon.data.total === 1, byAnon.data)

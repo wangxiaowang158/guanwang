@@ -2,6 +2,7 @@
 // 菜单可见性按当前管理员权限过滤：权限项取值为顶级栏目名，与后端 PermGuard 同源
 import { computed, h, ref } from 'vue'
 import * as Icons from '@ant-design/icons-vue'
+import type { ItemType } from 'ant-design-vue'
 import { getChannelList, type Channel } from '@/api/cms'
 import { BOTTOM_MENUS, TOP_MENUS } from '@/constants/menu'
 import { useUserStore } from '@/store'
@@ -30,7 +31,7 @@ export function channelPath(ch: Channel) {
 }
 
 /** 扁平数组 → antd 菜单 items（递归） */
-function toMenuItems(list: Channel[], parentId: number | null): any[] {
+function toMenuItems(list: Channel[], parentId: number | null): ItemType[] {
   return list
     .filter(c => c.parentId === parentId)
     .sort((a, b) => a.sort - b.sort)

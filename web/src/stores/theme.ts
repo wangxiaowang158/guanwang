@@ -24,8 +24,13 @@ export const useThemeStore = defineStore('theme', () => {
     return value === '2' ? '2' : '1'
   }
 
-  /** 读取 URL 的 ?template= 预览覆盖（仅用于开发预览，正式以后台配置为准） */
+  /**
+   * 读取 URL 的 ?template= 预览覆盖，仅开发环境生效
+   * 正式环境若也认它，任何人发一条带参数的链接就能让访客看到另一套风格，
+   * 与后台「网站模板」配置口径不一致（SRS 3.5.1：风格以后台配置为准）
+   */
   function readPreviewOverride(): TemplateKey | null {
+    if (!import.meta.env.DEV) return null
     const v = new URLSearchParams(window.location.search).get('template')
     if (v === '1' || v === '2') return v
     return null

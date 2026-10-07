@@ -43,6 +43,13 @@ export class MgmtMemberController {
     return result.ok ? raw(null, '状态已更新') : raw(null, result.message, 404)
   }
 
+  /** 解除风控锁定，不改变启用/禁用状态 */
+  @Put('unlock/:id')
+  async unlock(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.memberService.unlock(id)
+    return result.ok ? raw(null, '已解除锁定') : raw(null, result.message, 404)
+  }
+
   /** 重置会员密码 */
   @Put('reset-password/:id')
   async resetPassword(@Param('id', ParseIntPipe) id: number, @Body() dto: AdminResetPasswordDto) {

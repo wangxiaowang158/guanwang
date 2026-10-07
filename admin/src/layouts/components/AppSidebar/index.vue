@@ -30,6 +30,8 @@ import { useChannels, channelPath } from '@/composables/useChannels'
 import { TOP_MENUS, BOTTOM_MENUS, FIXED_MENU_PATHS } from '@/constants/menu'
 import { useUserStore } from '@/store'
 
+defineOptions({ name: 'AppSidebar' })
+
 const route = useRoute()
 const router = useRouter()
 const { load, buildMenu, findByKey, ancestors } = useChannels()

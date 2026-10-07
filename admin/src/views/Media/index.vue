@@ -97,6 +97,8 @@ import { DELETE_FAILED, DELETE_SUCCESS } from '@/constants/ui'
 import MediaGrid from './components/MediaGrid.vue'
 import { formatSize, SORT_OPTIONS, TYPE_OPTIONS } from './format'
 
+defineOptions({ name: 'MediaLibraryPage' })
+
 /** 空统计，首次加载完成前占位，避免模板取 undefined */
 const EMPTY_STAT: MediaStat = {
   total: 0,

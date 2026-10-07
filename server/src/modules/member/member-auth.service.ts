@@ -136,7 +136,10 @@ export class MemberAuthService {
       const captchaError = await this.captcha.verify(dto.captchaId, dto.captcha)
       if (captchaError) {
         await this.logFailure(member.id, dto.phone, dto, ctx, LOGIN_FAIL_REASON.WRONG_CAPTCHA)
-        return { ok: false, message: captchaError }
+        // 必须带上 captchaRequired：前台只凭这个标志补出验证码输入项。
+        // 漏了它，刷新过登录页（本地不再持有题面）的会员会一直收到「请输入图形验证码」
+        // 却永远看不到输入框，账号在前台再也登不上
+        return { ok: false, message: captchaError, captchaRequired: true }
       }
     }
 

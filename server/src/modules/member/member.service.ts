@@ -135,6 +135,21 @@ export class MemberService {
     return { ok: true, data: null }
   }
 
+  /**
+   * 后台解除风控锁定：只清锁定时间与失败计数，不动账号状态
+   * 此前复用「启用」接口，被禁用且恰好锁定的账号点「解除锁定」会被顺带启用，
+   * 违反 SRS 3.5.14「解除锁定不改变禁用状态」
+   */
+  async unlock(id: number): Promise<Result<null>> {
+    const member = await this.repo.findOne({ where: { id, deletedAt: IsNull() } })
+    if (!member) return { ok: false, message: '会员不存在' }
+
+    member.lockedUntil = null
+    member.failedAttempts = 0
+    await this.repo.save(member)
+    return { ok: true, data: null }
+  }
+
   /** 后台重置会员密码 */
   async resetPassword(id: number, newPassword: string): Promise<Result<null>> {
     const member = await this.repo.findOne({ where: { id, deletedAt: IsNull() } })

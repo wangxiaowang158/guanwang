@@ -2,15 +2,21 @@
 // 指标口径见 SRS 3.5.4：访问量取自访问统计，反馈取自意见反馈，新闻案例数取自内容管理
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, IsNull, Repository } from 'typeorm'
-import { FEEDBACK_STATUS } from '../../common/enums'
+import { In, Repository } from 'typeorm'
+import { CONTENT_STATUS, FEEDBACK_STATUS } from '../../common/enums'
 import { Channel } from '../cms/channel.entity'
 import { Content } from '../cms/content.entity'
 import { Feedback } from '../feedback/feedback.entity'
 import { rangeOfLastDays, toDateKey, VisitService } from './visit.service'
 
-/** 新闻案例数的统计范围：这两个一级栏目下的全部内容 */
+/** 新闻案例数的统计范围：这两个一级栏目下的已发布内容 */
 const NEWS_CASE_ROOT_KEYS = ['news', 'case']
+
+/**
+ * 分类栏目：条目是前台筛选项的名称，不是新闻或案例，不计入新闻案例数
+ * 与 admin/src/views/Cms/categorySources.ts、web/src/config/channelFilters.ts 中的分类栏目一致
+ */
+const TAXONOMY_CHANNEL_KEYS = ['case-industry', 'case-category']
 
 /** 最新反馈概览条数，SRS 3.5.4 规定 5 条 */
 const RECENT_FEEDBACK_LIMIT = 5
@@ -82,19 +88,32 @@ export class DashboardService {
   }
 
   /**
-   * 新闻案例内容总数
-   * 按栏目树统计：取 news / case 两棵子树下的全部栏目 key，再数其内容条数
+   * 已发布的新闻案例总数（SRS 3.5.4）
+   * 按栏目树统计：取 news / case 两棵子树下各层级的栏目 key，只数已发布内容。
+   * 后台可在任意栏目下新增子栏目，层级不止两层，因此按整棵子树递归收集。
+   * 排除两类不该计入的条目：草稿（访客看不到）、分类栏目里的选项条目
+   * （「行业分类」「类别分类」录的是筛选项名称，不是新闻或案例）
    */
   private async countNewsCase(): Promise<number> {
-    const roots = await this.channelRepo.find({
-      where: { key: In(NEWS_CASE_ROOT_KEYS), parentId: IsNull() },
-    })
-    if (roots.length === 0) return 0
-    const children = await this.channelRepo.find({
-      where: { parentId: In(roots.map((r) => r.id)) },
-    })
-    const keys = [...roots, ...children].map((c) => c.key)
-    return this.contentRepo.count({ where: { channelKey: In(keys) } })
+    const all = await this.channelRepo.find({ select: ['id', 'key', 'parentId'] })
+    const keys: string[] = []
+    const walk = (parentId: number) => {
+      for (const c of all) {
+        if (c.parentId === parentId) {
+          keys.push(c.key)
+          walk(c.id)
+        }
+      }
+    }
+    for (const root of all) {
+      if (root.parentId === null && NEWS_CASE_ROOT_KEYS.includes(root.key)) {
+        keys.push(root.key)
+        walk(root.id)
+      }
+    }
+    const countable = keys.filter((k) => !TAXONOMY_CHANNEL_KEYS.includes(k))
+    if (countable.length === 0) return 0
+    return this.contentRepo.count({ where: { channelKey: In(countable), status: CONTENT_STATUS.PUBLISHED } })
   }
 }
 

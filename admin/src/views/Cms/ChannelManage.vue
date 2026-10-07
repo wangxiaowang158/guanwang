@@ -160,6 +160,9 @@
 // 栏目管理：可视化增删改菜单结构与字段配置
 import { ref, reactive, computed, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import type { AntTreeNodeDropEvent, AntTreeNodeMouseEvent } from 'ant-design-vue/es/tree'
+import type { DataNode } from 'ant-design-vue/es/vc-tree/interface'
+import type { AllowDropOptions } from 'ant-design-vue/es/vc-tree/props'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ControlOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/PageContainer/index.vue'
 import {
@@ -203,12 +206,13 @@ const defaultForm = () => ({
 })
 const form = reactive(defaultForm())
 
-// SEO（TDK）仅对顶级公开板块页开放：排除系统类栏目与 Banner 容器
+// SEO（TDK）仅对顶级公开板块页开放：排除系统类栏目与不对外的分组容器
+// （Banner 管理、会员中心都是后台菜单分组，前台没有对应页面，配了 SEO 也不会输出）
 const SEO_EXCLUDE_TYPES = [
   'siteconfig', 'admins',
-  'members', 'feedback', 'authconfig', 'loginlog',
+  'members', 'feedback', 'authconfig', 'loginlog', 'oplog',
 ]
-const SEO_EXCLUDE_KEYS = ['banner']
+const SEO_EXCLUDE_KEYS = ['banner', 'member-center']
 
 /** 后端拒删的系统功能栏目类型，须与 server channel.service.ts remove() 的清单一致 */
 const UNDELETABLE_TYPES = [
@@ -250,7 +254,8 @@ const showBlockConfig = computed(() =>
 
 // 扁平 → 树
 const treeData = computed(() => {
-  const toTree = (parentId: number | null): any[] =>
+  type ChannelTreeNode = Channel & { children: ChannelTreeNode[] }
+  const toTree = (parentId: number | null): ChannelTreeNode[] =>
     flat.value
       .filter(c => c.parentId === parentId)
       .sort((a, b) => a.sort - b.sort)
@@ -278,14 +283,14 @@ const onSelect = (keys: (string | number)[]) => {
 }
 
 // 仅允许同级排序：拖到节点之间的间隙（非放入节点内部），且与拖动节点同父
-const allowTreeDrop = ({ dropNode, dropPosition }: any) => {
+const allowTreeDrop = ({ dropNode, dropPosition }: AllowDropOptions<DataNode>) => {
   if (dropPosition === 0) return false // 0 = 放到节点内部，禁止改变层级
   const target = flat.value.find(c => c.id === dropNode.id)
   return !!target && target.parentId === draggingParentId
 }
 
 let draggingParentId: number | null = null
-const onTreeDragStart = ({ node }: any) => {
+const onTreeDragStart = ({ node }: AntTreeNodeMouseEvent) => {
   const n = flat.value.find(c => c.id === node.id)
   draggingParentId = n ? n.parentId : null
 }
@@ -293,7 +298,7 @@ const onTreeDragStart = ({ node }: any) => {
 const onTreeDragEnd = () => { draggingParentId = null }
 
 // 拖拽放下：在同一父级内按新顺序重排并回写 sort
-const onTreeDrop = async (info: any) => {
+const onTreeDrop = async (info: AntTreeNodeDropEvent) => {
   try {
     const drag = flat.value.find(c => c.id === info.dragNode.id)
     const drop = flat.value.find(c => c.id === info.node.id)

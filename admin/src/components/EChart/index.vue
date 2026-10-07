@@ -7,6 +7,8 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 
+defineOptions({ name: 'EChartView' })
+
 const props = withDefaults(defineProps<{
   option: echarts.EChartsOption
   height?: string

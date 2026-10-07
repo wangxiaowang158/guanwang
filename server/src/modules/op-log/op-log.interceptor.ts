@@ -18,6 +18,12 @@ const MGMT_PREFIX = '/mgmt/'
 const GLOBAL_PREFIX = '/api'
 
 /**
+ * 不记入操作日志的写接口（SRS 3.5.18）
+ * 退出登录挂了 AdminGuard 以吊销令牌，能取到操作人，不显式排除就会被记成一条「其他」
+ */
+const SKIP_PATHS = new Set(['POST /mgmt/auth/logout'])
+
+/**
  * 脱敏字段名（小写比较）
  * 命中即替换成固定串，绝不能把密码、令牌原样落进审计表——
  * 审计表本身是可被查询导出的，落进去等于多了一处明文泄露点
@@ -129,11 +135,12 @@ export class OpLogInterceptor implements NestInterceptor {
     const method = (req.method || '').toUpperCase()
     // 去掉全局前缀，使目录表的键不必带 /api
     const rawPath = (req.path || '').split('?')[0]
-    const path = rawPath.startsWith(GLOBAL_PREFIX) ? rawPath.slice(GLOBAL_PREFIX.length) : rawPath
+    // 再去掉末尾斜杠：Express 默认对尾斜杠宽松路由，不规整的话 `/logout/` 会绕过排除表与目录表
+    const path = (rawPath.startsWith(GLOBAL_PREFIX) ? rawPath.slice(GLOBAL_PREFIX.length) : rawPath).replace(/(.)\/+$/, '$1')
 
     // admin 取成局部常量再判空，才能让类型收窄传进下面的闭包
     const admin = req.admin
-    if (!admin || !WRITE_METHODS.has(method) || !path.startsWith(MGMT_PREFIX)) {
+    if (!admin || !WRITE_METHODS.has(method) || !path.startsWith(MGMT_PREFIX) || SKIP_PATHS.has(`${method} ${path}`)) {
       return next.handle()
     }
 

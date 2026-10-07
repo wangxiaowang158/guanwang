@@ -183,6 +183,19 @@ describe('达阈值后强制图形验证码', () => {
     // 累加到 3 已达阈值
     if (!res.ok) expect(res.captchaRequired).toBe(true)
   })
+
+  it('已达阈值却未带验证码（刷新过登录页）时同样回传 captchaRequired，前台才能补出输入项', async () => {
+    // 回归：此前这条分支不带标志，刷新后的会员只看到「请输入图形验证码」却没有输入框，再也登不上
+    await seedMember({ failedAttempts: 3 })
+    captchaError = '请输入图形验证码'
+
+    const res = await login(RIGHT_PWD)
+    expect(res.ok).toBe(false)
+    if (!res.ok) {
+      expect(res.message).toBe('请输入图形验证码')
+      expect(res.captchaRequired).toBe(true)
+    }
+  })
 })
 
 describe('账号枚举防护', () => {
