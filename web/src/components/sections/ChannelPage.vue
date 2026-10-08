@@ -7,7 +7,7 @@
       :eyebrow="content.hero.eyebrow"
       :title="content.hero.title"
       :desc="content.hero.desc"
-      :bg="content.hero.bg"
+      :bg="content.hero.bg || fallbackImage"
       :crumb="channelName"
     />
 
@@ -29,7 +29,7 @@
         <span v-for="alias in aliasAnchorsOf(block)" :id="alias" :key="alias" class="block h-0" aria-hidden="true"></span>
         <div v-if="block.bg" class="absolute inset-0 bg-black/55 pointer-events-none"></div>
         <div class="relative" :class="theme.isStyle2 ? 'rs-channel-container' : 'site-container'">
-          <component :is="blockComp" :block="block" :on-dark="!!block.bg">
+          <component :is="blockComp" :block="block" :on-dark="!!block.bg" :fallback-image="fallbackImage">
             <!-- 筛选条插在区块标题与条目之间（SRS：条目少于 12 条或无分类时不提供） -->
             <template #filter>
               <ChannelFilterBar
@@ -97,6 +97,7 @@ import { API_SUCCESS_CODE } from '@/config'
 import { useThemeStore } from '@/stores/theme'
 import { useSiteStore } from '@/stores/site'
 import { filterRulesOf } from '@/config/channelFilters'
+import { defaultImageOf } from '@/config/defaultImages'
 import { useChannelPaging, isPagedBlock, totalPages } from '@/composables/useChannelPaging'
 import SkeletonRows from '@/components/common/SkeletonRows.vue'
 import PageHero from './PageHero.vue'
@@ -116,6 +117,8 @@ const siteStore = useSiteStore()
 const channelName = computed(() => siteStore.menu.find(m => m.key === props.pageKey)?.label || content.value?.hero.title || '')
 const heroComp = computed(() => (theme.isStyle2 ? Style2PageHero : PageHero))
 const blockComp = computed(() => (theme.isStyle2 ? Style2ContentBlock : ContentBlock))
+/** 本栏目的缺省配图：头图未配 Banner、图文条目未配图时显示 */
+const fallbackImage = computed(() => defaultImageOf(props.pageKey))
 
 // 区块底色：样式一白/浅灰交替；样式二白/米色交替
 function sectionClass(i: number) {

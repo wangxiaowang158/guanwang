@@ -3,7 +3,7 @@
 import { HOME_ICON_OPTIONS } from './homeIcons'
 
 export type FieldWidget =
-  | 'text' | 'textarea' | 'richtext' | 'image' | 'video' | 'file'
+  | 'text' | 'textarea' | 'richtext' | 'image' | 'cover' | 'video' | 'file'
   | 'link' | 'datetime' | 'switch' | 'select'
 
 export interface FieldDef {
@@ -25,7 +25,7 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
   description: { label: '描述', widget: 'textarea', maxlength: 500 },
   intro: { label: '简介', widget: 'textarea', maxlength: 500 },
   content: { label: '内容', widget: 'richtext' },
-  cover: { label: '封面图片', widget: 'image', tip: '建议尺寸：见前台板块要求' },
+  cover: { label: '封面图片', widget: 'cover', tip: '建议尺寸：见前台板块要求' },
   video: { label: '视频', widget: 'video', tip: '前台视频板块的播放源；封面图会作为播放前的首帧' },
   whiteCover: { label: '白色图片', widget: 'image', tip: '建议尺寸：800*540px' },
   file: { label: '文件地址', widget: 'file' },

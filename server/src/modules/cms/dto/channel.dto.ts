@@ -1,7 +1,7 @@
 // 栏目管理入参校验
 import { Type } from 'class-transformer'
 import {
-  IsArray, IsIn, IsInt, IsOptional, IsString, Length, Matches, Min,
+  IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, Matches, Min,
 } from 'class-validator'
 import { BLOCK_LAYOUT, CHANNEL_TYPE } from '../../../common/enums'
 
@@ -109,6 +109,11 @@ export class UpdateChannelDto {
   @IsString()
   @Length(1, 64, { message: '栏目名称长度需在 1-64 字之间' })
   name?: string
+
+  /** 是否隐藏（仅顶级栏目；系统功能栏目与首页由服务层拒绝） */
+  @IsOptional()
+  @IsBoolean()
+  hidden?: boolean
 
   @IsOptional()
   @IsString()

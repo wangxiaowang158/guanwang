@@ -151,7 +151,7 @@ export class VisitService {
       where: { parentId: IsNull() },
       order: { sort: 'ASC', id: 'ASC' },
     })
-    const portalChannels = channels.filter((c) => c.portalPath)
+    const portalChannels = channels.filter((c) => c.portalPath && !c.hidden)
     const rows = await this.repo
       .createQueryBuilder('v')
       .select('v.channelKey', 'channelKey')

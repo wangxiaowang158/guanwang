@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- 缺省配图·暖通空调：室外机 + 气流 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#d3e3fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="660" cy="90" r="150" fill="#ffffff" opacity="0.5"/>
+  <rect x="210" y="150" width="380" height="230" rx="18" fill="#ffffff" stroke="#0b57d0" stroke-width="6"/>
+  <circle cx="330" cy="265" r="78" fill="#eef5ff" stroke="#0b57d0" stroke-width="6"/>
+  <g fill="#4d8ff2">
+    <path d="M330 265 L330 197 A68 68 0 0 1 389 231 Z"/>
+    <path d="M330 265 L389 299 A68 68 0 0 1 330 333 Z" opacity="0.75"/>
+    <path d="M330 265 L271 299 A68 68 0 0 1 271 231 Z" opacity="0.5"/>
+  </g>
+  <circle cx="330" cy="265" r="12" fill="#071a36"/>
+  <g stroke="#0b57d0" stroke-width="6" stroke-linecap="round">
+    <line x1="450" y1="210" x2="550" y2="210"/>
+    <line x1="450" y1="245" x2="550" y2="245"/>
+    <line x1="450" y1="280" x2="550" y2="280"/>
+    <line x1="450" y1="315" x2="520" y2="315"/>
+  </g>
+  <rect x="250" y="380" width="40" height="30" fill="#0b57d0"/>
+  <rect x="510" y="380" width="40" height="30" fill="#0b57d0"/>
+  <g fill="none" stroke="#00b8d9" stroke-width="6" stroke-linecap="round">
+    <path d="M620 200 q30 -20 60 0 t60 0"/>
+    <path d="M620 250 q30 -20 60 0 t60 0" opacity="0.7"/>
+    <path d="M620 300 q30 -20 60 0 t60 0" opacity="0.4"/>
+  </g>
+</svg>

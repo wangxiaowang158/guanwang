@@ -139,6 +139,28 @@ export const UPLOAD = {
 }
 
 /**
+ * AI 生图配置：封面图「AI 生成」标签页调用 OpenAI 兼容的 /v1/images/generations
+ * 密钥只在服务端读取、不下发前端；apiKey 为空即视为未启用，接口返回明确提示
+ */
+export const AI_IMAGE = {
+  baseUrl: (process.env.AI_IMAGE_BASE_URL || 'https://api.openai.com/v1').trim().replace(/\/+$/, ''),
+  model: (process.env.AI_IMAGE_MODEL || 'gpt-image-1').trim(),
+  apiKey: (process.env.AI_IMAGE_API_KEY || '').trim(),
+  /** 单次请求超时毫秒数：生图常见耗时 10-60 秒，留足余量 */
+  timeoutMs: toInt(process.env.AI_IMAGE_TIMEOUT_MS, 90_000),
+  /** 每次生成的候选张数，同时即费用倍数 */
+  count: toInt(process.env.AI_IMAGE_COUNT, 5),
+  /** 生图尺寸，封面统一用横图 */
+  size: (process.env.AI_IMAGE_SIZE || '1536x1024').trim(),
+  /** 描述文本最大长度 */
+  promptMaxLen: 50,
+  /** 候选图在内存里的保留时长，过期未应用即丢弃 */
+  candidateTtlMs: 30 * 60 * 1000,
+  /** 候选缓存总条数上限，防止反复生成撑爆内存 */
+  candidateMax: 60,
+}
+
+/**
  * Redis 配置 —— 短信验证码与图形验证码的共享存储
  *
  * 留空 REDIS_URL 即不启用，回落到进程内存实现：

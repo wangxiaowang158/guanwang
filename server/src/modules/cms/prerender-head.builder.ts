@@ -81,7 +81,7 @@ export class PrerenderHeadBuilder {
     }
     // 栏目页：只认配了该 portalPath 的顶级栏目，口径与 buildChannel 一致
     const top = await this.channelRepo.findOne({ where: { portalPath: path } })
-    if (!top || top.parentId !== null) return null
+    if (!top || top.parentId !== null || top.hidden) return null
     return {
       title: top.seoTitle || site.webTitle,
       description: top.seoDescription || site.description,

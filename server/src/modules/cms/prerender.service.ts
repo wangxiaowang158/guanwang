@@ -229,7 +229,7 @@ export class PrerenderService {
       order: { sort: 'ASC', id: 'ASC' },
     })
     const links = tops
-      .filter(c => isSitePath(c.portalPath))
+      .filter(c => !c.hidden && isSitePath(c.portalPath))
       .map(c => `<li><a href="${esc(c.portalPath as string)}">${esc(c.name)}</a></li>`)
     if (!links.length) return ''
     return `<nav aria-label="主导航"><ul>${links.join('')}</ul></nav>`
@@ -306,7 +306,7 @@ export class PrerenderService {
    */
   private async buildChannel(path: string): Promise<string> {
     const top = await this.channelRepo.findOne({ where: { portalPath: path } })
-    if (!top || top.parentId !== null) return ''
+    if (!top || top.parentId !== null || top.hidden) return ''
 
     const [nav, page] = await Promise.all([
       this.buildNav(),

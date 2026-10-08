@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- 缺省配图·综合能源：光伏板 + 太阳 + 闪电 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#d3e3fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="610" cy="130" r="60" fill="#00b8d9" opacity="0.85"/>
+  <g stroke="#00b8d9" stroke-width="6" stroke-linecap="round" opacity="0.6">
+    <line x1="610" y1="40" x2="610" y2="55"/>
+    <line x1="700" y1="130" x2="685" y2="130"/>
+    <line x1="520" y1="130" x2="535" y2="130"/>
+    <line x1="674" y1="66" x2="663" y2="77"/>
+    <line x1="546" y1="66" x2="557" y2="77"/>
+  </g>
+  <g transform="translate(130 210) skewX(-18)">
+    <rect width="420" height="170" rx="8" fill="#0b57d0"/>
+    <g stroke="#eef5ff" stroke-width="4" opacity="0.7">
+      <line x1="105" y1="0" x2="105" y2="170"/>
+      <line x1="210" y1="0" x2="210" y2="170"/>
+      <line x1="315" y1="0" x2="315" y2="170"/>
+      <line x1="0" y1="57" x2="420" y2="57"/>
+      <line x1="0" y1="113" x2="420" y2="113"/>
+    </g>
+  </g>
+  <rect x="250" y="380" width="14" height="60" fill="#071a36"/>
+  <rect x="420" y="380" width="14" height="60" fill="#071a36"/>
+  <rect x="160" y="436" width="360" height="10" rx="5" fill="#071a36" opacity="0.4"/>
+  <path d="M640 250 l-50 90 h40 l-25 80 l75 -110 h-42 l32 -60 z" fill="#4d8ff2" stroke="#0b57d0" stroke-width="5" stroke-linejoin="round"/>
+</svg>

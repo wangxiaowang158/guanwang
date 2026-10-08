@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- 缺省配图·项目案例：城市楼宇群 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#d3e3fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="620" cy="120" r="46" fill="#00b8d9" opacity="0.5"/>
+  <rect x="150" y="250" width="110" height="190" fill="#4d8ff2" opacity="0.55"/>
+  <rect x="270" y="140" width="130" height="300" fill="#0b57d0"/>
+  <rect x="410" y="200" width="110" height="240" fill="#071a36"/>
+  <rect x="530" y="280" width="120" height="160" fill="#4d8ff2" opacity="0.75"/>
+  <g fill="#eef5ff" opacity="0.8">
+    <rect x="290" y="165" width="24" height="18"/><rect x="330" y="165" width="24" height="18"/><rect x="370" y="165" width="16" height="18"/>
+    <rect x="290" y="205" width="24" height="18"/><rect x="330" y="205" width="24" height="18"/><rect x="370" y="205" width="16" height="18"/>
+    <rect x="290" y="245" width="24" height="18"/><rect x="330" y="245" width="24" height="18"/><rect x="370" y="245" width="16" height="18"/>
+    <rect x="290" y="285" width="24" height="18"/><rect x="330" y="285" width="24" height="18"/><rect x="370" y="285" width="16" height="18"/>
+  </g>
+  <g fill="#00b8d9" opacity="0.7">
+    <rect x="430" y="225" width="20" height="16"/><rect x="470" y="225" width="20" height="16"/>
+    <rect x="430" y="265" width="20" height="16"/><rect x="470" y="265" width="20" height="16"/>
+    <rect x="430" y="305" width="20" height="16"/><rect x="470" y="305" width="20" height="16"/>
+  </g>
+  <rect x="120" y="438" width="560" height="10" rx="5" fill="#071a36" opacity="0.4"/>
+</svg>

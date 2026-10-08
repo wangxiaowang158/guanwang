@@ -191,7 +191,11 @@ const onClear = async () => {
   font-weight: 600;
 }
 
+/* 查询条件独立成浅灰区块，与其他列表页一致 */
 .toolbar {
   margin-bottom: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
 }
 </style>

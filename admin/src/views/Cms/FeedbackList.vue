@@ -43,6 +43,9 @@
           @search="search"
         />
       </a-space>
+    </div>
+    <!-- 功能操作行：导出放这里，不与查询条件挤在同一行 -->
+    <div class="actions">
       <a-button :loading="exporting" @click="onExport">
         <template #icon><DownloadOutlined /></template>
         导出
@@ -418,13 +421,18 @@ const onBatchDelete = async () => {
   font-weight: 600;
 }
 
-/* 筛选条件占左侧，导出按钮靠右，与内容列表页工具栏一致 */
+/* 查询条件独立成浅灰区块；下方 .actions 为功能操作行，靠右，与内容列表页一致 */
 .toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
   margin-bottom: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 .batch-bar {

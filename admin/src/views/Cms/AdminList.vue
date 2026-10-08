@@ -10,6 +10,9 @@
         allow-clear
         @search="search"
       />
+    </div>
+    <div class="actions">
+      <span class="actions-title">管理员账号</span>
       <a-button type="primary" @click="openEdit()">
         <template #icon><PlusOutlined /></template>
         新增管理员
@@ -298,10 +301,25 @@ onMounted(load)
   margin-bottom: 16px;
 }
 
+/* 查询条件独立成浅灰区块；下方 .actions 为功能操作行，靠右，与查询区分开 */
 .toolbar {
-  display: flex;
-  justify-content: space-between;
   margin-bottom: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.actions-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #262626;
 }
 
 .super-hint {

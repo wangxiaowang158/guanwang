@@ -12,6 +12,8 @@ export interface ChannelVo {
   name: string
   type: string
   icon?: string
+  /** 是否隐藏 */
+  hidden: boolean
   sort: number
   formFields: string[]
   listColumns: string[]
@@ -190,6 +192,7 @@ export function toChannelVo(c: Channel): ChannelVo {
     name: c.name,
     type: c.type,
     icon: orUndefined(c.icon),
+    hidden: !!c.hidden,
     sort: c.sort,
     formFields: parseStringArray(c.formFields),
     listColumns: parseStringArray(c.listColumns),

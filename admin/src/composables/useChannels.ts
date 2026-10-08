@@ -73,12 +73,23 @@ export function useChannels() {
    * 子栏目随其顶级祖先一同可见，避免父级隐藏而子级漏出
    */
   const visibleChannels = computed(() => {
+    // 已隐藏的一级模块不进侧边栏，也不可经路由访问；栏目管理页读原始列表，仍可恢复
     const visibleRootIds = new Set(
-      channels.value.filter(c => c.parentId === null && isRootVisible(c)).map(c => c.id)
+      channels.value.filter(c => c.parentId === null && !c.hidden && isRootVisible(c)).map(c => c.id)
     )
+    // 二级栏目也可单独隐藏；祖先链上任一节点被隐藏，其下整棵子树都不可见
+    const byId = new Map(channels.value.map(c => [c.id, c]))
+    const hiddenInChain = (c: Channel): boolean => {
+      let cur: Channel | undefined = c
+      while (cur) {
+        if (cur.hidden) return true
+        cur = cur.parentId ? byId.get(cur.parentId) : undefined
+      }
+      return false
+    }
     return channels.value.filter(c => {
       const rootId = rootIdOf(c)
-      return rootId !== null && visibleRootIds.has(rootId)
+      return rootId !== null && visibleRootIds.has(rootId) && !hiddenInChain(c)
     })
   })
 

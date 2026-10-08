@@ -24,7 +24,7 @@ import LoginLogList from './LoginLogList.vue'
 import OpLogList from './OpLogList.vue'
 
 const route = useRoute()
-const { load, loaded, findByKey } = useChannels()
+const { channels, load, loaded, findByKey } = useChannels()
 
 const channel = ref<Channel | null>(null)
 
@@ -58,4 +58,6 @@ onMounted(async () => {
 })
 
 watch(() => route.params.channelKey, resolve)
+// 栏目被改名/重载后同步最新数据（如页面标题就地修改）
+watch(channels, resolve)
 </script>

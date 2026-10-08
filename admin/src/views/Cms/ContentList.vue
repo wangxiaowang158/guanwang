@@ -1,10 +1,10 @@
 <template>
   <div ref="tableWrap" class="content-list">
-    <div class="page-title">{{ channel.name }}</div>
+    <ChannelTitle :channel="channel" />
 
-    <!-- 筛选 + 新增 + 批量删除 -->
+    <!-- 筛选条件单独一行，功能操作（新增 / 批量删除）在下一行 -->
     <div class="toolbar">
-      <a-space :size="12">
+      <a-space :size="12" wrap>
         <a-range-picker
           v-model:value="dateRange"
           value-format="YYYY-MM-DD"
@@ -28,6 +28,8 @@
           @search="onFilterChange"
         />
       </a-space>
+    </div>
+    <div class="actions">
       <a-space :size="12">
         <a-button type="primary" @click="goEdit()">
           <template #icon><PlusOutlined /></template>
@@ -140,6 +142,7 @@ import {
   type Channel, type Content, type ContentStatus
 } from '@/api/cms'
 import { COLUMN_LABELS } from './fieldDefs'
+import ChannelTitle from './components/ChannelTitle.vue'
 
 /** 发布状态筛选项 */
 const STATUS_OPTIONS = [
@@ -347,18 +350,18 @@ onBeforeUnmount(() => { sortable?.destroy() })
   padding: 20px;
 }
 
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #262626;
+/* 查询条件独立成浅灰区块；下方 .actions 为功能操作行，靠右，与查询区分开 */
+.toolbar {
   margin-bottom: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
 }
 
-.toolbar {
+.actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 .name-cell {

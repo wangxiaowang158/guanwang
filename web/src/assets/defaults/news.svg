@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- 缺省配图·新闻资讯：资讯页面 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#d3e3fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <rect x="270" y="95" width="320" height="330" rx="14" fill="#4d8ff2" opacity="0.35" transform="rotate(6 430 260)"/>
+  <rect x="220" y="90" width="320" height="330" rx="14" fill="#ffffff" stroke="#0b57d0" stroke-width="6"/>
+  <rect x="250" y="122" width="260" height="110" rx="6" fill="#0b57d0"/>
+  <polyline points="262,218 320,170 360,200 410,150 498,218" fill="#4d8ff2" opacity="0.8"/>
+  <circle cx="470" cy="150" r="14" fill="#00b8d9"/>
+  <g fill="#071a36" opacity="0.75">
+    <rect x="250" y="252" width="220" height="14" rx="7"/>
+  </g>
+  <g fill="#0b57d0" opacity="0.35">
+    <rect x="250" y="284" width="260" height="10" rx="5"/>
+    <rect x="250" y="308" width="240" height="10" rx="5"/>
+    <rect x="250" y="332" width="260" height="10" rx="5"/>
+    <rect x="250" y="356" width="180" height="10" rx="5"/>
+  </g>
+  <circle cx="590" cy="380" r="40" fill="#00b8d9"/>
+  <path d="M572 380 h36 M590 362 v36" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+</svg>

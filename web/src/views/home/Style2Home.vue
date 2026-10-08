@@ -74,7 +74,7 @@
         <div v-else class="divide-y" style="border-color: var(--rs-border)">
           <article v-for="item in sections.products" :key="item.id" class="grid grid-cols-1 lg:grid-cols-12 gap-8 py-9 first:pt-0 items-center">
             <div class="lg:col-span-4 aspect-[16/10] overflow-hidden" style="background: var(--rs-bg-cream)">
-              <SafeImage :src="item.image" :alt="item.name" :width="480" :height="300" />
+              <SafeImage :src="item.image" :fallback="HOME_DEFAULT_IMAGES.product" :alt="item.name" :width="480" :height="300" />
             </div>
             <div class="lg:col-span-3">
               <h3 class="text-xl font-bold mb-3" style="color: var(--rs-text-dark)">{{ item.name }}</h3>
@@ -171,8 +171,8 @@
             class="group block bg-white border-t-2"
             style="border-color: var(--rs-primary)"
           >
-            <div v-if="imgs.usable(v.image)" class="aspect-video overflow-hidden rs-zoom" style="background: var(--rs-bg-cream)">
-              <img :src="v.image" :alt="v.title" width="400" height="225" loading="lazy" class="w-full h-full object-cover" @error="imgs.markBroken(v.image)" />
+            <div class="aspect-video overflow-hidden rs-zoom" style="background: var(--rs-bg-cream)">
+              <SafeImage :src="v.image" :fallback="HOME_DEFAULT_IMAGES.view" :alt="v.title" :width="400" :height="225" />
             </div>
             <div class="p-7">
               <h3 class="text-base font-bold mb-2" style="color: var(--rs-text-dark)">{{ v.title }}</h3>
@@ -192,7 +192,7 @@
         <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <article v-for="s in sections.social" :key="s.id" class="group">
             <div class="h-52 overflow-hidden mb-5 rs-zoom" style="background: var(--rs-bg-cream)">
-              <SafeImage :src="s.image" :alt="s.title" :width="400" :height="208" />
+              <SafeImage :src="s.image" :fallback="HOME_DEFAULT_IMAGES.social" :alt="s.title" :width="400" :height="208" />
             </div>
             <h3 class="text-base font-bold mb-2" style="color: var(--rs-text-dark)">{{ s.title }}</h3>
             <p class="text-sm leading-relaxed" style="color: var(--rs-text-muted)">{{ s.desc }}</p>
@@ -230,6 +230,7 @@ import ContactSection from './components/ContactSection.vue'
 import { useBrokenImages } from '@/composables/useBrokenImages'
 import { useHomeCopy } from '@/composables/useHomeCopy'
 import { homeIconOf } from '@/config/homeIcons'
+import { HOME_DEFAULT_IMAGES } from '@/config/defaultImages'
 
 /** 合作伙伴 Logo、「我眼中的中瑞恒」配图失效登记 */
 const imgs = useBrokenImages()
@@ -249,7 +250,7 @@ const heroTag = computed(() => `${COMPANY_EN} · ${site.value.subSlogan || '智�
 const heroDesc = computed(() => site.value.description || '')
 
 // Hero 背景媒体：视频优先，其次背景图（站点配置优先，回退板块背景配置 backgrounds.hero）
-const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || '')
+const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || HOME_DEFAULT_IMAGES.hero)
 const heroVideo = computed(() => site.value.heroVideo || '')
 // 窄屏与减少动效偏好下不播背景视频，回落到背景图
 const { blocked: heroVideoBlocked, markFailed: markHeroVideoFailed } = useHeroVideo()

@@ -42,6 +42,13 @@
         @update:model-value="(v) => (model[key] = v)"
         :tip="defOf(key).tip"
       />
+      <!-- 封面图：素材库 / 本地上传 / AI 生成 -->
+      <CoverUpload
+        v-else-if="defOf(key).widget === 'cover'"
+        :model-value="textOf(key)"
+        @update:model-value="(v) => (model[key] = v)"
+        :tip="defOf(key).tip"
+      />
       <!-- 视频 -->
       <VideoUpload
         v-else-if="defOf(key).widget === 'video'"
@@ -121,6 +128,7 @@ import type { ContentFormModel } from '@/api/cms'
 import { getFieldDef } from './fieldDefs'
 import RichEditor from './components/RichEditor.vue'
 import ImageUpload from './components/ImageUpload.vue'
+import CoverUpload from './components/CoverUpload.vue'
 import VideoUpload from './components/VideoUpload.vue'
 
 const props = defineProps<{
@@ -150,7 +158,7 @@ const textOf = (key: string) => {
 }
 
 /** 图片/视频/下拉控件自带提示位，其余控件的提示走表单项的 extra，避免重复显示 */
-const hasInlineTip = (key: string) => ['image', 'video', 'select'].includes(defOf(key).widget)
+const hasInlineTip = (key: string) => ['image', 'cover', 'video', 'select'].includes(defOf(key).widget)
 
 /** 取某下拉字段的选项，父级未提供时为空数组（控件随之禁用） */
 const optionsOf = (key: string) => props.fieldOptions?.[key] ?? defOf(key).options ?? []

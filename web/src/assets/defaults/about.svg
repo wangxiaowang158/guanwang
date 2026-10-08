@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- 缺省配图·关于我们 / 通用：企业大楼 + 绿植 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#d3e3fb"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0b57d0"/>
+      <stop offset="1" stop-color="#4d8ff2"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="180" cy="120" r="120" fill="#ffffff" opacity="0.5"/>
+  <path d="M300 440 V150 L450 100 V440 Z" fill="url(#glass)"/>
+  <path d="M450 100 L520 130 V440 H450 Z" fill="#071a36"/>
+  <g stroke="#eef5ff" stroke-width="3" opacity="0.5">
+    <line x1="300" y1="200" x2="450" y2="165"/>
+    <line x1="300" y1="260" x2="450" y2="232"/>
+    <line x1="300" y1="320" x2="450" y2="300"/>
+    <line x1="300" y1="380" x2="450" y2="368"/>
+    <line x1="375" y1="125" x2="375" y2="440"/>
+  </g>
+  <g stroke="#00b8d9" stroke-width="3" opacity="0.6">
+    <line x1="470" y1="170" x2="470" y2="440"/>
+    <line x1="495" y1="180" x2="495" y2="440"/>
+  </g>
+  <rect x="550" y="300" width="110" height="140" fill="#4d8ff2" opacity="0.45"/>
+  <g fill="#00b8d9">
+    <circle cx="250" cy="395" r="34" opacity="0.8"/>
+    <circle cx="590" cy="290" r="26" opacity="0.6"/>
+  </g>
+  <rect x="246" y="400" width="8" height="40" fill="#071a36"/>
+  <rect x="160" y="436" width="520" height="10" rx="5" fill="#071a36" opacity="0.4"/>
+</svg>

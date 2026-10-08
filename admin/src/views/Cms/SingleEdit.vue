@@ -1,6 +1,6 @@
 <template>
   <div class="single-edit">
-    <div class="page-title">{{ channel.name }}</div>
+    <ChannelTitle :channel="channel" />
     <div class="form-card">
       <a-spin :spinning="loadState === 'loading'">
         <ContentForm
@@ -21,6 +21,7 @@ import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { getContentDetail, saveContent, type Channel, type Content, type ContentFormModel } from '@/api/cms'
 import { sanitizeHtml } from '@/utils/sanitize'
+import ChannelTitle from './components/ChannelTitle.vue'
 import ContentForm from './ContentForm.vue'
 
 const props = defineProps<{ channel: Channel }>()
@@ -91,13 +92,6 @@ const onSave = async () => {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #262626;
-  margin-bottom: 16px;
 }
 
 .form-card {

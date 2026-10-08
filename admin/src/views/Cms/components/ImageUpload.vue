@@ -2,72 +2,40 @@
   <div class="image-upload">
     <a-input
       :value="modelValue"
-      placeholder="图片地址，或点击右侧上传"
+      placeholder="图片地址，点击右侧「选择图片」"
       readonly
       class="path-input"
-    >
-      <template #addonAfter>
-        <span class="upload-btn" @click="triggerPick">
-          {{ uploading ? '上传中…' : '上传图片' }}
-        </span>
-      </template>
-    </a-input>
-    <a-button class="preview-btn" @click="pickerOpen = true">选择已有</a-button>
+    />
+    <!-- 素材库 / 本地上传 / AI 生成 三合一入口 -->
+    <a-button class="preview-btn" @click="pickerOpen = true">选择图片</a-button>
     <a-button class="preview-btn" :disabled="!modelValue" @click="previewVisible = true">
       预览图片
     </a-button>
     <span v-if="tip" class="tip">{{ tip }}</span>
-
-    <!-- 隐藏的文件选择 -->
-    <input
-      ref="fileRef"
-      type="file"
-      :accept="UPLOAD_ACCEPT"
-      style="display: none"
-      @change="onFileChange"
-    />
 
     <!-- 预览弹窗 -->
     <a-modal v-model:open="previewVisible" title="图片预览" :footer="null" width="640px">
       <img v-if="modelValue" :src="modelValue" alt="预览" class="preview-img" />
     </a-modal>
 
-    <!-- 从素材库挑已上传的图，省掉重复上传 -->
-    <MediaPickerModal
+    <CoverPickerModal
       v-model:open="pickerOpen"
-      type="image"
-      title="选择已有图片"
-      @pick="(url) => emit('update:modelValue', url)"
+      title="选择图片"
+      @confirm="(url) => emit('update:modelValue', url)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-// 图片上传：选本地图片上传到后端，写回站内访问地址
+// 图片字段：地址输入框 + 选择图片（素材库 / 本地上传 / AI 生成）+ 预览，写回站内访问地址
 import { ref } from 'vue'
-import { UPLOAD_ACCEPT } from '@/config'
-import { useImageUpload } from '@/composables/useImageUpload'
-import MediaPickerModal from '@/views/Media/components/MediaPickerModal.vue'
+import CoverPickerModal from './CoverPickerModal.vue'
 
 defineProps<{ modelValue?: string; tip?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
-const fileRef = ref<HTMLInputElement>()
 const previewVisible = ref(false)
 const pickerOpen = ref(false)
-
-const { uploading, pickAndUpload } = useImageUpload()
-
-const triggerPick = () => {
-  if (uploading.value) return
-  fileRef.value?.click()
-}
-
-// 校验与上传由 composable 统一处理，此处只负责把地址写回表单
-const onFileChange = async (e: Event) => {
-  const url = await pickAndUpload(e.target as HTMLInputElement)
-  if (url) emit('update:modelValue', url)
-}
 </script>
 
 <style scoped>
@@ -81,15 +49,6 @@ const onFileChange = async (e: Event) => {
 .path-input {
   flex: 1;
   min-width: 280px;
-}
-
-.upload-btn {
-  cursor: pointer;
-  user-select: none;
-  /* 上传中文案更长，固定宽度避免输入框宽度跳动 */
-  display: inline-block;
-  min-width: 56px;
-  text-align: center;
 }
 
 .tip {

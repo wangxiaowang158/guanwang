@@ -13,6 +13,7 @@ import { AlignHomeFormFields1790000007000 } from './1790000007000-AlignHomeFormF
 import { MoveCategoryTitleToName1790000008000 } from './1790000008000-MoveCategoryTitleToName'
 import { FlattenContentGroups1790000009000 } from './1790000009000-FlattenContentGroups'
 import { HomeSectionHeadings1790000010000 } from './1790000010000-HomeSectionHeadings'
+import { AddChannelHidden1790000011000 } from './1790000011000-AddChannelHidden'
 
 /**
  * 全部迁移，按执行顺序排列
@@ -30,4 +31,5 @@ export const MIGRATIONS = [
   MoveCategoryTitleToName1790000008000,
   FlattenContentGroups1790000009000,
   HomeSectionHeadings1790000010000,
+  AddChannelHidden1790000011000,
 ]

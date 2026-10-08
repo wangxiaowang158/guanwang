@@ -37,8 +37,11 @@
           @change="search"
         />
         <a-checkbox v-model:checked="unusedOnly" @change="search">只看未引用</a-checkbox>
-        <a-button :loading="loading" @click="fetchList">刷新</a-button>
       </a-space>
+    </div>
+    <!-- 功能操作行：刷新不与查询条件挤在同一行 -->
+    <div class="actions">
+      <a-button :loading="loading" @click="fetchList">刷新</a-button>
     </div>
 
     <a-alert
@@ -192,7 +195,17 @@ const onRemove = async (item: MediaItem) => {
   color: #d46b08;
 }
 
+/* 查询条件独立成浅灰区块；.actions 为功能操作行，靠右，与查询区分开 */
 .toolbar {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: 12px;
 }
 

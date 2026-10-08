@@ -80,7 +80,7 @@
             :class="{ visible: shown.has(`product-${item.id}`), 's1-product--reverse': i % 2 === 1 }"
           >
             <div class="s1-product-media">
-              <SafeImage :src="item.image" :alt="item.name" :width="640" :height="400" />
+              <SafeImage :src="item.image" :fallback="HOME_DEFAULT_IMAGES.product" :alt="item.name" :width="640" :height="400" />
             </div>
             <div class="s1-product-body">
               <span class="s1-product-num">{{ String(i + 1).padStart(2, '0') }}</span>
@@ -180,8 +180,8 @@
             class="s1-card s1-view-card fade-up"
             :class="[`delay-${(i % 4) * 100}`, { visible: shown.has(`view-${v.id}`) }]"
           >
-            <div v-if="imgs.usable(v.image)" class="s1-view-media">
-              <img :src="v.image" :alt="v.title" width="400" height="225" loading="lazy" @error="imgs.markBroken(v.image)" />
+            <div class="s1-view-media">
+              <SafeImage :src="v.image" :fallback="HOME_DEFAULT_IMAGES.view" :alt="v.title" :width="400" :height="225" />
             </div>
             <h3 class="s1-card-title">{{ v.title }}</h3>
             <p v-if="v.desc" class="s1-card-desc">{{ v.desc }}</p>
@@ -204,7 +204,7 @@
             :class="[`delay-${i * 100}`, { visible: shown.has(`social-${s.id}`) }]"
           >
             <div class="s1-social-media">
-              <SafeImage :src="s.image" :alt="s.title" :width="480" :height="300" />
+              <SafeImage :src="s.image" :fallback="HOME_DEFAULT_IMAGES.social" :alt="s.title" :width="480" :height="300" />
             </div>
             <div class="s1-social-body">
               <h3 class="s1-card-title">{{ s.title }}</h3>
@@ -247,8 +247,9 @@ import ContactSection from './components/ContactSection.vue'
 import { useBrokenImages } from '@/composables/useBrokenImages'
 import { useHomeCopy } from '@/composables/useHomeCopy'
 import { homeIconOf } from '@/config/homeIcons'
+import { HOME_DEFAULT_IMAGES } from '@/config/defaultImages'
 
-/** 合作伙伴 Logo、「我眼中的中瑞恒」配图失效登记 */
+/** 合作伙伴 Logo 失效登记 */
 const imgs = useBrokenImages()
 
 const sections = ref<HomeSections | null>(null)
@@ -266,7 +267,7 @@ const heroTag = computed(() => site.value.subSlogan || '您身边专业的智慧
 const heroDesc = computed(() => site.value.description || '')
 
 // 首屏背景媒体：窄屏与减少动效偏好下不播背景视频，回落到背景图
-const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || '')
+const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || HOME_DEFAULT_IMAGES.hero)
 const heroVideo = computed(() => site.value.heroVideo || '')
 const { blocked: heroVideoBlocked, markFailed: markHeroVideoFailed } = useHeroVideo()
 const showHeroVideo = computed(() => !!heroVideo.value && !heroVideoBlocked.value)

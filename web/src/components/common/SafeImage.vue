@@ -1,15 +1,15 @@
 <template>
-  <!-- 带占位的图片：无地址或加载失败时显示品牌底色占位，版面不塌陷（SRS 3.5.1 图片加载失败） -->
+  <!-- 带占位的图片：无地址或加载失败时先换缺省配图，缺省图也没有时显示品牌底色占位，版面不塌陷（SRS 3.5.1 图片加载失败） -->
   <img
-    v-if="src && !failed"
-    :src="src"
+    v-if="current"
+    :src="current"
     :alt="alt"
     :width="width"
     :height="height"
     :loading="eager ? 'eager' : 'lazy'"
     decoding="async"
     class="safe-image"
-    @error="failed = true"
+    @error="onError"
   />
   <div v-else class="safe-image safe-image--placeholder" role="img" :aria-label="alt || '暂无图片'">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 // 通用图片：统一处理「未配图」与「图挂了」两种情况，调用方不必各写一遍 v-if/v-else
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
   src?: string
@@ -29,11 +29,25 @@ const props = defineProps<{
   height: number
   /** 首屏图片传 true，其余默认懒加载 */
   eager?: boolean
+  /** 缺省配图：src 为空或加载失败时改显示它（见 config/defaultImages.ts） */
+  fallback?: string
 }>()
 
-const failed = ref(false)
+/** 已加载失败的地址；原图与缺省图各自记，缺省图也挂了才落到占位块 */
+const failed = ref<Set<string>>(new Set())
+
+const current = computed(() => {
+  if (props.src && !failed.value.has(props.src)) return props.src
+  if (props.fallback && !failed.value.has(props.fallback)) return props.fallback
+  return ''
+})
+
+function onError() {
+  if (current.value) failed.value = new Set(failed.value).add(current.value)
+}
+
 // 地址变化（翻页复用组件）时重置失败态，否则新图也会被当成失败
-watch(() => props.src, () => { failed.value = false })
+watch(() => [props.src, props.fallback], () => { failed.value = new Set() })
 </script>
 
 <style scoped>

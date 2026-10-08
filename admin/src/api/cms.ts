@@ -14,6 +14,8 @@ export interface Channel {
     // 会员中心四项，读写真实后端
     | 'members' | 'feedback' | 'authconfig' | 'loginlog'
   icon?: string
+  /** 是否隐藏：仅一级模块有效，隐藏后后台侧边栏与官网前台都不再出现 */
+  hidden?: boolean
   sort: number
   formFields: string[]
   listColumns: string[]

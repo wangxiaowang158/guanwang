@@ -11,9 +11,7 @@
       <button type="button" :class="btn('orderedList')" @click="editor.chain().focus().toggleOrderedList().run()">1. 列表</button>
       <button type="button" :class="btn('blockquote')" @click="editor.chain().focus().toggleBlockquote().run()">引用</button>
       <span class="sep" />
-      <button type="button" class="tb-btn" :disabled="uploading" @click="addImage">
-        {{ uploading ? '上传中…' : '图片' }}
-      </button>
+      <button type="button" class="tb-btn" @click="imagePickerOpen = true">图片</button>
       <button type="button" class="tb-btn" :disabled="videoUploading" @click="addVideo">
         {{ videoUploading ? `上传中 ${videoProgress}%` : '视频' }}
       </button>
@@ -21,26 +19,27 @@
       <button type="button" class="tb-btn" @click="editor.chain().focus().redo().run()">重做</button>
     </div>
     <editor-content :editor="editor" class="editor-body" />
-    <input ref="imgRef" type="file" :accept="UPLOAD_ACCEPT" style="display: none" @change="onImage" />
+    <!-- 插图：素材库 / 本地上传 / AI 生成 -->
+    <CoverPickerModal v-model:open="imagePickerOpen" title="插入图片" @confirm="onImagePicked" />
     <input ref="videoRef" type="file" :accept="UPLOAD_VIDEO_ACCEPT" style="display: none" @change="onVideo" />
   </div>
 </template>
 
 <script setup lang="ts">
-// 富文本编辑器：基于 tiptap，插图上传到后端后以地址内联
+// 富文本编辑器：基于 tiptap，插图经选择弹窗（素材库/上传/AI）取得站内地址后内联
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-import { UPLOAD_ACCEPT, UPLOAD_VIDEO_ACCEPT } from '@/config'
-import { useImageUpload } from '@/composables/useImageUpload'
+import { UPLOAD_VIDEO_ACCEPT } from '@/config'
 import { useVideoUpload } from '@/composables/useVideoUpload'
 import { Video } from './videoNode'
+import CoverPickerModal from './CoverPickerModal.vue'
 
 const props = defineProps<{ modelValue?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [string] }>()
 
-const imgRef = ref<HTMLInputElement>()
+const imagePickerOpen = ref(false)
 const videoRef = ref<HTMLInputElement>()
 
 const editor = useEditor({
@@ -64,17 +63,9 @@ const btn = (name: string, attrs?: Record<string, unknown>) => [
   { active: editor.value?.isActive(name, attrs) }
 ]
 
-const { uploading, pickAndUpload } = useImageUpload()
-
-const addImage = () => {
-  if (uploading.value) return
-  imgRef.value?.click()
-}
-
-// 校验与上传由 composable 统一处理，此处只负责把地址插入正文
-const onImage = async (e: Event) => {
-  const url = await pickAndUpload(e.target as HTMLInputElement)
-  if (url) editor.value?.chain().focus().setImage({ src: url }).run()
+// 弹窗只回传站内地址，此处负责插入正文
+const onImagePicked = (url: string) => {
+  editor.value?.chain().focus().setImage({ src: url }).run()
 }
 
 const {

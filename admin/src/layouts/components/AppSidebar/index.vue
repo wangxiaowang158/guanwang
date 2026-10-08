@@ -5,14 +5,17 @@
     class="app-sidebar"
     :trigger="null"
   >
-    <a-menu
-      v-model:selectedKeys="selectedKeys"
-      v-model:openKeys="openKeys"
-      theme="dark"
-      mode="inline"
-      :items="menuItems"
-      @click="handleMenuClick"
-    />
+    <!-- 菜单项多于一屏时在此容器内滚动，保证最底部的菜单可达 -->
+    <div class="menu-scroll">
+      <a-menu
+        v-model:selectedKeys="selectedKeys"
+        v-model:openKeys="openKeys"
+        theme="dark"
+        mode="inline"
+        :items="menuItems"
+        @click="handleMenuClick"
+      />
+    </div>
   </a-layout-sider>
 </template>
 
@@ -100,6 +103,15 @@ const handleMenuClick = ({ key }: { key: string }) => {
 <style scoped>
 .app-sidebar {
   background: #1f2a44;
+}
+
+.menu-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* 细滚动条，避免常驻宽滚动条破坏深色侧栏观感 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 :deep(.ant-menu.ant-menu-dark) {

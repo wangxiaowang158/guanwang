@@ -9,11 +9,11 @@
     <!-- 图文条目：有图显示缩略图，无图显示序号；可点击时整卡为入口 -->
     <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <ItemLink v-for="item in block.items" :key="item.id" :item="item" link-class="cb-card-link" class="cb-card">
-        <div v-if="item.image" class="cb-card-media">
-          <SafeImage :src="item.image" :alt="item.title" :width="480" :height="300" />
+        <div v-if="item.image || fallbackImage" class="cb-card-media">
+          <SafeImage :src="item.image" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
         </div>
         <div class="cb-card-body">
-          <div v-if="!item.image" class="cb-card-index tabular-nums">{{ String(item.sort).padStart(2, '0') }}</div>
+          <div v-if="!item.image && !fallbackImage" class="cb-card-index tabular-nums">{{ String(item.sort).padStart(2, '0') }}</div>
           <div v-if="item.tag || item.date" class="flex items-center gap-3 mb-3 text-xs">
             <span v-if="item.tag" class="cb-tag">{{ item.tag }}</span>
             <time v-if="item.date" :datetime="item.date" class="text-ink-500 tabular-nums">{{ item.date }}</time>
@@ -77,7 +77,7 @@
         v-for="item in playable"
         :key="item.id"
         :src="item.video as string"
-        :poster="item.image"
+        :poster="item.image || fallbackImage"
         :title="item.title"
         :desc="item.desc"
         :on-dark="onDark"
@@ -108,7 +108,12 @@ import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
 import ItemLink from './ItemLink.vue'
 
-const props = defineProps<{ block: PageBlock; onDark?: boolean }>()
+const props = defineProps<{
+  block: PageBlock
+  onDark?: boolean
+  /** 条目未配图时的缺省配图（按所在栏目主题），不传则无图条目显示序号 */
+  fallbackImage?: string
+}>()
 
 // 视频区块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
 const playable = computed(() => props.block.items.filter(item => item.video))

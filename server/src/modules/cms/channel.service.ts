@@ -79,6 +79,10 @@ export class ChannelService {
     if (!entity) throw new NotFoundException('栏目不存在')
 
     if (dto.name !== undefined) entity.name = dto.name
+    if (dto.hidden !== undefined) {
+      if (dto.hidden) this.assertHideable(entity)
+      entity.hidden = dto.hidden
+    }
     if (dto.sort !== undefined) entity.sort = dto.sort
     if (dto.formFields !== undefined) entity.formFields = JSON.stringify(dto.formFields)
     if (dto.listColumns !== undefined) entity.listColumns = JSON.stringify(dto.listColumns)
@@ -139,6 +143,19 @@ export class ChannelService {
       cur = parent
     }
     return cur.name
+  }
+
+  /**
+   * 隐藏对一级与二级栏目都可用，但有两条底线：
+   * 系统功能栏目隐藏后管理端失去入口；首页是前台根路径，隐藏会让站点没有首页
+   */
+  private assertHideable(entity: Channel): void {
+    const functional: string[] = [
+      CHANNEL_TYPE.SITECONFIG, CHANNEL_TYPE.ADMINS, CHANNEL_TYPE.MEMBERS,
+      CHANNEL_TYPE.FEEDBACK, CHANNEL_TYPE.AUTHCONFIG, CHANNEL_TYPE.LOGINLOG, CHANNEL_TYPE.OPLOG,
+    ]
+    if (functional.includes(entity.type)) throw new BadRequestException('系统功能栏目不允许隐藏')
+    if (entity.portalPath === '/') throw new BadRequestException('首页不允许隐藏')
   }
 
   /** 自身 + 全部后代节点 */

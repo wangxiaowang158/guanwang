@@ -12,8 +12,8 @@
     <!-- 图文条目：有图显示配图，无图显示编号；可点击时整卡为入口 -->
     <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px" style="background: var(--rs-border)">
       <ItemLink v-for="item in sorted" :key="item.id" :item="item" link-class="rs-card--link" class="rs-card block">
-        <div v-if="item.image" class="rs-card-media">
-          <SafeImage :src="item.image" :alt="item.title" :width="480" :height="300" />
+        <div v-if="item.image || fallbackImage" class="rs-card-media">
+          <SafeImage :src="item.image" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
         </div>
         <span v-else class="rs-card-index">{{ String(item.sort).padStart(2, '0') }}</span>
         <div v-if="item.tag || item.date" class="flex items-center gap-3 mb-3 text-xs">
@@ -69,7 +69,7 @@
         v-for="item in playable"
         :key="item.id"
         :src="item.video as string"
-        :poster="item.image"
+        :poster="item.image || fallbackImage"
         :title="item.title"
         :desc="item.desc"
         :on-dark="onDark"
@@ -101,7 +101,12 @@ import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
 import ItemLink from './ItemLink.vue'
 
-const props = defineProps<{ block: PageBlock; onDark?: boolean }>()
+const props = defineProps<{
+  block: PageBlock
+  onDark?: boolean
+  /** 条目未配图时的缺省配图（按所在栏目主题），不传则无图条目显示编号 */
+  fallbackImage?: string
+}>()
 
 // 顺序以后端下发为准（置顶优先、再按后台排序），前端不再二次排序：分页后会在单页内打乱
 const sorted = computed(() => props.block.items)

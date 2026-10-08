@@ -28,11 +28,21 @@
               <template #title="node">
                 <span class="node-row">
                   <span class="node-main">
-                    <span class="node-name">{{ node.name }}</span>
+                    <span class="node-name" :class="{ 'node-hidden': node.hidden }">{{ node.name }}</span>
+                    <a-tag v-if="node.hidden" class="node-hidden-tag">已隐藏</a-tag>
                     <a-tooltip title="按住拖动调整同级顺序">
                       <ControlOutlined class="node-drag-handle" />
                     </a-tooltip>
                   </span>
+                  <a-switch
+                    v-if="hideable(node)"
+                    class="node-switch"
+                    size="small"
+                    :checked="!node.hidden"
+                    :loading="toggling === node.id"
+                    @click="(_v: boolean, e: Event) => e.stopPropagation()"
+                    @change="(v: boolean) => onToggleEnabled(node, v)"
+                  />
                   <span class="node-ops">
                     <PlusOutlined title="新增子栏目" @click.stop="openAdd(node.id)" />
                     <EditOutlined title="编辑" @click.stop="openEdit(node)" />
@@ -74,6 +84,14 @@
                 placeholder="不选则为顶级"
                 allow-clear
                 tree-default-expand-all
+              />
+            </a-form-item>
+            <a-form-item v-if="canHide" label="启用状态" extra="关闭后，该栏目在后台菜单和官网前台都不再显示，内容数据保留，随时可重新启用">
+              <a-switch
+                :checked="!form.hidden"
+                checked-children="启用"
+                un-checked-children="禁用"
+                @change="(v: boolean) => (form.hidden = !v)"
               />
             </a-form-item>
             <a-form-item label="图标名称">
@@ -158,7 +176,7 @@
 
 <script setup lang="ts">
 // 栏目管理：可视化增删改菜单结构与字段配置
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import type { AntTreeNodeDropEvent, AntTreeNodeMouseEvent } from 'ant-design-vue/es/tree'
 import type { DataNode } from 'ant-design-vue/es/vc-tree/interface'
@@ -172,9 +190,11 @@ import {
 import { useChannels } from '@/composables/useChannels'
 import { FIELD_DEFS, COLUMN_LABELS } from './fieldDefs'
 
-const { load } = useChannels()
+const { load, channels } = useChannels()
 
 const flat = ref<Channel[]>([])
+// 全局栏目数据（标题就地改名、侧边栏刷新等处更新）变化时，树同步取最新名称
+watch(channels, list => { if (list.length) flat.value = list })
 const editing = ref(false)
 const saving = ref(false)
 const loadingTree = ref(false)
@@ -197,7 +217,7 @@ const layoutOptions = BLOCK_LAYOUT_OPTIONS
 const defaultForm = () => ({
   id: undefined as number | undefined,
   parentId: null as number | null,
-  key: '', name: '', type: 'list', icon: '', sort: 0,
+  key: '', name: '', type: 'list', icon: '', sort: 0, hidden: false,
   formFields: ['title', 'content', 'updateTime', 'isTop'] as string[],
   listColumns: ['title', 'createTime', 'isTop'] as string[],
   anchor: '', subheading: '', layout: undefined as BlockLayout | undefined,
@@ -228,6 +248,34 @@ const showSeo = computed(() =>
   !SEO_EXCLUDE_TYPES.includes(form.type) &&
   !SEO_EXCLUDE_KEYS.includes(form.key)
 )
+
+// 启用/禁用对一级与二级栏目都开放，与后端 assertHideable 口径一致：
+// 系统功能栏目禁用后会失去入口，首页是前台根路径
+const hideable = (node: { type: string; portalPath?: string | null }) =>
+  !UNDELETABLE_TYPES.includes(node.type) && node.portalPath !== '/'
+
+const canHide = computed(() =>
+  !!form.id && hideable({ type: form.type, portalPath: editingPortalPath.value })
+)
+
+// 栏目树上的就地开关：不必进编辑面板，一处集中管理所有栏目的启用状态
+const toggling = ref<number | null>(null)
+const onToggleEnabled = async (node: Channel, enabled: boolean) => {
+  toggling.value = node.id
+  try {
+    const res = await updateChannel({ id: node.id, hidden: !enabled })
+    if (res.data.code === 200) {
+      message.success(enabled ? `已启用「${node.name}」` : `已禁用「${node.name}」`)
+      await load(true) // 刷新树与侧边栏
+    } else {
+      message.error(res.data.message || '操作失败')
+    }
+  } catch {
+    message.error('操作失败')
+  } finally {
+    toggling.value = null
+  }
+}
 
 // 当前编辑节点的前台路径，仅用于判断是否展示头图配置，不参与提交
 const editingPortalPath = ref('')
@@ -361,6 +409,7 @@ const openEdit = (node: Channel) => {
     name: node.name,
     type: node.type,
     icon: node.icon || '',
+    hidden: !!node.hidden,
     sort: node.sort,
     formFields: node.formFields ? [...node.formFields] : [],
     listColumns: node.listColumns ? [...node.listColumns] : [],
@@ -470,6 +519,14 @@ onMounted(fetchList)
   margin-bottom: 16px;
 }
 
+.node-hidden {
+  color: #bfbfbf;
+}
+
+.node-hidden-tag {
+  margin-left: 8px;
+}
+
 .layout {
   display: flex;
   gap: 16px;
@@ -502,10 +559,21 @@ onMounted(fetchList)
   min-height: 400px;
 }
 
-/* 保存/取消按钮右对齐 */
+/* 保存/取消按钮左对齐，与上方输入框起点一致（标签列宽 90px + 冒号间距） */
 .form-actions :deep(.ant-form-item-control-input-content) {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  padding-left: 100px;
+}
+
+/* 树节点就地启用开关：与操作图标一样，仅鼠标移入时显示 */
+.node-switch {
+  display: none;
+  margin-right: 10px;
+}
+
+.node-row:hover .node-switch {
+  display: inline-block;
 }
 
 .node-row {
@@ -516,6 +584,7 @@ onMounted(fetchList)
 }
 
 .node-main {
+  flex: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;

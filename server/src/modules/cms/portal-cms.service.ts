@@ -36,12 +36,12 @@ export class PortalCmsService {
   /** 前台导航菜单树：只含配了 portalPath 的顶级栏目，及其有内容的子栏目 */
   async menu(): Promise<MenuNodeVo[]> {
     const all = await this.channelRepo.find({ order: { sort: 'ASC', id: 'ASC' } })
-    const tops = all.filter(c => !c.parentId && c.portalPath)
+    const tops = all.filter(c => !c.parentId && c.portalPath && !c.hidden)
     const nonEmpty = await this.nonEmptyChannelKeys()
 
     return tops.map(top => {
       const children = all
-        .filter(c => c.parentId === top.id && c.anchor && nonEmpty.has(c.key))
+        .filter(c => c.parentId === top.id && !c.hidden && c.anchor && nonEmpty.has(c.key))
         .map<MenuNodeVo>(c => ({
           key: c.key,
           label: c.name,
@@ -62,7 +62,7 @@ export class PortalCmsService {
     })
     const result: Record<string, SeoConfigVo> = {}
     for (const c of tops) {
-      if (!c.portalPath) continue
+      if (!c.portalPath || c.hidden) continue
       result[c.key] = {
         title: c.seoTitle ?? '',
         keywords: c.seoKeywords ?? '',
@@ -78,13 +78,13 @@ export class PortalCmsService {
    */
   async pageContent(key: string): Promise<PageContentVo> {
     const top = await this.channelRepo.findOne({ where: { key } })
-    if (!top || !top.portalPath) throw new NotFoundException('栏目不存在')
+    if (!top || !top.portalPath || top.hidden) throw new NotFoundException('栏目不存在')
 
     const children = await this.channelRepo.find({
       where: { parentId: top.id },
       order: { sort: 'ASC', id: 'ASC' },
     })
-    const withAnchor = children.filter(c => c.anchor)
+    const withAnchor = children.filter(c => c.anchor && !c.hidden)
     const childKeys = withAnchor.map(c => c.key)
     // 首屏每区块限条：内容随运营持续增长，不限条意味着整栏目全部条目一次下发。
     // 超出部分由 blockItems() 按页续取
@@ -143,10 +143,10 @@ export class PortalCmsService {
     category?: string,
   ): Promise<BlockItemsVo> {
     const child = await this.channelRepo.findOne({ where: { key: channelKey } })
-    if (!child?.anchor || !child.parentId) throw new NotFoundException('栏目不存在')
+    if (!child?.anchor || !child.parentId || child.hidden) throw new NotFoundException('栏目不存在')
 
     const parent = await this.channelRepo.findOne({ where: { id: child.parentId } })
-    if (!parent?.portalPath) throw new NotFoundException('栏目不存在')
+    if (!parent?.portalPath || parent.hidden) throw new NotFoundException('栏目不存在')
 
     const layout = child.layout ?? BLOCK_LAYOUT.CARDS
     // 正文下发口径必须与 pageContent 一致，否则续页条目会比首屏多带或少带正文
@@ -178,11 +178,11 @@ export class PortalCmsService {
     const channel = await this.channelRepo.findOne({ where: { key: content.channelKey } })
     // 栏目不对外（无 portalPath 的顶级栏目，或栏目已删）时不给详情页：
     // 首页板块、Banner 这类内容没有归属页面，放出详情页等于凭空多出无主地址
-    if (!channel) throw new NotFoundException('内容不存在')
+    if (!channel || channel.hidden) throw new NotFoundException('内容不存在')
     const parent = channel.parentId
       ? await this.channelRepo.findOne({ where: { id: channel.parentId } })
       : channel
-    if (!parent?.portalPath) throw new NotFoundException('内容不存在')
+    if (!parent?.portalPath || parent.hidden) throw new NotFoundException('内容不存在')
 
     const { prev, next } = await this.siblingNav(content)
     return toArticleDetailVo(content, {
@@ -242,7 +242,7 @@ export class PortalCmsService {
       where: { parentId: IsNull() },
       order: { sort: 'ASC', id: 'ASC' },
     })
-    const pages = tops.filter(c => c.portalPath)
+    const pages = tops.filter(c => c.portalPath && !c.hidden)
 
     // 首页不对应任何栏目，单独补一条；更新时间取各栏目里最新的一个，
     // 首页内容本就由多个 home-* 栏目拼成，取最大值比写死当前时间更贴近实际
@@ -269,12 +269,12 @@ export class PortalCmsService {
    * @param tops 全部顶级栏目，复用调用方已查到的结果，避免重复查库
    */
   private async articleSitemapEntries(tops: Channel[]): Promise<Array<{ path: string; lastmod: Date }>> {
-    const portalTopIds = new Set(tops.filter(c => c.portalPath).map(c => c.id))
+    const portalTopIds = new Set(tops.filter(c => c.portalPath && !c.hidden).map(c => c.id))
     const all = await this.channelRepo.find()
     // 能上溯到对外顶级栏目的栏目 key（顶级栏目自身也算）
     const reachable = new Set(
       all
-        .filter(c => (c.parentId ? portalTopIds.has(c.parentId) : portalTopIds.has(c.id)))
+        .filter(c => !c.hidden && (c.parentId ? portalTopIds.has(c.parentId) : portalTopIds.has(c.id)))
         .map(c => c.key),
     )
     if (!reachable.size) return []

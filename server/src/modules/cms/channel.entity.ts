@@ -31,6 +31,13 @@ export class Channel {
   @Column({ type: 'varchar', length: 64, nullable: true })
   icon!: string | null
 
+  /**
+   * 是否隐藏。仅顶级栏目有效：隐藏后管理端侧边栏与官网前台（菜单、页面、站点地图）都不再出现，
+   * 数据保留，可随时取消隐藏；栏目管理页始终可见以便恢复
+   */
+  @Column({ type: 'boolean', default: false })
+  hidden!: boolean
+
   /** 排序值，同级内升序排列 */
   @Column({ type: 'int', default: 0 })
   sort!: number

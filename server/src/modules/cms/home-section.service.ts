@@ -73,15 +73,20 @@ export class HomeSectionService {
     const result: Record<string, SectionHeading> = {}
     for (const [section, key] of Object.entries(map)) {
       const ch = byKey.get(key)
-      if (ch) result[section] = { eyebrow: ch.name ?? '', title: ch.subheading ?? '' }
+      if (ch && !ch.hidden) result[section] = { eyebrow: ch.name ?? '', title: ch.subheading ?? '' }
     }
     return result
   }
 
   /** 首页全部板块聚合数据 */
   async sections(): Promise<Record<string, unknown>> {
-    const keys = Object.values(HOME_SECTION_KEYS)
-    const all = await this.contentService.listByChannelKeys(keys, HOME_SECTION_MAX_ITEMS)
+    // 被隐藏的板块不取数：pick 对其返回空，前台按「该板块没有内容」处理
+    const hiddenRows = await this.channelRepo.find({
+      where: { key: In(Object.values(HOME_SECTION_KEYS)), hidden: true },
+    })
+    const hiddenKeys = new Set(hiddenRows.map(c => c.key))
+    const keys = Object.values(HOME_SECTION_KEYS).filter(k => !hiddenKeys.has(k))
+    const all = keys.length ? await this.contentService.listByChannelKeys(keys, HOME_SECTION_MAX_ITEMS) : []
     const pick = (key: string) => all.filter(c => c.channelKey === key)
     const heroBg = await this.portalCms.bannerImage('home')
 

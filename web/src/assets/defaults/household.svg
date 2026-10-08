@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- 缺省配图·智能家居：房屋 + 无线信号 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef5ff"/>
+      <stop offset="1" stop-color="#d3e3fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="150" cy="420" r="160" fill="#ffffff" opacity="0.45"/>
+  <path d="M220 250 L400 110 L580 250" fill="none" stroke="#0b57d0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="260" y="240" width="280" height="190" fill="#ffffff" stroke="#0b57d0" stroke-width="8"/>
+  <rect x="370" y="330" width="60" height="100" fill="#4d8ff2"/>
+  <rect x="290" y="280" width="56" height="50" fill="#eef5ff" stroke="#0b57d0" stroke-width="5"/>
+  <rect x="454" y="280" width="56" height="50" fill="#eef5ff" stroke="#0b57d0" stroke-width="5"/>
+  <circle cx="400" cy="200" r="10" fill="#00b8d9"/>
+  <g fill="none" stroke="#00b8d9" stroke-width="7" stroke-linecap="round">
+    <path d="M370 175 a42 42 0 0 1 60 0"/>
+    <path d="M350 152 a70 70 0 0 1 100 0" opacity="0.6"/>
+  </g>
+  <rect x="200" y="428" width="400" height="10" rx="5" fill="#071a36" opacity="0.35"/>
+</svg>
