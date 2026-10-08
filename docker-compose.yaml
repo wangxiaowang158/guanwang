@@ -125,6 +125,13 @@ services:
       FEEDBACK_NOTIFY_WEBHOOK: ${FEEDBACK_NOTIFY_WEBHOOK:-}
       FEEDBACK_NOTIFY_TYPE: ${FEEDBACK_NOTIFY_TYPE:-wecom}
       FEEDBACK_NOTIFY_TIMEOUT_MS: ${FEEDBACK_NOTIFY_TIMEOUT_MS:-3000}
+      # 封面「AI 生成」：密钥留空即关闭该功能，其余上传方式不受影响
+      AI_IMAGE_BASE_URL: ${AI_IMAGE_BASE_URL:-https://api.openai.com/v1}
+      AI_IMAGE_MODEL: ${AI_IMAGE_MODEL:-gpt-image-1}
+      AI_IMAGE_API_KEY: ${AI_IMAGE_API_KEY:-}
+      AI_IMAGE_COUNT: ${AI_IMAGE_COUNT:-5}
+      AI_IMAGE_SIZE: ${AI_IMAGE_SIZE:-1536x1024}
+      AI_IMAGE_TIMEOUT_MS: ${AI_IMAGE_TIMEOUT_MS:-90000}
     volumes:
       # 后台上传的图片落在容器内，不挂卷则重建容器即全部丢失。
       # 路径须与上方 UPLOAD_DIR 一致（相对镜像 WORKDIR /app）
