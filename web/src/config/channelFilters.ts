@@ -28,8 +28,6 @@ export const CHANNEL_FILTERS: Record<string, ChannelFilterRule[]> = {
   // 项目案例：按行业筛案例内容。能源采购方最常见的诉求是
   // 「看看你们在同类单位做过什么」，行业维度因此比类别维度更靠前
   case: [{ source: 'case-industry', target: 'case-content' }],
-  // 暖通空调产品：按产品类别筛具体产品
-  hvac: [{ source: 'hvac-category', target: 'hvac-product' }],
 }
 
 /**

@@ -4,6 +4,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository, type FindOptionsWhere } from 'typeorm'
 import { sanitizeRichText } from '../../common/html-sanitizer'
+import { matchExtra, normalizeExtra, serializeExtra, type ExtraFilter } from '../../common/content-extra'
 import { CONTENT_STATUS, type ContentStatus } from '../../common/enums'
 import { Channel } from './channel.entity'
 import { Content } from './content.entity'
@@ -137,6 +138,7 @@ export class ContentService {
     page?: number,
     pageSize?: number,
     category?: string,
+    filter?: ExtraFilter,
   ): Promise<PageResult<Content>> {
     const paging = resolvePaging(page, pageSize, {
       defaultSize: PORTAL_BLOCK_PAGE_SIZE,
@@ -149,6 +151,24 @@ export class ContentService {
       status: CONTENT_STATUS.PUBLISHED,
     }
     if (category) where.category = category
+
+    // 业务线 / 行业 / 标签存在 extra JSON 里，库层无法索引过滤。
+    // 单栏目内容量为百级，取出已发布全量后在内存里筛再分页，保证 total 与翻页都按筛选后的结果算；
+    // 排序沿用 PORTAL_ORDER，与不带筛选的分页口径一致
+    if (filter && (filter.business?.length || filter.industry?.length || filter.tag?.length)) {
+      // 先只取 id + extra 两列做过滤，切出当前页后再按 id 取整行，避免把全栏目富文本正文都读进内存
+      const light = await this.repo.find({ where, order: PORTAL_ORDER, select: { id: true, extra: true } })
+      const matchedIds = light.filter((c) => matchExtra(normalizeExtra(c.extra), filter)).map((c) => c.id)
+      const pageIds = matchedIds.slice(paging.skip, paging.skip + paging.pageSize)
+      const rows = pageIds.length ? await this.repo.find({ where: { id: In(pageIds) } }) : []
+      const byId = new Map(rows.map((r) => [r.id, r]))
+      return {
+        list: pageIds.map((id) => byId.get(id)).filter((r): r is Content => !!r),
+        total: matchedIds.length,
+        page: paging.page,
+        pageSize: paging.pageSize,
+      }
+    }
 
     const [list, total] = await this.repo.findAndCount({
       where,
@@ -212,6 +232,8 @@ export class ContentService {
       const value = field === 'content' && typeof v === 'string' ? sanitizeRichText(v) : v
       entity[field] = typeof value === 'string' && value.trim() ? value : null
     }
+    // extra 经白名单净化后再入库；null / 空对象 / 全空结构都落成 null
+    if (dto.extra !== undefined) entity.extra = serializeExtra(dto.extra)
     if (dto.sort !== undefined) entity.sort = dto.sort
     if (dto.isTop !== undefined) entity.isTop = dto.isTop
     if (dto.status !== undefined) entity.status = dto.status

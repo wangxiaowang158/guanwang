@@ -11,6 +11,10 @@
     <a-button class="preview-btn" :disabled="!modelValue" @click="previewVisible = true">
       预览图片
     </a-button>
+    <!-- 输入框只读，不提供清除就没法撤掉已选图片 -->
+    <a-button v-if="modelValue" class="preview-btn" danger @click="emit('update:modelValue', '')">
+      清除
+    </a-button>
     <span v-if="tip" class="tip">{{ tip }}</span>
 
     <!-- 预览弹窗 -->

@@ -32,4 +32,22 @@ export class BlockItemsQueryDto {
   @IsString()
   @Length(1, 100)
   category?: string
+
+  /** 业务线筛选，逗号分隔多值（energy,building,living），多值为「或」 */
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  business?: string
+
+  /** 行业筛选，逗号分隔多值，多值为「或」 */
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  industry?: string
+
+  /** 标签筛选，逗号分隔多值，多值为「或」 */
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  tag?: string
 }

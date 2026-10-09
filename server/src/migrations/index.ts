@@ -14,6 +14,9 @@ import { MoveCategoryTitleToName1790000008000 } from './1790000008000-MoveCatego
 import { FlattenContentGroups1790000009000 } from './1790000009000-FlattenContentGroups'
 import { HomeSectionHeadings1790000010000 } from './1790000010000-HomeSectionHeadings'
 import { AddChannelHidden1790000011000 } from './1790000011000-AddChannelHidden'
+import { AddContentExtra1790000012000 } from './1790000012000-AddContentExtra'
+import { AddFeedbackLeadFields1790000013000 } from './1790000013000-AddFeedbackLeadFields'
+import { AddChannelMenuFields1790000014000 } from './1790000014000-AddChannelMenuFields'
 
 /**
  * 全部迁移，按执行顺序排列
@@ -32,4 +35,7 @@ export const MIGRATIONS = [
   FlattenContentGroups1790000009000,
   HomeSectionHeadings1790000010000,
   AddChannelHidden1790000011000,
+  AddContentExtra1790000012000,
+  AddFeedbackLeadFields1790000013000,
+  AddChannelMenuFields1790000014000,
 ]

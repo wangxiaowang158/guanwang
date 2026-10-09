@@ -1,7 +1,7 @@
 // 内容管理入参校验
 import { Type } from 'class-transformer'
 import {
-  IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, Matches, Min,
+  IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Length, Matches, Min,
 } from 'class-validator'
 import { CONTENT_STATUS, type ContentStatus } from '../../../common/enums'
 
@@ -162,6 +162,14 @@ export class SaveContentDto {
   @IsString()
   @Length(0, 100)
   source?: string
+
+  /**
+   * 扩展数据：对象（后台表单直接提交）；null 或空对象表示清空，不传则更新时保持原值
+   * 结构校验由服务层 normalizeExtra 收口（白名单键、限长限量），这里只挡非对象入参
+   */
+  @IsOptional()
+  @IsObject({ message: '扩展数据格式不正确' })
+  extra?: Record<string, unknown> | null
 
   @IsOptional()
   @Type(() => Number)

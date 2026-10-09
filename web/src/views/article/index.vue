@@ -43,9 +43,30 @@
           @error="imgs.markBroken(article.image)"
         />
 
+        <!-- 案例结构化区块：基础信息 → 改造前痛点；各块无数据时自动不显示 -->
+        <component :is="parts.fact" v-if="facts.length" class="article-sec" :items="facts" heading="项目基础信息" />
+        <component :is="parts.pain" v-if="pains.length" class="article-sec" :items="pains" heading="改造前客户痛点" />
+
+        <!-- 正文：有结构化数据时它是「落地方案」，需要一个标题把它和前后区块衔接；纯文章不加 -->
+        <section v-if="bodyHtml && hasStructured" class="article-sec">
+          <component :is="parts.head" heading="落地方案" />
+          <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 bodyHtml -->
+          <div class="rich-html article-body article-body--flush" v-html="bodyHtml"></div>
+        </section>
         <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 bodyHtml -->
-        <div v-if="bodyHtml" class="rich-html article-body" v-html="bodyHtml"></div>
+        <div v-else-if="bodyHtml" class="rich-html article-body" v-html="bodyHtml"></div>
         <p v-else-if="article.desc" class="article-body">{{ article.desc }}</p>
+
+        <!-- 案例结构化区块：量化收益 → 现场图集 → 客户评价 -->
+        <component :is="parts.metric" v-if="metrics.length" class="article-sec" :items="metrics" heading="改造后量化收益" />
+        <component :is="parts.gallery" v-if="gallery.length" class="article-sec" :images="gallery" heading="现场实拍与系统截图" :alt-prefix="`${article.title} 现场 `" />
+        <component :is="parts.quote" v-if="quote?.text" class="article-sec" :quote="quote" heading="客户评价" />
+
+        <!-- 案例页尾转化入口：仅结构化案例展示，普通新闻不打扰 -->
+        <div v-if="hasStructured" class="article-cta">
+          <p class="article-cta-text">想了解类似项目的落地方案与收益测算？</p>
+          <button type="button" class="article-cta-btn" @click="openLead('consult', `案例详情-${article.title}`)">预约咨询</button>
+        </div>
 
         <!-- 上一篇 / 下一篇：左右分列，窄屏上下排 -->
         <nav v-if="article.prev || article.next" class="article-around" aria-label="相邻内容">
@@ -96,6 +117,19 @@ import { useArticleJsonLd } from '@/composables/useJsonLd'
 import { sanitizeRichText } from '@/utils/sanitize'
 import EmptyState from '@/components/sections/EmptyState.vue'
 import VideoPlayer from '@/components/sections/VideoPlayer.vue'
+import FactTable from '@/components/sections/FactTable.vue'
+import PainPointList from '@/components/sections/PainPointList.vue'
+import MetricBoard from '@/components/sections/MetricBoard.vue'
+import ImageGallery from '@/components/sections/ImageGallery.vue'
+import TestimonialQuote from '@/components/sections/TestimonialQuote.vue'
+import SectionHeading from '@/components/sections/SectionHeading.vue'
+import Style2FactTable from '@/components/sections/Style2FactTable.vue'
+import Style2PainPointList from '@/components/sections/Style2PainPointList.vue'
+import Style2MetricBoard from '@/components/sections/Style2MetricBoard.vue'
+import Style2ImageGallery from '@/components/sections/Style2ImageGallery.vue'
+import Style2TestimonialQuote from '@/components/sections/Style2TestimonialQuote.vue'
+import Style2SectionHead from '@/components/sections/Style2SectionHead.vue'
+import { useLeadModal } from '@/composables/useLeadModal'
 import { useBrokenImages } from '@/composables/useBrokenImages'
 
 defineOptions({ name: 'ArticlePage' })
@@ -118,6 +152,24 @@ const errorText = ref('加载失败，请稍后重试')
 
 // 富文本渲染前净化，v-html 不接未净化内容
 const bodyHtml = computed(() => (article.value?.html ? sanitizeRichText(article.value.html) : ''))
+
+const { openLead } = useLeadModal()
+
+// 案例结构化数据，各字段缺省时为空，对应区块不渲染
+const facts = computed(() => article.value?.extra?.facts ?? [])
+const pains = computed(() => article.value?.extra?.pains ?? [])
+const metrics = computed(() => article.value?.extra?.metrics ?? [])
+const gallery = computed(() => (article.value?.extra?.gallery ?? []).filter(Boolean))
+const quote = computed(() => article.value?.extra?.quote)
+/** 至少有一项结构化数据，才按案例详情结构展示 */
+const hasStructured = computed(() =>
+  facts.value.length > 0 || pains.value.length > 0 || metrics.value.length > 0 || gallery.value.length > 0 || !!quote.value?.text,
+)
+
+// 区块组件随模板切换，props 约定两套一致
+const parts = computed(() => theme.isStyle2
+  ? { fact: Style2FactTable, pain: Style2PainPointList, metric: Style2MetricBoard, gallery: Style2ImageGallery, quote: Style2TestimonialQuote, head: Style2SectionHead }
+  : { fact: FactTable, pain: PainPointList, metric: MetricBoard, gallery: ImageGallery, quote: TestimonialQuote, head: SectionHeading })
 
 /**
  * 拉取内容详情

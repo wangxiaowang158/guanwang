@@ -1,5 +1,6 @@
 // 前台官网接口层 —— /api/portal/*：站点信息 / 首页板块 / 访问记录
 import { get, post } from './request'
+import type { ExtraQuote } from './page'
 
 /** 站点基本信息 */
 export interface SiteInfo {
@@ -65,6 +66,13 @@ export interface AchievementItem { id: number; value: number; suffix: string; la
 /** 社会贡献项 */
 export interface SocialItem { id: number; title: string; desc: string; image: string; sort: number }
 
+/** 愿景使命项（后端 home-vision 栏目，聚合接口暂未下发，缺省时首页不渲染） */
+export interface VisionItem { id: number; title: string; desc: string }
+/** 媒体采访与客户证言项（后端 home-testimony 栏目，聚合接口暂未下发） */
+export interface TestimonyItem { id: number; title: string; image: string; quote: ExtraQuote }
+/** 资质与研发实力项（后端 home-honor 栏目，聚合接口暂未下发） */
+export interface HonorItem { id: number; title: string; desc: string; image: string }
+
 /** 首页全部板块聚合数据 */
 export interface HomeSections {
   about: SingleSection
@@ -77,6 +85,12 @@ export interface HomeSections {
   social: SocialItem[]
   /** 「我眼中的中瑞恒」 */
   views?: ViewItem[]
+  /** 愿景使命（新版首页，后端待在聚合接口补充下发） */
+  vision?: VisionItem[]
+  /** 媒体采访与客户证言（新版首页，后端待补） */
+  testimonies?: TestimonyItem[]
+  /** 资质与研发实力（新版首页，后端待补） */
+  honors?: HonorItem[]
   /** 各板块标题，key 为板块标识：about/business/product/service/philosophy/achievement/partner/view/social */
   headings?: Record<string, SectionHeading>
   /** 各板块背景图配置（来自后台），key 为板块标识：hero/about/business/product/service/philosophy/partner/achievement/social/contact，无值时用默认样式 */

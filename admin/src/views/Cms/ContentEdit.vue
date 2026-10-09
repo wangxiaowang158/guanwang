@@ -15,6 +15,7 @@
           :fields="channel.formFields"
           :channel-key="channel.key"
           v-model:model="model"
+          v-model:extra="extraDraft"
           :saving="saving"
           :field-options="fieldOptions"
           show-back
@@ -34,10 +35,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import PageContainer from '@/components/PageContainer/index.vue'
 import { useChannels } from '@/composables/useChannels'
-import { getContentDetail, getContentList, saveContent, type Channel, type Content, type ContentFormModel } from '@/api/cms'
+import {
+  getContentDetail, getContentList, saveContent,
+  type Channel, type Content, type ContentExtra, type ContentFormModel,
+} from '@/api/cms'
 import { sanitizeHtml } from '@/utils/sanitize'
 import { categorySourceOf } from './categorySources'
 import ContentForm from './ContentForm.vue'
+import { draftToExtra, emptyDraft, extraToDraft } from './components/extra/extraDraft'
+import { isExtraField } from './fieldDefs'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,7 +54,12 @@ const contentId = route.params.id ? Number(route.params.id) : undefined
 
 const channel = ref<Channel | null>(null)
 const model = ref<ContentFormModel>({})
+// 扩展字段草稿（content.extra），与 model 分开持有；originalExtra 用于保存时保留未启用字段的旧值
+const extraDraft = ref(emptyDraft())
+const originalExtra = ref<ContentExtra | null>(null)
 const saving = ref(false)
+/** 编辑已有内容时的详情加载状态；加载失败不能放行保存，否则会用空表单新建出一条重复记录 */
+const loadState = ref<'loading' | 'ready' | 'failed'>('loading')
 // 下拉字段选项，目前只有「产品类别」需要，取自对应分类栏目的条目名
 const fieldOptions = ref<Record<string, { label: string; value: string }[]>>({})
 
@@ -97,15 +108,33 @@ onMounted(async () => {
     channelKey, author: '管理员', source: '本站', isTop: false, status: 'published'
   }
   if (contentId) {
-    const res = await getContentDetail({ channelKey, id: contentId })
-    if (res.data.code === 200 && res.data.data) {
-      Object.assign(base, res.data.data)
+    try {
+      const res = await getContentDetail({ channelKey, id: contentId })
+      if (res.data.code === 200 && res.data.data) {
+        const { extra, ...rest } = res.data.data
+        Object.assign(base, rest)
+        originalExtra.value = extra ?? null
+        extraDraft.value = extraToDraft(extra)
+      } else {
+        loadState.value = 'failed'
+        message.error(res.data.message || '内容加载失败，请返回刷新重试')
+      }
+    } catch {
+      loadState.value = 'failed'
+      message.error('内容加载失败，请返回刷新重试')
     }
   }
+  if (loadState.value === 'loading') loadState.value = 'ready'
   model.value = base
 })
 
 const onSave = async () => {
+  // 防连点：表单校验是异步的，saving 要等校验结束才置位，连点两次会各发一次保存
+  if (saving.value) return
+  if (loadState.value === 'failed') {
+    message.warning('内容加载失败，请返回刷新页面后再保存')
+    return
+  }
   saving.value = true
   try {
     // 富文本内容保存前净化，防存储型 XSS
@@ -114,6 +143,9 @@ const onSave = async () => {
     // 清空选择器得到的是 null/undefined，undefined 在 JSON 里会被丢掉，后端据此「保持原值」，
     // 清不掉已设的发布时间。统一发空串，后端按「清空、回落创建日期」处理
     payload.publishAt = payload.publishAt || ''
+    // 栏目没启用任何扩展字段时不带 extra：后端据此保持原值，不会误清
+    const extraKeys = (channel.value?.formFields ?? []).filter(isExtraField)
+    if (extraKeys.length) payload.extra = draftToExtra(extraDraft.value, extraKeys, originalExtra.value)
     const res = await saveContent(payload)
     if (res.data.code === 200) {
       message.success('保存成功')

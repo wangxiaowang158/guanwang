@@ -83,6 +83,13 @@ export class Content {
   source!: string | null
 
   /**
+   * 扩展数据（JSON 文本）：多标签、业务线、行业、指标组、痛点方案等结构化信息
+   * 结构与净化见 common/content-extra.ts，读写都经 normalizeExtra
+   */
+  @Column({ type: 'text', nullable: true })
+  extra!: string | null
+
+  /**
    * 发布状态：草稿仅后台可见，前台只读已发布
    * 默认 published——存量数据与「填完就上线」的既有习惯都按已发布处理，
    * 想暂存才显式改草稿

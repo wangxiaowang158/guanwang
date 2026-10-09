@@ -281,7 +281,7 @@ async function runPathChecks(frag: FragFn, base: string): Promise<void> {
 
   say('\n【入参形态】')
   // path 传成数组（重复传参）时 Express 会给出 string[]，不能当字符串用
-  const arrRes = await fetch(`${base}/api/portal/prerender?path=/news&path=/hvac`)
+  const arrRes = await fetch(`${base}/api/portal/prerender?path=/news&path=/case`)
   check('path 重复传参 → 空片段', (await arrRes.text()) === '', false)
   const noneRes = await fetch(`${base}/api/portal/prerender`)
   check('不传 path → 空片段', (await noneRes.text()) === '', false)

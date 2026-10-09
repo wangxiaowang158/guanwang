@@ -38,12 +38,29 @@ export interface MyFeedbackItem {
   replies: FeedbackReply[]
 }
 
+/** 线索类型：预约/咨询入口区分来意，普通留言不传 */
+export type LeadType = 'energyAssess' | 'productDemo' | 'channel' | 'consult'
+
+/** 线索类型展示文案（表单下拉与入口按钮共用） */
+export const LEAD_TYPE_LABEL: Record<LeadType, string> = {
+  consult: '在线咨询',
+  energyAssess: '预约测算',
+  productDemo: '预约演示',
+  channel: '渠道招商',
+}
+
 /** 访客提交入参：需自填联系方式 */
 export interface AnonymousFeedbackPayload {
   company?: string
   name: string
   phone: string
   feedbackType?: FeedbackType
+  /** 线索类型 */
+  leadType?: LeadType
+  /** 联系邮箱，选填 */
+  email?: string
+  /** 职位，选填 */
+  position?: string
   content: string
   sourcePage?: string
 }

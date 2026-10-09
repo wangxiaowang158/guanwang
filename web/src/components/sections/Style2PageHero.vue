@@ -11,6 +11,8 @@
       <div v-if="eyebrow" class="rs-page-hero-tag">{{ eyebrow }}</div>
       <h1 class="rs-page-hero-title">{{ title }}</h1>
       <p v-if="desc" class="rs-page-hero-desc">{{ desc }}</p>
+      <!-- 转化入口位（如预约演示），页面按需传入；窄屏随内容换行，不溢出 -->
+      <div v-if="$slots.actions" class="rs-page-hero-actions"><slot name="actions" /></div>
     </div>
   </section>
 </template>
@@ -48,6 +50,12 @@ defineProps<{
   inset: 0;
   background: radial-gradient(circle at 82% 25%, rgba(200, 22, 29, 0.25), transparent 45%);
   pointer-events: none;
+}
+.rs-page-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
 }
 .rs-page-hero-crumb {
   display: flex;

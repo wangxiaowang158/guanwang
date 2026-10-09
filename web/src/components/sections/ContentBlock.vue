@@ -1,10 +1,24 @@
 <template>
   <!-- 样式一内容块：按 layout 渲染 图文条目 / 条目列表 / 名称集合 / 序号步骤 / 富文本 / 视频；onDark 用于背景图区块 -->
-  <section :id="block.anchor">
+  <section v-if="renderable" :id="block.anchor">
     <SectionHeading :heading="block.heading" :subheading="block.subheading" :on-dark="onDark" />
     <slot name="filter" />
 
     <slot v-if="!block.items.length" name="empty"><EmptyState :on-dark="onDark" /></slot>
+
+    <!-- 结构化区块：数据汇总自条目 extra，标题已由上方统一渲染 -->
+    <PainPointList v-else-if="block.layout === 'pains'" :items="pains" :on-dark="onDark" />
+    <ProcessFlow v-else-if="block.layout === 'flow'" :items="steps" :on-dark="onDark" />
+    <MetricBoard v-else-if="block.layout === 'metrics'" :items="metrics" :on-dark="onDark" />
+    <CooperationModes v-else-if="block.layout === 'modes'" :items="modes" :on-dark="onDark" />
+    <ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" />
+    <!-- 证言：单条直接展示，多条轮播 -->
+    <template v-else-if="block.layout === 'quote'">
+      <TestimonialQuote v-if="quotes.length === 1" :quote="quotes[0]" :on-dark="onDark" />
+      <BaseCarousel v-else :items="quotes" :label="block.heading">
+        <template #default="{ item }"><TestimonialQuote :quote="item" :on-dark="onDark" /></template>
+      </BaseCarousel>
+    </template>
 
     <!-- 图文条目：有图显示缩略图，无图显示序号；可点击时整卡为入口 -->
     <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -18,6 +32,10 @@
             <span v-if="item.tag" class="cb-tag">{{ item.tag }}</span>
             <time v-if="item.date" :datetime="item.date" class="text-ink-500 tabular-nums">{{ item.date }}</time>
           </div>
+          <!-- 业务线与行业标签：案例、产品、方案卡片按 extra 展示 -->
+          <ul v-if="chipsOf(item).length" class="cb-chips" aria-label="业务线与行业">
+            <li v-for="chip in chipsOf(item)" :key="chip" class="cb-chip">{{ chip }}</li>
+          </ul>
           <h3 class="cb-card-title">{{ item.title }}</h3>
           <p v-if="item.desc" class="cb-card-desc">{{ item.desc }}</p>
           <span v-if="item.hasDetail || item.link" class="cb-more" aria-hidden="true">
@@ -103,10 +121,19 @@ import { computed } from 'vue'
 import type { PageBlock } from '@/api/page'
 import { sanitizeRichText } from '@/utils/sanitize'
 import SafeImage from '@/components/common/SafeImage.vue'
+import BaseCarousel from '@/components/common/BaseCarousel.vue'
 import SectionHeading from './SectionHeading.vue'
 import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
 import ItemLink from './ItemLink.vue'
+import PainPointList from './PainPointList.vue'
+import ProcessFlow from './ProcessFlow.vue'
+import MetricBoard from './MetricBoard.vue'
+import CooperationModes from './CooperationModes.vue'
+import TestimonialQuote from './TestimonialQuote.vue'
+import ImageGallery from './ImageGallery.vue'
+import { blockHasContent, galleryOf, isExtraLayout, metricsOf, modesOf, painsOf, quotesOf, stepsOf } from './blockExtra'
+import { chipsOf } from './itemChips'
 
 const props = defineProps<{
   block: PageBlock
@@ -117,6 +144,15 @@ const props = defineProps<{
 
 // 视频区块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
 const playable = computed(() => props.block.items.filter(item => item.video))
+
+// 结构化区块的汇总数据；无数据的结构化区块整块不渲染，普通区块仍走空态
+const pains = computed(() => painsOf(props.block))
+const steps = computed(() => stepsOf(props.block))
+const metrics = computed(() => metricsOf(props.block))
+const modes = computed(() => modesOf(props.block))
+const quotes = computed(() => quotesOf(props.block))
+const gallery = computed(() => galleryOf(props.block))
+const renderable = computed(() => !isExtraLayout(props.block.layout) || blockHasContent(props.block))
 
 /** 富文本渲染前净化，v-html 不接未净化内容 */
 const richHtml = (html: string) => sanitizeRichText(html)

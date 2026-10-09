@@ -1,5 +1,6 @@
 // 前台文章详情接口层 —— /api/portal/article/:id
 import { get } from './request'
+import type { ContentExtra } from './page'
 
 /** 上一篇/下一篇导航条目 */
 export interface ArticleNav {
@@ -17,6 +18,8 @@ export interface ArticleDetail {
   video?: string
   /** 富文本正文（后端已过白名单净化），渲染前前台再净化一道 */
   html?: string
+  /** 结构化扩展数据（案例基础信息、指标、证言等），未录入时缺省 */
+  extra?: ContentExtra
   /** 后台为该条内容录入的关键字 */
   keywords?: string
   date?: string

@@ -20,7 +20,7 @@
 
         <nav class="hidden lg:flex items-stretch gap-1 h-full" aria-label="主导航">
           <div
-            v-for="item in menu"
+            v-for="(item, idx) in menu"
             :key="item.key"
             class="relative flex"
             @mouseenter="openDropdown(item.key)"
@@ -33,13 +33,33 @@
               class="flex items-center px-4 text-sm font-medium transition-colors no-underline whitespace-nowrap rs-nav-link"
               :class="[textColor, { 'is-active': isActive(item) }]"
               :aria-current="isActive(item) ? 'page' : undefined"
-              :aria-haspopup="item.children?.length ? 'true' : undefined"
+              :aria-controls="item.children?.length ? `nav-panel-${item.key}` : undefined"
               :aria-expanded="item.children?.length ? openKey === item.key : undefined"
             >{{ item.label }}</RouterLink>
 
             <Transition name="rs-dropdown">
+              <!-- 子项带分组：超级菜单多列展示，显示分组标题与说明 -->
               <div
-                v-if="item.children?.length && openKey === item.key"
+                v-if="item.children?.length && openKey === item.key && groupChildren(item.children)"
+                :id="`nav-panel-${item.key}`"
+                class="rs-mega absolute top-full bg-white shadow-xl border-t-2"
+                :class="idx >= menu.length / 2 ? 'right-0' : 'left-0'"
+                :style="{ borderColor: 'var(--rs-primary)', '--mega-cols': Math.min(groupChildren(item.children)?.length ?? 1, 4) }"
+              >
+                <section v-for="g in groupChildren(item.children)" :key="g.title" class="min-w-0">
+                  <p v-if="g.title" class="rs-mega-title">{{ g.title }}</p>
+                  <RouterLink v-for="child in g.items" :key="child.key" :to="childTo(child)" class="rs-dropdown-link rs-mega-link">
+                    <img v-if="child.icon" :src="child.icon" alt="" class="rs-mega-icon" width="24" height="24" loading="lazy" />
+                    <span class="min-w-0">
+                      <span class="block">{{ child.label }}</span>
+                      <span v-if="child.desc" class="rs-mega-desc">{{ child.desc }}</span>
+                    </span>
+                  </RouterLink>
+                </section>
+              </div>
+              <!-- 无分组：保持原有单列 -->
+              <div
+                v-else-if="item.children?.length && openKey === item.key"
                 class="absolute left-0 top-full min-w-48 bg-white shadow-xl py-2 border-t-2"
                 style="border-color: var(--rs-primary)"
               >
@@ -102,7 +122,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { COMPANY_EN, COMPANY_SHORT } from '@/config/brand'
-import { useHeaderNav } from '@/composables/useHeaderNav'
+import { groupChildren, useHeaderNav } from '@/composables/useHeaderNav'
 import MemberEntry from './MemberEntry.vue'
 import MobileNav from './MobileNav.vue'
 import PhoneIcon from './PhoneIcon.vue'
@@ -118,7 +138,10 @@ const {
  * 带深色首屏的页面：首页与 8 个栏目页（样式二的首屏与栏目头图都是深色底）
  * 其余页面（详情、隐私、会员中心、404）顶部是白底，透明顶栏上的白字会看不见
  */
-const DARK_HERO_ROUTES = new Set(['home', 'hvac', 'energy', 'smart', 'household', 'case', 'news', 'alliance', 'about'])
+const DARK_HERO_ROUTES = new Set([
+  'home', 'business', 'business-energy', 'business-building', 'business-living',
+  'products', 'solutions', 'case', 'news', 'alliance', 'about',
+])
 const onDarkHero = computed(() => DARK_HERO_ROUTES.has(String(route.name ?? '')))
 
 // 实底：离开深色首屏、已滚动、或移动端抽屉展开（抽屉是白底，顶栏须同色）
@@ -164,6 +187,29 @@ const subColor = computed(() => (solid.value ? 'text-ink-500' : 'text-white/60')
   background: var(--rs-primary);
   color: #fff;
 }
+/* 超级菜单：按分组数等分列，宽度不超过视口 */
+.rs-mega {
+  display: grid;
+  grid-template-columns: repeat(var(--mega-cols, 1), minmax(200px, 1fr));
+  gap: 0 8px;
+  width: max-content;
+  max-width: min(960px, calc(100vw - 48px));
+  padding: 12px 8px;
+}
+.rs-mega-title {
+  margin: 0 0 4px;
+  padding: 0 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rs-text-muted);
+  border-bottom: 1px solid var(--rs-border);
+}
+.rs-mega-link { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; font-size: 14px; color: var(--rs-text-dark); text-decoration: none; transition: background 0.2s ease, color 0.2s ease; }
+.rs-mega-icon { flex-shrink: 0; width: 24px; height: 24px; margin-top: 1px; object-fit: contain; }
+.rs-mega-desc { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--rs-text-muted); }
+/* 悬停整行变红底时，说明文字同步转白，否则灰字压红底看不清 */
+.rs-mega-link:hover .rs-mega-desc,
+.rs-mega-link:focus-visible .rs-mega-desc { color: rgba(255, 255, 255, 0.85); }
 .rs-call {
   background: var(--rs-primary);
   transition: background 0.2s ease;

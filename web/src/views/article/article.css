@@ -87,6 +87,38 @@
 .article-body :deep(h2) { color: var(--color-ink-900); margin-top: 2em; }
 .article-body :deep(h3) { color: var(--color-ink-900); margin-top: 1.6em; }
 
+/* 案例结构化区块：与相邻区块拉开间距；容器 800px，区块内部网格自行折行，窄屏不溢出 */
+.article-sec { margin-top: 56px; min-width: 0; }
+.article-body--flush { margin-top: 0; }
+
+/* 案例页尾转化入口：窄屏文字与按钮上下排，按钮保持整行可点 */
+.article-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 64px;
+  padding: 24px 28px;
+  background: var(--color-surface, #f8fafc);
+  border-radius: var(--a-radius);
+}
+.article-page--style2 .article-cta { background: var(--rs-bg-cream); }
+.article-cta-text { margin: 0; font-size: 16px; font-weight: 600; color: var(--color-ink-900); }
+.article-cta-btn {
+  min-height: 44px;
+  padding: 0 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--a-accent);
+  border-radius: var(--a-radius);
+}
+.article-cta-btn:hover { filter: brightness(0.92); }
+@media (max-width: 640px) {
+  .article-cta-btn { width: 100%; }
+}
+
 .article-around {
   display: grid;
   grid-template-columns: 1fr 1fr;

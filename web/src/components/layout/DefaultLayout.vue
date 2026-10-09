@@ -14,6 +14,8 @@
     </main>
     <component :is="footerComp" />
     <QuickActions />
+    <!-- 线索预约弹窗全站唯一一份，任何页面经 useLeadModal().openLead 唤起 -->
+    <LeadFormModal />
   </div>
 </template>
 
@@ -22,6 +24,7 @@
 // 两套模板按需异步加载：访客只会用到其中一套，静态 import 会把两套都打进首屏包
 import { computed, defineAsyncComponent } from 'vue'
 import { useThemeStore } from '@/stores/theme'
+import LeadFormModal from '@/components/common/LeadFormModal.vue'
 import QuickActions from './QuickActions.vue'
 
 const AppHeader = defineAsyncComponent(() => import('./AppHeader.vue'))

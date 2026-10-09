@@ -2,7 +2,7 @@
 // 前台只看得到 visibleToMember 为真的回复；submitIp 等运维字段不出前台
 import type { Feedback } from '../feedback.entity'
 import type { FeedbackReply } from '../feedback-reply.entity'
-import type { FeedbackSource, FeedbackStatus, FeedbackType } from '../../../common/enums'
+import type { FeedbackSource, FeedbackStatus, FeedbackType, LeadType } from '../../../common/enums'
 import { maskPhone } from '../../member/vo/member.vo'
 
 /** 回复条目（前台与后台共用，后台额外可见回复人） */
@@ -31,6 +31,8 @@ export interface FeedbackListItemVo {
   company: string | null
   name: string
   phoneMasked: string | null
+  /** 线索类型，列表据此区分预约/咨询线索与普通留言 */
+  leadType: LeadType | null
   feedbackType: FeedbackType | null
   content: string
   status: FeedbackStatus
@@ -49,6 +51,10 @@ export interface FeedbackDetailVo {
   name: string
   phone: string | null
   feedbackType: FeedbackType | null
+  /** 线索类型、邮箱、职位：预约/咨询入口提交时才有 */
+  leadType: LeadType | null
+  email: string | null
+  position: string | null
   content: string
   status: FeedbackStatus
   submitIp: string | null
@@ -84,6 +90,7 @@ export function toFeedbackListItemVo(f: Feedback, replyCount: number): FeedbackL
     company: f.company,
     name: f.name,
     phoneMasked: f.phone ? maskPhone(f.phone) : null,
+    leadType: f.leadType,
     feedbackType: f.feedbackType,
     content: f.content,
     status: f.status,
@@ -108,6 +115,9 @@ export function toFeedbackDetailVo(
     name: f.name,
     phone: f.phone,
     feedbackType: f.feedbackType,
+    leadType: f.leadType,
+    email: f.email,
+    position: f.position,
     content: f.content,
     status: f.status,
     submitIp: f.submitIp,

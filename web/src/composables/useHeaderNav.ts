@@ -13,6 +13,33 @@ const SOLID_AFTER_PX = 20
 /** 鼠标移出后延迟收起下拉，避免从菜单项移向下拉面板途中被误收起 */
 const CLOSE_DELAY_MS = 120
 
+/** 下拉里的一组子项；title 为空表示未分组 */
+export interface MenuGroup {
+  title: string
+  items: MenuNode[]
+}
+
+/**
+ * 把子项按 group 字段分组，保持首次出现的顺序
+ * 没有任何子项带 group 时返回 null，调用方据此走原有单列渲染
+ * 个别子项缺 group 时归入「未分组」，排在最前
+ * @param children 一级栏目的子项
+ */
+export function groupChildren(children?: MenuNode[]): MenuGroup[] | null {
+  if (!children?.some(c => c.group)) return null
+  const groups: MenuGroup[] = []
+  for (const c of children) {
+    const title = c.group ?? ''
+    let g = groups.find(x => x.title === title)
+    if (!g) {
+      g = { title, items: [] }
+      groups.push(g)
+    }
+    g.items.push(c)
+  }
+  return groups.sort((a, b) => Number(!!a.title) - Number(!!b.title))
+}
+
 export function useHeaderNav() {
   const route = useRoute()
   const siteStore = useSiteStore()
@@ -57,6 +84,10 @@ export function useHeaderNav() {
 
   /** Esc 收起下拉与移动端抽屉 */
   function onEscape(): void {
+    // 焦点在下拉面板内时先把焦点还给触发它的导航链接：面板随后会被移除，
+    // 不还的话焦点掉到 body，键盘用户要从页面顶部重新 Tab
+    const panel = document.activeElement?.closest<HTMLElement>('[id^="nav-panel-"]')
+    if (panel) document.querySelector<HTMLElement>(`[aria-controls="${panel.id}"]`)?.focus()
     openKey.value = ''
     menuOpen.value = false
   }

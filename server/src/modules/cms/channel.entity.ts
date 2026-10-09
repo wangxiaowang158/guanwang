@@ -82,6 +82,22 @@ export class Channel {
   @Column({ type: 'varchar', length: 20, nullable: true })
   layout!: BlockLayout | null
 
+  /**
+   * 菜单挂靠：该顶级页面在导航里归到哪个顶级栏目（填其 key）之下，自身路径不变
+   * 用于「主营业务」下挂三个独立业务页、「关于我们」下挂新闻资讯这类一页一栏目的情形；
+   * 由种子维护，不经接口开放（与 portalPath 同理）
+   */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  menuParent!: string | null
+
+  /** 超级下拉菜单分组名，子节点使用；同组子项在菜单里归为一列 */
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  menuGroup!: string | null
+
+  /** 超级下拉菜单里该项下方的一句说明 */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  menuDesc!: string | null
+
   /** 页面 Hero 眉标题（顶级节点使用） */
   @Column({ type: 'varchar', length: 100, nullable: true })
   heroEyebrow!: string | null

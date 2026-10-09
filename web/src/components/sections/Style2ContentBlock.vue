@@ -1,6 +1,6 @@
 <template>
   <!-- 样式二内容块：按 layout 渲染 cards/list/tags/steps/rich，集团红风格；onDark 用于背景图板块 -->
-  <section :id="block.anchor" class="scroll-mt-20" :class="{ 'rs-block--ondark': onDark }">
+  <section v-if="renderable" :id="block.anchor" class="scroll-mt-20" :class="{ 'rs-block--ondark': onDark }">
     <!-- 区块名是这一段的标题，读屏与大纲都靠 h2；副标题是说明文字 -->
     <h2 class="rs-block-eyebrow">{{ block.heading }}</h2>
     <p v-if="block.subheading" class="rs-block-sub">{{ block.subheading }}</p>
@@ -8,6 +8,20 @@
 
     <slot name="filter" />
     <slot v-if="!sorted.length" name="empty"><EmptyState :on-dark="onDark" /></slot>
+
+    <!-- 结构化区块：数据汇总自条目 extra，标题已由上方统一渲染 -->
+    <Style2PainPointList v-else-if="block.layout === 'pains'" :items="pains" :on-dark="onDark" />
+    <Style2ProcessFlow v-else-if="block.layout === 'flow'" :items="steps" :on-dark="onDark" />
+    <Style2MetricBoard v-else-if="block.layout === 'metrics'" :items="metrics" :on-dark="onDark" />
+    <Style2CooperationModes v-else-if="block.layout === 'modes'" :items="modes" :on-dark="onDark" />
+    <Style2ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" />
+    <!-- 证言：单条直接展示，多条轮播 -->
+    <template v-else-if="block.layout === 'quote'">
+      <Style2TestimonialQuote v-if="quotes.length === 1" :quote="quotes[0]" :on-dark="onDark" />
+      <BaseCarousel v-else :items="quotes" :label="block.heading" style2>
+        <template #default="{ item }"><Style2TestimonialQuote :quote="item" :on-dark="onDark" /></template>
+      </BaseCarousel>
+    </template>
 
     <!-- 图文条目：有图显示配图，无图显示编号；可点击时整卡为入口 -->
     <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px" style="background: var(--rs-border)">
@@ -20,6 +34,10 @@
           <span v-if="item.tag" class="px-2.5 py-0.5 font-medium text-white" style="background: var(--rs-primary)">{{ item.tag }}</span>
           <time v-if="item.date" :datetime="item.date" class="tabular-nums" style="color: var(--rs-text-muted)">{{ item.date }}</time>
         </div>
+        <!-- 业务线与行业标签：案例、产品、方案卡片按 extra 展示 -->
+        <ul v-if="chipsOf(item).length" class="rs-chips" aria-label="业务线与行业">
+          <li v-for="chip in chipsOf(item)" :key="chip" class="rs-chip">{{ chip }}</li>
+        </ul>
         <h3 class="rs-card-title">{{ item.title }}</h3>
         <p v-if="item.desc" class="rs-card-desc">{{ item.desc }}</p>
       </ItemLink>
@@ -97,9 +115,18 @@ import { computed } from 'vue'
 import type { PageBlock } from '@/api/page'
 import { sanitizeRichText } from '@/utils/sanitize'
 import SafeImage from '@/components/common/SafeImage.vue'
+import BaseCarousel from '@/components/common/BaseCarousel.vue'
 import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
 import ItemLink from './ItemLink.vue'
+import Style2PainPointList from './Style2PainPointList.vue'
+import Style2ProcessFlow from './Style2ProcessFlow.vue'
+import Style2MetricBoard from './Style2MetricBoard.vue'
+import Style2CooperationModes from './Style2CooperationModes.vue'
+import Style2TestimonialQuote from './Style2TestimonialQuote.vue'
+import Style2ImageGallery from './Style2ImageGallery.vue'
+import { blockHasContent, galleryOf, isExtraLayout, metricsOf, modesOf, painsOf, quotesOf, stepsOf } from './blockExtra'
+import { chipsOf } from './itemChips'
 
 const props = defineProps<{
   block: PageBlock
@@ -113,6 +140,15 @@ const sorted = computed(() => props.block.items)
 
 // 视频板块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
 const playable = computed(() => sorted.value.filter(item => item.video))
+
+// 结构化区块的汇总数据；无数据的结构化区块整块不渲染，普通区块仍走空态
+const pains = computed(() => painsOf(props.block))
+const steps = computed(() => stepsOf(props.block))
+const metrics = computed(() => metricsOf(props.block))
+const modes = computed(() => modesOf(props.block))
+const quotes = computed(() => quotesOf(props.block))
+const gallery = computed(() => galleryOf(props.block))
+const renderable = computed(() => !isExtraLayout(props.block.layout) || blockHasContent(props.block))
 
 /** 富文本渲染前净化，v-html 不接未净化内容 */
 const richHtml = (html: string) => sanitizeRichText(html)
@@ -188,6 +224,21 @@ const richHtml = (html: string) => sanitizeRichText(html)
   font-size: 14px;
   line-height: 1.7;
   color: var(--rs-text-body);
+}
+/* 业务线 / 行业标签：描边小标，允许窄屏换行 */
+.rs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.rs-chip {
+  padding: 1px 8px;
+  font-size: 12px;
+  color: var(--rs-text-body);
+  border: 1px solid var(--rs-border);
 }
 .rs-tag {
   padding: 10px 22px;

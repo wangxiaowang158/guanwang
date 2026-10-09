@@ -9,6 +9,12 @@ export interface MenuNode {
   path: string
   /** 同页锚点 id（一级栏目无锚点，子项指向页内板块） */
   anchor?: string
+  /** 超级菜单分组名：子项带该字段时下拉按分组多列展示，缺省为单列（后端待补） */
+  group?: string
+  /** 子项一句话说明，仅分组展示时显示（后端待补） */
+  desc?: string
+  /** 子项图标地址或图标标识（后端待补） */
+  icon?: string
   children?: MenuNode[]
 }
 

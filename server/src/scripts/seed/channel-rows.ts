@@ -6,14 +6,11 @@ import { HOME_FORM_FIELDS, HOME_HEADINGS, HOME_LIST_COLUMNS } from './home-form-
 import {
   FLATTEN_TO_LIST, FLATTEN_TO_SINGLE, FLATTENED_FORM_FIELDS, FLATTENED_KEYS, FLATTENED_LIST_COLUMNS,
 } from './flatten-groups'
+import { V2_OVERRIDES, buildV2Rows, isLegacyKey } from './channel-rows-v2'
 
 /** 顶级栏目 → 前台路由路径。不在表内的栏目不对前台开放 */
 export const PORTAL_PATHS: Record<string, string> = {
   home: '/',
-  hvac: '/hvac',
-  energy: '/energy',
-  smart: '/smart',
-  household: '/household',
   case: '/case',
   news: '/news',
   alliance: '/alliance',
@@ -25,7 +22,6 @@ export const PORTAL_PATHS: Record<string, string> = {
  * 缺了它们这三个页面的内容在后台完全无法编辑
  */
 export const NEW_CHILD_CHANNELS = [
-  { parentKey: 'household', key: 'household-feature', name: '产品特性' },
   { parentKey: 'alliance', key: 'alliance-partner', name: '联盟成员' },
   { parentKey: 'alliance', key: 'alliance-join', name: '加入方式' },
   { parentKey: 'about', key: 'about-profile', name: '公司概况' },
@@ -69,6 +65,12 @@ export interface ChannelRow {
   heroEyebrow: string | null
   heroTitle: string | null
   heroDesc: string | null
+  /** 菜单挂靠的顶级栏目 key；缺省不挂靠 */
+  menuParent?: string | null
+  menuGroup?: string | null
+  menuDesc?: string | null
+  /** 仅新建时生效：改版后不再对外的旧页面隐藏，已存在的栏目不改，尊重后台已有设置 */
+  hidden?: boolean
 }
 
 type RawChannel = (typeof channels)[number]
@@ -141,10 +143,14 @@ export function buildChannelRows(): ChannelRow[] {
 
   rows.push(...buildNewChildRows())
   rows.push(...buildNewHomeRows())
-  return rows
+  // 新版官网：既有栏目套菜单/排序覆盖，再追加新增的一级与子级栏目
+  for (const row of rows) Object.assign(row, V2_OVERRIDES[row.key])
+  rows.push(...buildV2Rows())
+  // 旧版四个页面及其子栏目、头图栏目不再生成
+  return rows.filter(r => !isLegacyKey(r.key))
 }
 
-/** household / alliance / about 三页缺失的子栏目 */
+/** alliance / about 两页缺失的子栏目 */
 function buildNewChildRows(): ChannelRow[] {
   return NEW_CHILD_CHANNELS.map((def, index) => {
     const anchor = anchorOf(def.parentKey, def.key)

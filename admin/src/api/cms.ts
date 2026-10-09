@@ -26,6 +26,10 @@ export interface Channel {
   subheading?: string
   /** 区块展示形态 */
   layout?: BlockLayout
+  /** 超级下拉菜单分组名，同组子项在菜单里归为一列 */
+  menuGroup?: string
+  /** 超级下拉菜单里该项下方的一句说明 */
+  menuDesc?: string
   /** 前台路由路径，如 /hvac；为空表示该栏目不进前台。管理端只读不改 */
   /** 前台页面路径，只读：由种子维护，接口不接收修改 */
   portalPath?: string
@@ -44,7 +48,9 @@ export interface Channel {
 }
 
 /** 前台区块展示形态，与后端 BLOCK_LAYOUT 保持一致 */
-export type BlockLayout = 'cards' | 'list' | 'tags' | 'steps' | 'rich' | 'video'
+export type BlockLayout =
+  | 'cards' | 'list' | 'tags' | 'steps' | 'rich' | 'video'
+  | 'pains' | 'flow' | 'metrics' | 'modes' | 'quote' | 'gallery'
 
 /** 展示形态下拉选项 */
 export const BLOCK_LAYOUT_OPTIONS: { label: string; value: BlockLayout }[] = [
@@ -54,7 +60,48 @@ export const BLOCK_LAYOUT_OPTIONS: { label: string; value: BlockLayout }[] = [
   { label: '编号流程', value: 'steps' },
   { label: '图文段落', value: 'rich' },
   { label: '视频', value: 'video' },
+  { label: '痛点与方案', value: 'pains' },
+  { label: '全链条流程', value: 'flow' },
+  { label: '量化价值看板', value: 'metrics' },
+  { label: '合作模式', value: 'modes' },
+  { label: '客户证言', value: 'quote' },
+  { label: '图集', value: 'gallery' },
 ]
+
+/** 业务线取值，与后端 BUSINESS_LINES 一致 */
+export type BusinessLine = 'energy' | 'building' | 'living'
+
+/** 业务线下拉选项 */
+export const BUSINESS_LINE_OPTIONS: { label: string; value: BusinessLine }[] = [
+  { label: '智慧能源', value: 'energy' },
+  { label: '智慧楼宇', value: 'building' },
+  { label: '智慧生活', value: 'living' },
+]
+
+/** 指标：量化价值、案例收益 */
+export interface ExtraMetric { label: string; value: string; unit?: string; note?: string }
+/** 痛点 → 解决方案 → 量化价值 */
+export interface ExtraPain { title: string; desc?: string; solution?: string; value?: string }
+/** 标题 + 说明：流程步骤、合作模式 */
+export interface ExtraItem { title: string; desc?: string }
+/** 键值对：案例基础信息 */
+export interface ExtraFact { label: string; value: string }
+/** 客户证言 */
+export interface ExtraQuote { text: string; author?: string; org?: string }
+
+/** 内容扩展数据，与后端 content-extra.ts 的 ContentExtra 同构 */
+export interface ContentExtra {
+  business?: BusinessLine
+  industries?: string[]
+  tags?: string[]
+  metrics?: ExtraMetric[]
+  pains?: ExtraPain[]
+  steps?: ExtraItem[]
+  modes?: ExtraItem[]
+  facts?: ExtraFact[]
+  gallery?: string[]
+  quote?: ExtraQuote
+}
 
 /** 内容记录（通用字段，按栏目 formFields 取用） */
 export interface Content {
@@ -86,6 +133,8 @@ export interface Content {
    * 保存时传空串表示清空（前台回落为创建日期），不传表示保持原值
    */
   publishAt?: string
+  /** 扩展数据：读取时无则缺省；保存时传对象，传 null 表示清空 */
+  extra?: ContentExtra | null
   /** 列表展示日期：已设发布时间时取发布时间，否则取创建时间 */
   createTime?: string
   updateTime?: string

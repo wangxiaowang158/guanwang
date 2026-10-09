@@ -8,7 +8,7 @@ import type { Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { LocationQuery, LocationQueryRaw } from 'vue-router'
 import { getBlockItems } from '@/api/page'
-import type { PageBlock, PageContent } from '@/api/page'
+import type { ExtraFilterParams, PageBlock, PageContent } from '@/api/page'
 import { API_SUCCESS_CODE } from '@/config'
 
 /** 分页的展示形态：图文条目、条目列表。名称集合、序号步骤、富文本、视频一次性展示 */
@@ -28,9 +28,18 @@ interface BlockState {
   failed: boolean
   /** 不带筛选时的条目总数：决定是否提供筛选，不随筛选结果变化 */
   baseTotal: number
+  /** 当前已加载内容对应的多维筛选序列化键，与地址里的期望值比对决定是否重取 */
+  extraKey: string
+  /** 请求序号：快速切换筛选/翻页时，只采纳最新一次请求的结果，丢弃先发后回的旧响应 */
+  seq: number
 }
 
-const pageKeyOf = (anchor: string) => `${anchor}.p`
+/** 多维筛选条件的稳定序列化，用于比较前后是否变化 */
+export function extraKeyOf(f?: ExtraFilterParams): string {
+  return [f?.business, f?.industry, f?.tag].map(v => (v ?? []).join(',')).join('|')
+}
+
+export const pageKeyOf = (anchor: string) => `${anchor}.p`
 const catKeyOf = (anchor: string) => `${anchor}.c`
 
 /** 读地址里的页码，非正整数一律按第 1 页（SRS：页码超出范围或无效展示第 1 页） */
@@ -55,10 +64,12 @@ export function totalPages(block: PageBlock): number {
 /**
  * @param content 栏目页内容（区块条目会被就地替换）
  * @param validCategories 取某区块当前可选的分类名，用于丢弃地址里已失效的分类
+ * @param extraFilterOf 取某区块当前的业务线/行业/标签筛选（来自 useMultiFilter），缺省表示不做多维筛选
  */
 export function useChannelPaging(
   content: Ref<PageContent | null>,
   validCategories: (block: PageBlock) => string[],
+  extraFilterOf?: (block: PageBlock) => ExtraFilterParams,
 ) {
   const route = useRoute()
   const router = useRouter()
@@ -66,7 +77,9 @@ export function useChannelPaging(
 
   const stateOf = (block: PageBlock): BlockState => {
     if (!state[block.anchor]) {
-      state[block.anchor] = { page: 1, category: '', loading: false, failed: false, baseTotal: block.total }
+      // extraKey 初值取「无筛选」的序列化结果，与首屏下发的未筛选内容对应；
+      // 若用空串，首次同步时会把「无筛选」误判为变化而多发一次请求
+      state[block.anchor] = { page: 1, category: '', loading: false, failed: false, baseTotal: block.total, extraKey: extraKeyOf(), seq: 0 }
     }
     return state[block.anchor]
   }
@@ -85,12 +98,17 @@ export function useChannelPaging(
       ? readCategory(route.query, block.anchor)
       : ''
     const wantPage = isPagedBlock(block) ? readPage(route.query, block.anchor) : 1
-    if (wantPage === s.page && wantCat === s.category) return
+    const wantExtra = extraFilterOf?.(block)
+    const wantExtraKey = extraKeyOf(wantExtra)
+    if (wantPage === s.page && wantCat === s.category && wantExtraKey === s.extraKey) return
 
+    const seq = ++s.seq
     s.loading = true
     s.failed = false
     try {
-      const res = await getBlockItems(block.channelKey, wantPage, block.pageSize, wantCat || undefined)
+      const res = await getBlockItems(block.channelKey, wantPage, block.pageSize, wantCat || undefined, wantExtra)
+      // 期间又发起了更新的请求：本次结果已过期，丢弃，由最新那次负责落状态
+      if (seq !== s.seq) return
       if (res.code !== API_SUCCESS_CODE || !res.data) throw new Error(res.message)
       // 页码超过总页数：回到第 1 页，并把地址里的页码清掉
       if (!res.data.items.length && wantPage > 1) {
@@ -102,10 +120,11 @@ export function useChannelPaging(
       block.total = res.data.total
       s.page = wantPage
       s.category = wantCat
+      s.extraKey = wantExtraKey
     } catch {
-      s.failed = true
+      if (seq === s.seq) s.failed = true
     } finally {
-      s.loading = false
+      if (seq === s.seq) s.loading = false
     }
   }
 
@@ -115,6 +134,8 @@ export function useChannelPaging(
    */
   async function ensureFull(block: PageBlock): Promise<void> {
     if (isPagedBlock(block) || block.total <= block.items.length) return
+    // 有多维筛选时 total 是筛选后的总数，取全量会把筛选结果换回未筛选内容，此时不补取
+    if (extraKeyOf(extraFilterOf?.(block)) !== extraKeyOf()) return
     try {
       const res = await getBlockItems(block.channelKey, 1, FULL_FETCH_SIZE)
       if (res.code === API_SUCCESS_CODE && res.data) block.items = res.data.items

@@ -24,6 +24,17 @@ export const FEEDBACK_TYPE_LABEL: Record<FeedbackType, string> = {
   other: '其他',
 }
 
+/** 线索类型：预约/咨询入口提交时才有 */
+export type FeedbackLeadType = 'energyAssess' | 'productDemo' | 'channel' | 'consult'
+
+/** 线索类型中文名 */
+export const FEEDBACK_LEAD_TYPE_LABEL: Record<FeedbackLeadType, string> = {
+  energyAssess: '节能测算预约',
+  productDemo: '产品演示预约',
+  channel: '渠道招商咨询',
+  consult: '方案咨询',
+}
+
 /** 处理状态 */
 export type FeedbackStatus = 'pending' | 'processing' | 'replied' | 'closed'
 
@@ -86,6 +97,10 @@ export interface FeedbackDetail {
   name: string
   phone: string | null
   feedbackType: FeedbackType | null
+  /** 线索类型、邮箱、职位：预约/咨询入口提交时才有 */
+  leadType: FeedbackLeadType | null
+  email: string | null
+  position: string | null
   content: string
   status: FeedbackStatus
   submitIp: string | null

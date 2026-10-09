@@ -100,6 +100,10 @@
             <a-form-item v-if="form.type === 'list' || form.type === 'single'" label="编辑字段">
               <a-checkbox-group v-model:value="form.formFields" :options="fieldOptions" />
             </a-form-item>
+            <a-form-item v-if="form.type === 'list' || form.type === 'single'" label="扩展字段">
+              <a-checkbox-group v-model:value="form.formFields" :options="extraFieldOptions" />
+              <div class="field-tip">存放业务线、行业、标签、指标等结构化信息，不占用基础字段</div>
+            </a-form-item>
             <a-form-item v-if="form.type === 'list'" label="列表列">
               <a-checkbox-group v-model:value="form.listColumns" :options="columnOptions" />
             </a-form-item>
@@ -128,8 +132,16 @@
               <a-form-item label="展示形态">
                 <a-select v-model:value="form.layout" :options="layoutOptions" placeholder="默认图标卡片" allow-clear />
                 <div class="field-tip">
-                  选「视频」时，内容的视频字段作为播放源、封面图片作为播放前首帧
+                  选「视频」时，内容的视频字段作为播放源、封面图片作为播放前首帧；
+                  痛点、流程、看板、合作模式、证言、图集这几种，数据取自内容的对应扩展字段
                 </div>
+              </a-form-item>
+              <a-form-item label="菜单分组">
+                <a-input v-model:value="form.menuGroup" placeholder="选填，如：三大业务" :maxlength="50" />
+                <div class="field-tip">前台超级下拉菜单里，同分组名的子项归为一列；留空则按单列展示</div>
+              </a-form-item>
+              <a-form-item label="菜单说明">
+                <a-input v-model:value="form.menuDesc" placeholder="选填，显示在菜单项下方的一句话" :maxlength="100" />
               </a-form-item>
             </template>
             <!-- 页面头图文案：走通用栏目页模板的板块可填，对应前台页面顶部 -->
@@ -188,7 +200,7 @@ import {
   BLOCK_LAYOUT_OPTIONS, type BlockLayout, type Channel
 } from '@/api/cms'
 import { useChannels } from '@/composables/useChannels'
-import { FIELD_DEFS, COLUMN_LABELS } from './fieldDefs'
+import { FIELD_DEFS, COLUMN_LABELS, EXTRA_FIELD_OPTIONS, isExtraField } from './fieldDefs'
 
 const { load, channels } = useChannels()
 
@@ -210,7 +222,11 @@ const typeOptions = [
   { label: '注册登录配置', value: 'authconfig' },
   { label: '登录日志', value: 'loginlog' }
 ]
-const fieldOptions = Object.keys(FIELD_DEFS).map(k => ({ label: FIELD_DEFS[k].label, value: k }))
+// 基础字段（content 顶层列）与扩展字段（content.extra）分组显示，两组共用同一个 formFields 数组
+const fieldOptions = Object.keys(FIELD_DEFS)
+  .filter(k => !isExtraField(k))
+  .map(k => ({ label: FIELD_DEFS[k].label, value: k }))
+const extraFieldOptions = EXTRA_FIELD_OPTIONS
 const columnOptions = Object.keys(COLUMN_LABELS).map(k => ({ label: COLUMN_LABELS[k], value: k }))
 const layoutOptions = BLOCK_LAYOUT_OPTIONS
 
@@ -221,6 +237,7 @@ const defaultForm = () => ({
   formFields: ['title', 'content', 'updateTime', 'isTop'] as string[],
   listColumns: ['title', 'createTime', 'isTop'] as string[],
   anchor: '', subheading: '', layout: undefined as BlockLayout | undefined,
+  menuGroup: '', menuDesc: '',
   heroEyebrow: '', heroTitle: '', heroDesc: '',
   seoTitle: '', seoKeywords: '', seoDescription: ''
 })
@@ -416,6 +433,8 @@ const openEdit = (node: Channel) => {
     anchor: node.anchor || '',
     subheading: node.subheading || '',
     layout: node.layout,
+    menuGroup: node.menuGroup || '',
+    menuDesc: node.menuDesc || '',
     heroEyebrow: node.heroEyebrow || '',
     heroTitle: node.heroTitle || '',
     heroDesc: node.heroDesc || '',
@@ -459,6 +478,14 @@ const onSave = async () => {
       delete blockPayload.anchor
       delete blockPayload.subheading
       delete blockPayload.layout
+      delete blockPayload.menuGroup
+      delete blockPayload.menuDesc
+    }
+    // 首页板块同样不在界面上展示菜单字段，提交空值会清掉库里的值
+    if (isHomeSection.value) {
+      const menuPayload = payload as Partial<typeof payload>
+      delete menuPayload.menuGroup
+      delete menuPayload.menuDesc
     }
     const res = payload.id
       ? await updateChannel(payload as Channel)

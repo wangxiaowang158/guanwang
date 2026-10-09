@@ -29,6 +29,9 @@
       </div>
     </section>
 
+    <!-- 新版模块：愿景使命轮播（后端未下发时不渲染） -->
+    <HomeVision :items="sections?.vision ?? []" style2 />
+
     <!-- 公司简介：编辑式左右分栏 -->
     <section id="about" class="rs-section bg-white scroll-mt-20">
       <div class="rs-container grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
@@ -43,6 +46,10 @@
         </div>
       </div>
     </section>
+    <!-- 新版模块：三大业务简介、标杆案例看板（缺数据时不占位） -->
+    <HomeBusinessTrio :briefs="briefs" style2 />
+    <HomeCaseShowcase :cases="cases" :metrics="caseMetrics" style2 />
+
     <!-- 业务与行业：深色底，序号编号陈列 -->
     <section id="business" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
       <div class="rs-container">
@@ -155,6 +162,10 @@
       </div>
     </section>
 
+    <!-- 新版模块：媒体采访与客户证言、资质与研发实力（后端未下发时不渲染） -->
+    <HomeTestimony :items="sections?.testimonies ?? []" style2 />
+    <HomeHonor :items="sections?.honors ?? []" style2 />
+
     <!-- 我眼中的中瑞恒：媒体报道与行业评价；无内容时整块不显示 -->
     <section v-if="sections?.views?.length" id="view" class="rs-section scroll-mt-20" style="background: var(--rs-bg-cream)">
       <div class="rs-container">
@@ -227,6 +238,12 @@ import EmptyState from '@/components/sections/EmptyState.vue'
 import SafeImage from '@/components/common/SafeImage.vue'
 import AchievementStat from './components/AchievementStat.vue'
 import ContactSection from './components/ContactSection.vue'
+import HomeVision from './components/HomeVision.vue'
+import HomeBusinessTrio from './components/HomeBusinessTrio.vue'
+import HomeCaseShowcase from './components/HomeCaseShowcase.vue'
+import HomeTestimony from './components/HomeTestimony.vue'
+import HomeHonor from './components/HomeHonor.vue'
+import { useBusinessBriefs, useCaseShowcase } from '@/composables/useHomeShowcase'
 import { useBrokenImages } from '@/composables/useBrokenImages'
 import { useHomeCopy } from '@/composables/useHomeCopy'
 import { homeIconOf } from '@/config/homeIcons'
@@ -243,6 +260,9 @@ const siteStore = useSiteStore()
 const site = computed(() => siteStore.site)
 // 板块标题、首屏按钮、联系板块标题：后台配了用后台，否则内置文案
 const { heading, contactHeading, heroPrimaryText, heroSecondaryText } = useHomeCopy(sections, site)
+// 新版首页模块的数据：三大业务简介、标杆案例（指标看板 + 案例卡片）
+const { briefs } = useBusinessBriefs()
+const { cases, metrics: caseMetrics } = useCaseShowcase()
 
 // 首屏文案取自基本信息管理，未配置时用内置文案
 const heroTitle = computed(() => site.value.slogan || '让建筑更节能　让环境更舒适')

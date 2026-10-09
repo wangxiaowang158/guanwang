@@ -4,6 +4,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { IsNull, Repository } from 'typeorm'
 import { BLOCK_LAYOUT, CONTENT_STATUS } from '../../common/enums'
+import type { ExtraFilter } from '../../common/content-extra'
 import { Channel } from './channel.entity'
 import { Content } from './content.entity'
 import { ContentService, PORTAL_BLOCK_PAGE_SIZE } from './content.service'
@@ -38,18 +39,36 @@ export class PortalCmsService {
     const all = await this.channelRepo.find({ order: { sort: 'ASC', id: 'ASC' } })
     const tops = all.filter(c => !c.parentId && c.portalPath && !c.hidden)
     const nonEmpty = await this.nonEmptyChannelKeys()
+    // 挂靠页面：自身是独立页面，但在导航里归到别的顶级栏目之下
+    const rootKeys = new Set(tops.filter(c => !c.menuParent).map(c => c.key))
+    const docked = tops.filter(c => c.menuParent && rootKeys.has(c.menuParent))
 
-    return tops.map(top => {
+    return tops.filter(c => !c.menuParent || !rootKeys.has(c.menuParent)).map(top => {
+      const dockedNodes = docked
+        .filter(d => d.menuParent === top.key)
+        .map<MenuNodeVo>(d => {
+          const node: MenuNodeVo = { key: d.key, label: d.name, path: d.portalPath as string }
+          if (d.menuGroup) node.group = d.menuGroup
+          if (d.menuDesc) node.desc = d.menuDesc
+          return node
+        })
       const children = all
         .filter(c => c.parentId === top.id && !c.hidden && c.anchor && nonEmpty.has(c.key))
-        .map<MenuNodeVo>(c => ({
-          key: c.key,
-          label: c.name,
-          path: top.portalPath as string,
-          anchor: c.anchor as string,
-        }))
+        .map<MenuNodeVo>(c => {
+          const child: MenuNodeVo = {
+            key: c.key,
+            label: c.name,
+            path: top.portalPath as string,
+            anchor: c.anchor as string,
+          }
+          if (c.menuGroup) child.group = c.menuGroup
+          if (c.menuDesc) child.desc = c.menuDesc
+          return child
+        })
       const node: MenuNodeVo = { key: top.key, label: top.name, path: top.portalPath as string }
-      if (children.length) node.children = children
+      // 挂靠页面排在页内锚点之前：它们是一级页面，比页内区块更值得放在菜单前面
+      const menuChildren = [...dockedNodes, ...children]
+      if (menuChildren.length) node.children = menuChildren
       return node
     })
   }
@@ -141,6 +160,7 @@ export class PortalCmsService {
     page?: number,
     pageSize?: number,
     category?: string,
+    filter?: ExtraFilter,
   ): Promise<BlockItemsVo> {
     const child = await this.channelRepo.findOne({ where: { key: channelKey } })
     if (!child?.anchor || !child.parentId || child.hidden) throw new NotFoundException('栏目不存在')
@@ -152,7 +172,7 @@ export class PortalCmsService {
     // 正文下发口径必须与 pageContent 一致，否则续页条目会比首屏多带或少带正文
     const withHtml = INLINE_HTML_LAYOUTS.has(layout)
 
-    const result = await this.contentService.listPagedByChannelKey(channelKey, page, pageSize, category)
+    const result = await this.contentService.listPagedByChannelKey(channelKey, page, pageSize, category, filter)
     // sort 是前台展示序号，续页要接着首屏往下排，不能每页都从 1 起
     const offset = (result.page - 1) * result.pageSize
     return {

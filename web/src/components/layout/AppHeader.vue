@@ -21,7 +21,7 @@
         <!-- 桌面导航 -->
         <nav class="hidden lg:flex items-stretch h-full flex-1" aria-label="主导航">
           <div
-            v-for="item in menu"
+            v-for="(item, idx) in menu"
             :key="item.key"
             class="relative flex"
             @mouseenter="openDropdown(item.key)"
@@ -34,7 +34,7 @@
               class="nav-link"
               :class="{ 'is-active': isActive(item) }"
               :aria-current="isActive(item) ? 'page' : undefined"
-              :aria-haspopup="item.children?.length ? 'true' : undefined"
+              :aria-controls="item.children?.length ? `nav-panel-${item.key}` : undefined"
               :aria-expanded="item.children?.length ? openKey === item.key : undefined"
             >
               {{ item.label }}
@@ -44,7 +44,27 @@
             </RouterLink>
 
             <Transition name="dropdown">
-              <div v-if="item.children?.length && openKey === item.key" class="dropdown-panel">
+              <!-- 子项带分组：超级菜单多列展示，显示分组标题与说明 -->
+              <div
+                v-if="item.children?.length && openKey === item.key && groupChildren(item.children)"
+                :id="`nav-panel-${item.key}`"
+                class="dropdown-panel dropdown-panel--mega"
+                :class="{ 'is-right': idx >= menu.length / 2 }"
+                :style="{ '--mega-cols': Math.min(groupChildren(item.children)?.length ?? 1, 4) }"
+              >
+                <section v-for="g in groupChildren(item.children)" :key="g.title" class="mega-group">
+                  <p v-if="g.title" class="dropdown-title">{{ g.title }}</p>
+                  <RouterLink v-for="child in g.items" :key="child.key" :to="childTo(child)" class="dropdown-link mega-link">
+                    <img v-if="child.icon" :src="child.icon" alt="" class="mega-icon" width="24" height="24" loading="lazy" />
+                    <span class="min-w-0">
+                      <span class="block">{{ child.label }}</span>
+                      <span v-if="child.desc" class="mega-desc">{{ child.desc }}</span>
+                    </span>
+                  </RouterLink>
+                </section>
+              </div>
+              <!-- 无分组：保持原有单列 -->
+              <div v-else-if="item.children?.length && openKey === item.key" class="dropdown-panel">
                 <p class="dropdown-title">{{ item.label }}</p>
                 <RouterLink
                   v-for="child in item.children"
@@ -101,7 +121,7 @@
 <script setup lang="ts">
 // 样式一顶栏：行为逻辑见 useHeaderNav，本组件只管呈现
 import { COMPANY_EN, COMPANY_SHORT } from '@/config/brand'
-import { useHeaderNav } from '@/composables/useHeaderNav'
+import { groupChildren, useHeaderNav } from '@/composables/useHeaderNav'
 import MemberEntry from './MemberEntry.vue'
 import MobileNav from './MobileNav.vue'
 import PhoneIcon from './PhoneIcon.vue'
@@ -173,6 +193,22 @@ const {
   background: var(--color-brand-50);
   color: var(--color-brand-600);
 }
+
+/* 超级菜单：按分组数等分列，每列至少 200px；前半段菜单项靠左对齐父项向右展开，
+   后半段（.is-right）靠右对齐向左展开，避免靠右的菜单项面板超出视口右侧 */
+.dropdown-panel--mega.is-right { left: auto; right: 0; }
+.dropdown-panel--mega {
+  display: grid;
+  grid-template-columns: repeat(var(--mega-cols, 1), minmax(200px, 1fr));
+  gap: 8px 16px;
+  width: max-content;
+  max-width: min(960px, calc(100vw - 48px));
+  padding: 16px;
+}
+.mega-group { min-width: 0; }
+.mega-link { display: flex; align-items: flex-start; gap: 10px; white-space: normal; }
+.mega-icon { flex-shrink: 0; width: 24px; height: 24px; margin-top: 1px; object-fit: contain; }
+.mega-desc { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--color-ink-500); }
 
 .dropdown-enter-active,
 .dropdown-leave-active,

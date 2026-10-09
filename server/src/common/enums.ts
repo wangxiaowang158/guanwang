@@ -51,6 +51,19 @@ export const FEEDBACK_TYPE = {
 } as const
 export type FeedbackType = (typeof FEEDBACK_TYPE)[keyof typeof FEEDBACK_TYPE]
 
+/** 线索类型：官网预约/咨询入口，与 feedbackType 并存（feedbackType 保持原有口径） */
+export const LEAD_TYPE = {
+  /** 项目节能测算预约 */
+  ENERGY_ASSESS: 'energyAssess',
+  /** 产品演示预约 */
+  PRODUCT_DEMO: 'productDemo',
+  /** 渠道招商咨询 */
+  CHANNEL: 'channel',
+  /** 方案/合作咨询 */
+  CONSULT: 'consult',
+} as const
+export type LeadType = (typeof LEAD_TYPE)[keyof typeof LEAD_TYPE]
+
 /** 登录方式 */
 export const LOGIN_METHOD = {
   PASSWORD: 'password',
@@ -108,5 +121,17 @@ export const BLOCK_LAYOUT = {
   STEPS: 'steps',
   RICH: 'rich',
   VIDEO: 'video',
+  /** 痛点 → 解决方案 → 价值，数据取自条目 extra.pains */
+  PAINS: 'pains',
+  /** 全链条流程，数据取自条目 extra.steps */
+  FLOW: 'flow',
+  /** 量化价值看板，数据取自条目 extra.metrics */
+  METRICS: 'metrics',
+  /** 合作模式，数据取自条目 extra.modes */
+  MODES: 'modes',
+  /** 客户证言，数据取自条目 extra.quote */
+  QUOTE: 'quote',
+  /** 图集，数据取自条目 extra.gallery */
+  GALLERY: 'gallery',
 } as const
 export type BlockLayout = (typeof BLOCK_LAYOUT)[keyof typeof BLOCK_LAYOUT]

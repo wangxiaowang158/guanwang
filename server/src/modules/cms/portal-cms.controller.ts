@@ -9,6 +9,13 @@ import { SiteConfigService } from './site-config.service'
 import { normalizeOrigin } from './site-origin'
 import { BlockItemsQueryDto } from './dto/portal.dto'
 
+/** 逗号分隔的筛选值 → 去空去重数组，最多 10 个，防止超长 OR 条件 */
+function splitCsv(raw?: string): string[] | undefined {
+  if (!raw) return undefined
+  const list = [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))].slice(0, 10)
+  return list.length ? list : undefined
+}
+
 /** 转义 XML 文本节点与 URL 中的保留字符，供 sitemap 拼接使用 */
 /** 预渲染路径的长度上限，超长一律按非法路径处理 */
 const PRERENDER_PATH_MAX = 512
@@ -82,7 +89,11 @@ export class PortalCmsController {
    */
   @Get('page/block')
   pageBlock(@Query() query: BlockItemsQueryDto) {
-    return this.portalCms.blockItems(query.channelKey, query.page, query.pageSize, query.category)
+    return this.portalCms.blockItems(query.channelKey, query.page, query.pageSize, query.category, {
+      business: splitCsv(query.business),
+      industry: splitCsv(query.industry),
+      tag: splitCsv(query.tag),
+    })
   }
 
   /**

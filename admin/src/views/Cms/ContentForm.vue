@@ -86,6 +86,30 @@
       <a-checkbox v-else-if="defOf(key).widget === 'switch'" v-model:checked="model[key]">
         置顶
       </a-checkbox>
+      <!-- 扩展字段：读写 extra 草稿，不进 model -->
+      <a-select
+        v-else-if="defOf(key).widget === 'extra-business'"
+        v-model:value="extra.business"
+        :options="BUSINESS_LINE_OPTIONS"
+        placeholder="请选择业务线"
+        allow-clear
+      />
+      <ExtraTagsInput
+        v-else-if="defOf(key).widget === 'extra-tags'"
+        :model-value="tagsOf(key)"
+        @update:model-value="(v) => setTags(key, v)"
+      />
+      <ExtraQuoteInput
+        v-else-if="defOf(key).widget === 'extra-quote'"
+        v-model="extra.quote"
+      />
+      <ExtraListEditor
+        v-else-if="isListWidget(defOf(key).widget)"
+        :model-value="rowsOf(key)"
+        :columns="columnsOf(key)"
+        :add-text="`新增${defOf(key).label}`"
+        @update:model-value="(v) => setRows(key, v)"
+      />
       <!-- 兜底文本 -->
       <a-input v-else v-model:value="model[key]" />
     </a-form-item>
@@ -125,11 +149,16 @@
 import { ref } from 'vue'
 import type { Rule } from 'ant-design-vue/es/form'
 import type { ContentFormModel } from '@/api/cms'
-import { getFieldDef } from './fieldDefs'
+import { BUSINESS_LINE_OPTIONS } from '@/api/cms'
+import { getFieldDef, isExtraField, type FieldWidget } from './fieldDefs'
 import RichEditor from './components/RichEditor.vue'
 import ImageUpload from './components/ImageUpload.vue'
 import CoverUpload from './components/CoverUpload.vue'
 import VideoUpload from './components/VideoUpload.vue'
+import ExtraTagsInput from './components/extra/ExtraTagsInput.vue'
+import ExtraListEditor from './components/extra/ExtraListEditor.vue'
+import ExtraQuoteInput from './components/extra/ExtraQuoteInput.vue'
+import { EXTRA_COLUMNS, type ExtraDraft, type ExtraRow } from './components/extra/extraDraft'
 
 const props = defineProps<{
   fields: string[]
@@ -147,7 +176,32 @@ const emit = defineEmits<{ save: []; back: [] }>()
 /** 表单模型由父级持有，经 v-model:model 双向绑定，字段在此就地编辑 */
 const model = defineModel<ContentFormModel>('model', { required: true })
 
+/**
+ * 扩展字段草稿（对应 content.extra），由父级持有并在保存时经 draftToExtra 组装
+ * 与 model 分开：model 只装 content 顶层列，扩展字段的值是数组/对象，混进去会破坏其类型约束
+ */
+const extra = defineModel<ExtraDraft>('extra', { required: true })
+
 const formRef = ref()
+
+type ListKey = 'metrics' | 'pains' | 'steps' | 'modes' | 'facts' | 'gallery'
+
+/** 列表型扩展控件：指标、痛点、条目、键值、多图 */
+const isListWidget = (w: FieldWidget) =>
+  ['extra-metrics', 'extra-pains', 'extra-items', 'extra-facts', 'extra-gallery'].includes(w)
+
+/** 标签型字段只有 industries / tags 两个 */
+const tagsOf = (key: string): string[] => (key === 'industries' ? extra.value.industries : extra.value.tags)
+const setTags = (key: string, v: string[]) => {
+  if (key === 'industries') extra.value.industries = v
+  else extra.value.tags = v
+}
+
+const rowsOf = (key: string): ExtraRow[] => (isExtraField(key) && key in EXTRA_COLUMNS ? extra.value[key as ListKey] : [])
+const columnsOf = (key: string) => EXTRA_COLUMNS[key as ListKey] ?? []
+const setRows = (key: string, v: ExtraRow[]) => {
+  if (isExtraField(key) && key in EXTRA_COLUMNS) extra.value[key as ListKey] = v
+}
 
 const defOf = (key: string) => getFieldDef(key, props.channelKey)
 

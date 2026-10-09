@@ -7,6 +7,9 @@ import homeSections from '../../modules/cms/seed/home-sections.json'
 import pageContents from '../../modules/cms/seed/page-contents.json'
 import webSite from '../../modules/cms/seed/web-site.json'
 import { HOME_SECTION_KEYS } from '../../modules/cms/home-section.service'
+import type { ContentExtra } from '../../common/content-extra'
+import { buildV2ContentRows } from './content-rows-v2'
+import { isLegacyKey } from './channel-rows-v2'
 
 /** 表单以 name 为名称字段的栏目，种子须写 name 而非 title（迁移 1790000008000 同步旧库） */
 const NAME_KEYED_CHANNELS = new Set(['hvac-category'])
@@ -24,6 +27,8 @@ export interface ContentRow {
   link?: string | null
   category?: string | null
   icon?: string | null
+  /** 扩展数据，写库时经 serializeExtra 净化后转成 JSON 文本 */
+  extra?: ContentExtra | null
   sort: number
   isTop?: boolean
   publishAt?: Date | null
@@ -208,5 +213,6 @@ export function buildContentRows(): ContentRow[] {
     ...buildHomeRows(),
     ...buildBannerRows(),
     ...buildAdminOnlyRows(),
-  ]
+    ...buildV2ContentRows(),
+  ].filter(r => !isLegacyKey(r.channelKey))
 }

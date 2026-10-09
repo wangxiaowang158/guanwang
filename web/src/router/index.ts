@@ -60,6 +60,16 @@ function waitForHeight(minHeight: number): Promise<void> {
   })
 }
 
+/** 新版官网的数据驱动栏目页：子路径相对 DefaultLayout 根，key 为栏目 key 与路由 name */
+const CHANNEL_PAGE_ROUTES = [
+  { path: 'business', key: 'business' },
+  { path: 'business/energy', key: 'business-energy' },
+  { path: 'business/building', key: 'business-building' },
+  { path: 'business/living', key: 'business-living' },
+  { path: 'products', key: 'products' },
+  { path: 'solutions', key: 'solutions' },
+]
+
 // 注意：新增前台路由须同步 docker/nginx/gateway.conf 的已知路由正则，
 // 否则网关会对该地址返回 404 状态码（页面仍能渲染，但搜索引擎不收录）
 // 前台官网路由 —— 对齐后台对外栏目（首页 + 8 个一级栏目页）+ 会员页
@@ -90,10 +100,13 @@ const router = createRouter({
       component: () => import('@/components/layout/DefaultLayout.vue'),
       children: [
         { path: '', name: 'home', component: () => import('@/views/home/index.vue') },
-        { path: 'hvac', name: 'hvac', component: () => import('@/views/hvac/index.vue') },
-        { path: 'energy', name: 'energy', component: () => import('@/views/energy/index.vue') },
-        { path: 'smart', name: 'smart', component: () => import('@/views/smart/index.vue') },
-        { path: 'household', name: 'household', component: () => import('@/views/household/index.vue') },
+        // 新版官网栏目页：统一走数据驱动的 ChannelPage，路由 name 即栏目 key（SEO 配置按 name 取）
+        ...CHANNEL_PAGE_ROUTES.map(({ path, key }) => ({
+          path,
+          name: key,
+          component: () => import('@/components/sections/ChannelPage.vue'),
+          props: { pageKey: key },
+        })),
         { path: 'case', name: 'case', component: () => import('@/views/case/index.vue') },
         { path: 'news', name: 'news', component: () => import('@/views/news/index.vue') },
         { path: 'alliance', name: 'alliance', component: () => import('@/views/alliance/index.vue') },

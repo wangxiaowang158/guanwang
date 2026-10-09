@@ -111,6 +111,11 @@
         <a-descriptions-item label="姓名">{{ current.name }}</a-descriptions-item>
         <a-descriptions-item label="联系电话">{{ current.phone || '-' }}</a-descriptions-item>
         <a-descriptions-item label="单位">{{ current.company || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="职位">{{ current.position || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="邮箱">{{ current.email || '-' }}</a-descriptions-item>
+        <a-descriptions-item label="线索类型">
+          {{ current.leadType ? FEEDBACK_LEAD_TYPE_LABEL[current.leadType] : '-' }}
+        </a-descriptions-item>
         <a-descriptions-item label="状态">
           <a-tag :color="FEEDBACK_STATUS_COLOR[current.status]">
             {{ FEEDBACK_STATUS_LABEL[current.status] }}
@@ -185,7 +190,7 @@ import { DownloadOutlined } from '@ant-design/icons-vue'
 import {
   getFeedbackList, getFeedbackDetail, replyFeedback, updateFeedbackStatus,
   deleteFeedback, batchDeleteFeedback, exportFeedback,
-  FEEDBACK_SOURCE_LABEL, FEEDBACK_TYPE_LABEL, FEEDBACK_STATUS_LABEL,
+  FEEDBACK_SOURCE_LABEL, FEEDBACK_TYPE_LABEL, FEEDBACK_STATUS_LABEL, FEEDBACK_LEAD_TYPE_LABEL,
   FEEDBACK_STATUS_COLOR, FEEDBACK_STATUS_FLOW,
   type FeedbackDetail, type FeedbackListItem,
   type FeedbackSource, type FeedbackStatus, type FeedbackType,

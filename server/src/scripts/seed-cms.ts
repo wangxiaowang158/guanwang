@@ -7,7 +7,9 @@ import { config } from 'dotenv'
 import { NestFactory } from '@nestjs/core'
 import { DataSource } from 'typeorm'
 import { CONTENT_STATUS } from '../common/enums'
+import { serializeExtra } from '../common/content-extra'
 import { buildChannelRows } from './seed/channel-rows'
+import { V2_OVERRIDES, isLegacyKey } from './seed/channel-rows-v2'
 import { buildContentRows } from './seed/content-rows'
 import siteJson from '../modules/cms/seed/site.json'
 import webSiteJson from '../modules/cms/seed/web-site.json'
@@ -26,6 +28,9 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
   const idByKey = new Map<string, number>()
   let inserted = 0
   let updated = 0
+  // 新版栏目首次入库的那一次，才套用保留栏目的新导航顺序；
+  // 之后重跑种子不再动，免得覆盖运营在后台调过的排序
+  const upgradingToV2 = !(await repo.findOne({ where: { key: 'business' } }))
 
   for (const row of ordered) {
     const parentId = row.parentKey ? idByKey.get(row.parentKey) ?? null : null
@@ -48,6 +53,12 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
       entity.seoKeywords = row.seoKeywords
       entity.seoDescription = row.seoDescription
     }
+    // 菜单字段与 portalPath 同属种子维护；hidden 只在新建时写，已存在的栏目保留后台设置
+    // menuParent 由种子独占；menuGroup / menuDesc 后台可编辑，只在库里为空时补，不覆盖运营改过的值
+    entity.menuParent = row.menuParent ?? null
+    entity.menuGroup = entity.menuGroup ?? row.menuGroup ?? null
+    entity.menuDesc = entity.menuDesc ?? row.menuDesc ?? null
+    if (!existing && row.hidden !== undefined) entity.hidden = row.hidden
     entity.portalPath = row.portalPath
     entity.anchor = row.anchor
     entity.subheading = row.subheading
@@ -61,6 +72,22 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
     if (existing) updated += 1
     else inserted += 1
   }
+
+  if (upgradingToV2) {
+    // 保留栏目套用新导航顺序（只在新版栏目首次入库那一次，之后不覆盖运营在后台调的排序）
+    for (const [key, o] of Object.entries(V2_OVERRIDES)) {
+      if (o.sort !== undefined) await repo.update({ key }, { sort: o.sort })
+    }
+  }
+
+  // 旧库里改版前的页面（暖通 / 综合能源 / 智慧能源 / 智能家居）：种子不再生成它们，
+  // 但库里的老行仍带着前台路径，会留在导航里并指向已下线的路由（点进去 404）。
+  // 这里隐藏并清掉路径，只改这两列，栏目与内容都保留，要彻底删除请在后台「栏目管理」操作。
+  // 判定看"是否还带前台路径"而不是"是否首次升级"：中途失败重跑能补上，
+  // 清掉路径后也不会再匹配，运营之后手动重新显示的不会被每次种子重新隐藏
+  const stale = (await repo.find()).filter(c => isLegacyKey(c.key) && c.portalPath)
+  for (const c of stale) await repo.update({ id: c.id }, { hidden: true, portalPath: null })
+  if (stale.length) say(`  已下线旧页面：${stale.map(c => c.key).join('、')}`)
 
   return { inserted, updated }
 }
@@ -93,7 +120,8 @@ async function seedContents(ds: DataSource): Promise<{ inserted: number; skipped
       continue
     }
     // 显式标记已发布：种子内容就是为了让前台开箱有东西可看，不能落成草稿
-    await repo.save(repo.create({ ...row, status: CONTENT_STATUS.PUBLISHED }))
+    const { extra, ...rest } = row
+    await repo.save(repo.create({ ...rest, extra: serializeExtra(extra), status: CONTENT_STATUS.PUBLISHED }))
     inserted += 1
   }
 

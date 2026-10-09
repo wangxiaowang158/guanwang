@@ -26,6 +26,9 @@
       </div>
     </section>
 
+    <!-- 新版模块：愿景使命轮播（后端未下发时不渲染） -->
+    <HomeVision :items="sections?.vision ?? []" />
+
     <!-- 公司简介 -->
     <section id="about" class="s1-section s1-section--white">
       <div class="s1-container">
@@ -41,6 +44,10 @@
         <EmptyState v-else />
       </div>
     </section>
+
+    <!-- 新版模块：三大业务简介、标杆案例看板（缺数据时不占位） -->
+    <HomeBusinessTrio :briefs="briefs" />
+    <HomeCaseShowcase :cases="cases" :metrics="caseMetrics" />
 
     <!-- 业务与行业 -->
     <section id="business" class="s1-section s1-section--surface">
@@ -164,6 +171,10 @@
       </div>
     </section>
 
+    <!-- 新版模块：媒体采访与客户证言、资质与研发实力（后端未下发时不渲染） -->
+    <HomeTestimony :items="sections?.testimonies ?? []" />
+    <HomeHonor :items="sections?.honors ?? []" />
+
     <!-- 我眼中的中瑞恒：媒体报道与行业评价；无内容时整块不显示，不占首页篇幅 -->
     <section v-if="sections?.views?.length" id="view" class="s1-section s1-section--white">
       <div class="s1-container">
@@ -244,6 +255,12 @@ import AchievementStat from './components/AchievementStat.vue'
 import HeroStat from './components/HeroStat.vue'
 import Style1Heading from './components/Style1Heading.vue'
 import ContactSection from './components/ContactSection.vue'
+import HomeVision from './components/HomeVision.vue'
+import HomeBusinessTrio from './components/HomeBusinessTrio.vue'
+import HomeCaseShowcase from './components/HomeCaseShowcase.vue'
+import HomeTestimony from './components/HomeTestimony.vue'
+import HomeHonor from './components/HomeHonor.vue'
+import { useBusinessBriefs, useCaseShowcase } from '@/composables/useHomeShowcase'
 import { useBrokenImages } from '@/composables/useBrokenImages'
 import { useHomeCopy } from '@/composables/useHomeCopy'
 import { homeIconOf } from '@/config/homeIcons'
@@ -258,6 +275,9 @@ const siteStore = useSiteStore()
 // 站点信息取自 site store，与页眉/页脚共享同一次请求
 const site = computed(() => siteStore.site)
 const { shown, track } = useReveal()
+// 新版首页模块的数据：三大业务简介、标杆案例（指标看板 + 案例卡片）
+const { briefs } = useBusinessBriefs()
+const { cases, metrics: caseMetrics } = useCaseShowcase()
 // 板块标题、首屏按钮、联系板块标题：后台配了用后台，否则内置文案
 const { heading, contactHeading, heroPrimaryText, heroSecondaryText } = useHomeCopy(sections, site)
 

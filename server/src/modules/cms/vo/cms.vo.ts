@@ -3,6 +3,7 @@ import { sanitizeRichText } from '../../../common/html-sanitizer'
 import type { BlockLayout } from '../../../common/enums'
 import type { Channel } from '../channel.entity'
 import type { Content } from '../content.entity'
+import { normalizeExtra, type ContentExtra } from '../../../common/content-extra'
 
 /** 管理端栏目视图，formFields / listColumns 还原为数组 */
 export interface ChannelVo {
@@ -23,6 +24,8 @@ export interface ChannelVo {
   portalPath?: string
   anchor?: string
   subheading?: string
+  menuGroup?: string
+  menuDesc?: string
   layout?: string
   heroEyebrow?: string
   heroTitle?: string
@@ -36,6 +39,10 @@ export interface MenuNodeVo {
   label: string
   path: string
   anchor?: string
+  /** 超级下拉菜单分组名，同组子项归为一列；缺省按单列展示 */
+  group?: string
+  /** 子项下方的一句说明 */
+  desc?: string
   children?: MenuNodeVo[]
 }
 
@@ -59,6 +66,8 @@ export interface PageItemVo {
   html?: string
   date?: string
   sort: number
+  /** 扩展数据（业务线、行业、标签、指标、痛点方案等），已净化；无则不下发 */
+  extra?: ContentExtra
   /** 有正文可看，前台据此把条目做成详情页入口 */
   hasDetail?: boolean
   /**
@@ -78,6 +87,8 @@ export interface ArticleDetailVo {
   video?: string
   /** 已净化的富文本正文 */
   html?: string
+  /** 扩展数据，案例详情的结构化区块（基础信息、痛点、方案、收益、实拍、评价）取自这里 */
+  extra?: ContentExtra
   /** 后台为该条内容录入的关键字，详情页 SEO 用；未录入时由调用方回落栏目/站点关键字 */
   keywords?: string
   date?: string
@@ -202,6 +213,8 @@ export function toChannelVo(c: Channel): ChannelVo {
     portalPath: orUndefined(c.portalPath),
     anchor: orUndefined(c.anchor),
     subheading: orUndefined(c.subheading),
+    menuGroup: orUndefined(c.menuGroup),
+    menuDesc: orUndefined(c.menuDesc),
     layout: orUndefined(c.layout),
     heroEyebrow: orUndefined(c.heroEyebrow),
     heroTitle: orUndefined(c.heroTitle),
@@ -232,6 +245,8 @@ export function toContentVo(c: Content): Record<string, unknown> {
     brand: orUndefined(c.brand),
     author: orUndefined(c.author),
     source: orUndefined(c.source),
+    // 后台编辑表单回填用：对象形态，无则不下发
+    extra: normalizeExtra(c.extra) ?? undefined,
     sort: c.sort,
     isTop: c.isTop,
     status: c.status,
@@ -268,6 +283,8 @@ export function toPageItemVo(c: Content, index: number, includeHtml = true): Pag
     sort: index + 1,
     link: safeLink(c.link),
   }
+  const extra = normalizeExtra(c.extra)
+  if (extra) vo.extra = extra
   if (includeHtml) {
     vo.html = html
     return vo
@@ -301,6 +318,7 @@ export function toArticleDetailVo(
     image: orUndefined(c.cover),
     video: orUndefined(c.video),
     html: orUndefined(sanitizeRichText(c.content)),
+    extra: normalizeExtra(c.extra) ?? undefined,
     keywords: orUndefined(c.keywords),
     // 未指定发布时间时取创建日期（SRS 3.5.1 内容详情·发布信息）
     date: formatDate(c.publishAt ?? c.createdAt),

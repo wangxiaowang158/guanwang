@@ -79,6 +79,18 @@ export class CreateChannelDto {
   @Length(0, 300)
   subheading?: string
 
+  /** 超级下拉菜单分组名 */
+  @IsOptional()
+  @IsString()
+  @Length(0, 50)
+  menuGroup?: string
+
+  /** 超级下拉菜单说明 */
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  menuDesc?: string
+
   @IsOptional()
   @IsIn(BLOCK_LAYOUTS, { message: '展示形态取值不合法' })
   layout?: string
@@ -163,6 +175,18 @@ export class UpdateChannelDto {
   @IsString()
   @Length(0, 300)
   subheading?: string
+
+  /** 超级下拉菜单分组名 */
+  @IsOptional()
+  @IsString()
+  @Length(0, 50)
+  menuGroup?: string
+
+  /** 超级下拉菜单说明 */
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  menuDesc?: string
 
   @IsOptional()
   @IsIn(BLOCK_LAYOUTS, { message: '展示形态取值不合法' })

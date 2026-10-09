@@ -1,7 +1,9 @@
 // 反馈记录实体 —— 合并原「访客留言」与新增「会员意见反馈」
 // 一张表两种来源，用 source 区分：匿名咨询的回复仅后台可见，会员反馈的回复推送到前台个人中心
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
-import { FEEDBACK_STATUS, type FeedbackSource, type FeedbackStatus, type FeedbackType } from '../../common/enums'
+import {
+  FEEDBACK_STATUS, type FeedbackSource, type FeedbackStatus, type FeedbackType, type LeadType,
+} from '../../common/enums'
 
 @Entity('feedback')
 export class Feedback {
@@ -34,6 +36,18 @@ export class Feedback {
   /** 反馈类型：产品建议 / 服务投诉 / 合作咨询 / 其他 */
   @Column({ type: 'varchar', length: 20, nullable: true })
   feedbackType!: FeedbackType | null
+
+  /** 线索类型：节能测算 / 产品演示 / 渠道招商 / 咨询；非线索入口为空 */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  leadType!: LeadType | null
+
+  /** 联系邮箱，选填 */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  email!: string | null
+
+  /** 职位，选填 */
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  position!: string | null
 
   /** 反馈内容，按纯文本处理，不接受富文本 */
   @Column({ type: 'text' })

@@ -21,6 +21,13 @@ const BY_PAGE: Record<string, string> = {
   news,
   alliance,
   about,
+  // 新版官网栏目：按内容主题复用既有插画，未单独出图
+  business: about,
+  'business-energy': energy,
+  'business-building': smart,
+  'business-living': household,
+  products: hvac,
+  solutions: caseImg,
 }
 
 /** 首页各板块的缺省配图，按板块内容主题挑选 */

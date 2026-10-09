@@ -13,7 +13,7 @@ const TEXT_FIELDS = [
   'icon', 'seoTitle', 'seoKeywords', 'seoDescription',
   // portalPath 不在此列：前台路由与网关白名单固定为种子里的一级页面，
   // 经接口新增或改动路径只会得到一个点进去 404 的菜单项，故由种子独占维护
-  'anchor', 'subheading',
+  'anchor', 'subheading', 'menuGroup', 'menuDesc',
   'heroEyebrow', 'heroTitle', 'heroDesc',
 ] as const
 

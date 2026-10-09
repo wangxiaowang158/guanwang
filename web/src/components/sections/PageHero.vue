@@ -11,6 +11,8 @@
       <p v-if="eyebrow" class="page-hero-eyebrow">{{ eyebrow }}</p>
       <h1 class="page-hero-title">{{ title }}</h1>
       <p v-if="desc" class="page-hero-desc">{{ desc }}</p>
+      <!-- 转化入口位（如预约演示），页面按需传入；窄屏随内容换行，不溢出 -->
+      <div v-if="$slots.actions" class="page-hero-actions"><slot name="actions" /></div>
     </div>
   </section>
 </template>
@@ -72,6 +74,12 @@ defineProps<{
   font-weight: 700;
   line-height: 1.2;
   color: #fff;
+}
+.page-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
 }
 .page-hero-desc {
   margin: 16px 0 0;

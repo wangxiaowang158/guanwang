@@ -9,6 +9,7 @@ import type { Content } from './content.entity'
 import { PortalCmsService } from './portal-cms.service'
 import { safeLink } from './vo/cms.vo'
 import { htmlToText } from '../../common/utils/html-to-text'
+import { normalizeExtra } from '../../common/content-extra'
 
 /** 首页各板块对应的栏目 key */
 export const HOME_SECTION_KEYS = {
@@ -21,6 +22,9 @@ export const HOME_SECTION_KEYS = {
   ACHIEVEMENT: 'home-achievement',
   SOCIAL: 'home-social',
   VIEW: 'home-view',
+  VISION: 'home-vision',
+  TESTIMONY: 'home-testimony',
+  HONOR: 'home-honor',
 } as const
 
 /** 板块标题：小标题取栏目名，主标题取栏目的区块副标题；前台为空时用内置文案 */
@@ -100,6 +104,9 @@ export class HomeSectionService {
       achievements: pick(HOME_SECTION_KEYS.ACHIEVEMENT).map((c, i) => this.toAchievement(c, i)),
       social: pick(HOME_SECTION_KEYS.SOCIAL).map((c, i) => this.toSocial(c, i)),
       views: pick(HOME_SECTION_KEYS.VIEW).map((c, i) => this.toView(c, i)),
+      vision: pick(HOME_SECTION_KEYS.VISION).map(c => this.toVision(c)),
+      testimonies: pick(HOME_SECTION_KEYS.TESTIMONY).flatMap(c => this.toTestimony(c)),
+      honors: pick(HOME_SECTION_KEYS.HONOR).map(c => this.toHonor(c)),
       headings: await this.headings(),
       // 板块背景图：目前仅首屏 Hero 有配置项，取自「首页 Banner」栏目
       backgrounds: heroBg ? { hero: heroBg } : {},
@@ -187,6 +194,26 @@ export class HomeSectionService {
       link: safeLink(c.link) ?? '',
       sort: this.displaySort(index),
     }
+  }
+
+  /** 愿景使命项：标题 + 说明，前台轮播展示 */
+  private toVision(c: Content) {
+    return { id: c.id, title: c.title ?? '', desc: c.description ?? '' }
+  }
+
+  /**
+   * 媒体采访与客户证言项：评价文案存在 extra.quote 里，没有评价文案的条目不下发，
+   * 避免前台渲染出只有标题没有内容的空卡片
+   */
+  private toTestimony(c: Content) {
+    const quote = normalizeExtra(c.extra)?.quote
+    if (!quote) return []
+    return [{ id: c.id, title: c.title ?? '', image: c.cover ?? '', quote }]
+  }
+
+  /** 资质与研发实力项：证书图取封面 */
+  private toHonor(c: Content) {
+    return { id: c.id, title: c.title ?? '', desc: c.description ?? '', image: c.cover ?? '' }
   }
 
   /** 社会贡献项 */

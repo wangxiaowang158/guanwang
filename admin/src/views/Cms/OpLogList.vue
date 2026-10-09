@@ -95,24 +95,69 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:open="detailOpen" title="操作详情" :footer="null" width="640px">
-      <a-descriptions v-if="detail" :column="1" size="small" bordered>
-        <a-descriptions-item label="操作人">
-          {{ detail.adminName ? `${detail.adminName}（${detail.adminAccount}）` : detail.adminAccount }}
-        </a-descriptions-item>
-        <a-descriptions-item label="操作">{{ detail.action }}</a-descriptions-item>
-        <a-descriptions-item label="模块">{{ detail.module }}</a-descriptions-item>
-        <a-descriptions-item label="接口">{{ detail.method }} {{ detail.path }}</a-descriptions-item>
-        <a-descriptions-item label="来源 IP">{{ detail.ip || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="结果">
-          {{ OP_LOG_RESULT_LABEL[detail.result] }}
-          <span v-if="detail.errorMessage">（{{ detail.errorMessage }}）</span>
-        </a-descriptions-item>
-        <a-descriptions-item label="操作时间">{{ formatTime(detail.createdAt) }}</a-descriptions-item>
-        <a-descriptions-item label="请求参数">
-          <pre class="params">{{ detail.params || '无' }}</pre>
-        </a-descriptions-item>
-      </a-descriptions>
+    <a-modal v-model:open="detailOpen" title="操作日志详情" :footer="null" width="640px">
+      <div v-if="detail" class="detail">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt>操作人：</dt>
+            <dd>{{ detail.adminName ? `${detail.adminName}（${detail.adminAccount}）` : detail.adminAccount }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>操作时间：</dt>
+            <dd>{{ formatTime(detail.createdAt) }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>操作类型：</dt>
+            <dd><a-tag color="blue">{{ detail.action }}</a-tag></dd>
+          </div>
+          <div class="detail-row">
+            <dt>所属模块：</dt>
+            <dd>{{ detail.module }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>接口：</dt>
+            <dd>
+              <a-tag :color="METHOD_COLOR[detail.method] || 'default'" class="method-tag">{{ detail.method }}</a-tag>
+              <code class="mono">{{ detail.path }}</code>
+            </dd>
+          </div>
+          <div class="detail-row">
+            <dt>结果：</dt>
+            <dd>
+              <a-tag :color="detail.result === 'success' ? 'green' : 'red'">
+                {{ OP_LOG_RESULT_LABEL[detail.result] }}
+              </a-tag>
+            </dd>
+          </div>
+          <div v-if="detail.errorMessage" class="detail-row">
+            <dt>失败原因：</dt>
+            <dd class="error-text">{{ detail.errorMessage }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt>来源 IP：</dt>
+            <dd class="mono">{{ detail.ip || '-' }}</dd>
+          </div>
+        </dl>
+
+        <!-- 请求参数：能解析成对象就拆成字段表，截断或非 JSON 时回退为原文 -->
+        <section class="panel">
+          <div class="panel-title"><span>请求参数</span></div>
+          <a-table
+            v-if="paramRows.length"
+            :columns="paramColumns"
+            :data-source="paramRows"
+            row-key="field"
+            size="small"
+            :pagination="false"
+          >
+            <template #bodyCell="{ column, record }">
+              <span v-if="column.key === 'field'" class="field-name">{{ record.field }}</span>
+              <span v-else class="field-value">{{ record.value }}</span>
+            </template>
+          </a-table>
+          <pre v-else class="params">{{ detail.params || '无' }}</pre>
+        </section>
+      </div>
     </a-modal>
   </div>
 </template>
@@ -163,6 +208,53 @@ const clearing = ref(false)
 
 const detailOpen = ref(false)
 const detail = ref<OpLogItem | null>(null)
+
+/** 请求方法标签配色：新增 / 修改 / 删除一眼区分 */
+const METHOD_COLOR: Record<string, string> = {
+  POST: 'green', PUT: 'orange', PATCH: 'orange', DELETE: 'red',
+}
+
+const paramColumns = [
+  { title: '字段', key: 'field', width: 190 },
+  { title: '值', key: 'value' },
+]
+
+interface ParamRow { field: string; value: string }
+
+/** 标量原样显示，对象/数组转成单行 JSON；长度由后端已截断 */
+const stringify = (v: unknown): string => {
+  if (v === null) return 'null'
+  if (typeof v === 'object') return JSON.stringify(v)
+  return String(v)
+}
+
+/**
+ * 把 {"query":{...},"body":{...}} 拍平成「字段 / 值」行；body 字段直接用字段名，
+ * query 字段加「query.」前缀避免同名混淆。后端超长会截断成非法 JSON，
+ * 解析失败时返回空数组，页面回退为显示原文
+ */
+const flattenParams = (raw: string | null): ParamRow[] => {
+  if (!raw) return []
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    return []
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return []
+  const { query, body } = data as { query?: unknown; body?: unknown }
+  const rows: ParamRow[] = []
+  const push = (source: unknown, prefix: string) => {
+    if (!source || typeof source !== 'object') return
+    for (const [k, v] of Object.entries(source)) rows.push({ field: `${prefix}${k}`, value: stringify(v) })
+  }
+  push(query, 'query.')
+  if (Array.isArray(body)) rows.push({ field: 'body', value: stringify(body) })
+  else push(body, '')
+  return rows
+}
+
+const paramRows = computed(() => flattenParams(detail.value?.params ?? null))
 
 const {
   loading, rows, page, pageSize, total,
@@ -256,11 +348,71 @@ const onClear = async () => {
   font-size: 12px;
 }
 
-/* 参数快照可能较长，限高滚动而非撑开弹窗 */
+/* 详情：标签 + 值的无边框行，标签列定宽对齐 */
+.detail-list { margin: 8px 0 20px; }
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 7px 0;
+  line-height: 22px;
+}
+.detail-row dt {
+  flex: none;
+  width: 88px;
+  margin: 0;
+  color: #595959;
+}
+.detail-row dd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: #262626;
+  word-break: break-all;
+}
+.method-tag { margin-right: 8px; font-weight: 600; }
+.error-text { color: #cf1322; }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+/* 参数区：灰底卡片，居中小标题两侧带分隔线 */
+.panel {
+  padding: 14px 16px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+.panel-title::before,
+.panel-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e8e8e8;
+}
+.field-name { color: #595959; font-weight: 500; }
+.field-value {
+  color: #262626;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+/* 参数无法拆成字段时的原文，限高滚动而非撑开弹窗 */
 .params {
   margin: 0;
-  max-height: 200px;
+  max-height: 240px;
   overflow: auto;
+  padding: 10px 12px;
+  background: #fff;
+  border-radius: 6px;
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 12px;

@@ -1,23 +1,37 @@
 // 反馈请求 DTO —— 内容按纯文本处理，长度上限防超长输入
-import { Type } from 'class-transformer'
+import { Transform, Type } from 'class-transformer'
 import {
-  IsBoolean, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength, MinLength,
+  IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength, MinLength,
 } from 'class-validator'
-import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE } from '../../../common/enums'
-import type { FeedbackSource, FeedbackStatus, FeedbackType } from '../../../common/enums'
+import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE, LEAD_TYPE } from '../../../common/enums'
+import type { FeedbackSource, FeedbackStatus, FeedbackType, LeadType } from '../../../common/enums'
 
 /** 手机号格式：中国大陆 11 位 */
 const PHONE_PATTERN = /^1[3-9]\d{9}$/
 
+/**
+ * 字符串去首尾空白；选填项空串视为未填
+ * @IsOptional 只放过 null/undefined，空串会走到后面的格式校验被误拒，
+ * 必填项则要避免纯空格通过 MinLength(1)
+ */
+const trimText = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value)
+const trimOrUndefined = ({ value }: { value: unknown }) => {
+  if (typeof value !== 'string') return value
+  const v = value.trim()
+  return v === '' ? undefined : v
+}
+
 /** 匿名咨询提交（沿用原留言入口，无需登录） */
 export class SubmitAnonymousFeedbackDto {
   /** 单位名称，选填 */
+  @Transform(trimOrUndefined)
   @IsOptional()
   @IsString({ message: '单位名称格式不正确' })
   @MaxLength(100, { message: '单位名称不能超过 100 个字' })
   company?: string
 
   /** 联系人姓名，SRS 3.5.2：≤20 字 */
+  @Transform(trimText)
   @IsString({ message: '请输入姓名' })
   @MinLength(1, { message: '请输入姓名' })
   @MaxLength(20, { message: '姓名不能超过 20 个字' })
@@ -32,6 +46,25 @@ export class SubmitAnonymousFeedbackDto {
   @IsOptional()
   @IsEnum(FEEDBACK_TYPE, { message: '反馈类型不合法' })
   feedbackType?: FeedbackType
+
+  /** 线索类型：预约/咨询入口传入，普通留言不传 */
+  @IsOptional()
+  @IsEnum(LEAD_TYPE, { message: '线索类型不合法' })
+  leadType?: LeadType
+
+  /** 联系邮箱，选填 */
+  @Transform(trimOrUndefined)
+  @IsOptional()
+  @IsEmail({}, { message: '请输入有效的邮箱' })
+  @MaxLength(100, { message: '邮箱不能超过 100 个字' })
+  email?: string
+
+  /** 职位，选填 */
+  @Transform(trimOrUndefined)
+  @IsOptional()
+  @IsString({ message: '职位格式不正确' })
+  @MaxLength(50, { message: '职位不能超过 50 个字' })
+  position?: string
 
   /** 留言内容，SRS 3.5.2：≤500 字 */
   @IsString({ message: '请输入留言内容' })

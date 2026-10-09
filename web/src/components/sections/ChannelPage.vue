@@ -9,7 +9,14 @@
       :desc="content.hero.desc"
       :bg="content.hero.bg || fallbackImage"
       :crumb="channelName"
-    />
+    >
+      <!-- 三个业务页的页头转化入口：预约线上演示 -->
+      <template v-if="showDemoCta" #actions>
+        <button type="button" class="cp-cta" :class="{ 'cp-cta--style2': theme.isStyle2 }" @click="openLead('productDemo', `${channelName}页头`)">
+          预约线上演示
+        </button>
+      </template>
+    </component>
 
     <!-- 加载态：头图高度占位 + 条目骨架，避免页脚先顶上来 -->
     <div v-if="loading" class="site-container py-24">
@@ -32,6 +39,17 @@
           <component :is="blockComp" :block="block" :on-dark="!!block.bg" :fallback-image="fallbackImage">
             <!-- 筛选条插在区块标题与条目之间（SRS：条目少于 12 条或无分类时不提供） -->
             <template #filter>
+              <!-- 多标签组合筛选：业务线 / 行业 / 标签，不受 12 条门槛限制 -->
+              <MultiFilterBar
+                v-if="multiRuleOf(block)"
+                :dimensions="multiDimensionsOf(block)"
+                :selected="multi.selectedOf(block)"
+                :on-dark="!!block.bg"
+                :loading="paging.state(block).loading"
+                :style2="theme.isStyle2"
+                @toggle="(p) => multi.toggle(block, p.dimension, p.value)"
+                @clear="multi.clear(block)"
+              />
               <ChannelFilterBar
                 v-if="paging.filterEnabled(block)"
                 :options="filterOptionsOf(block)"
@@ -44,6 +62,11 @@
             </template>
             <template v-if="paging.state(block).category && !block.items.length" #empty>
               <EmptyState text="该分类下暂无内容" :on-dark="!!block.bg" />
+            </template>
+            <template v-else-if="multiRuleOf(block) && multi.hasSelection(block) && !block.items.length" #empty>
+              <EmptyState text="没有符合所选条件的内容，请调整筛选" :on-dark="!!block.bg">
+                <button type="button" class="cp-clear" @click="multi.clear(block)">清空筛选</button>
+              </EmptyState>
             </template>
           </component>
 
@@ -88,7 +111,7 @@
 
 <script setup lang="ts">
 // 数据驱动的栏目页容器：所有一级栏目页复用，仅传入 pageKey；分页与筛选状态见 useChannelPaging
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { clearPageSeo, setPageSeo } from '@/composables/useSeo'
 import { getPageContent, getBlockItems } from '@/api/page'
 import type { PageBlock, PageContent } from '@/api/page'
@@ -97,9 +120,19 @@ import { API_SUCCESS_CODE } from '@/config'
 import { useThemeStore } from '@/stores/theme'
 import { useSiteStore } from '@/stores/site'
 import { filterRulesOf } from '@/config/channelFilters'
+import { multiFilterRulesOf, DIMENSION_LABEL, INDUSTRY_OPTIONS } from '@/config/multiFilters'
+import type { MultiFilterRule } from '@/config/multiFilters'
+import { BUSINESS_LINE_OPTIONS } from '@/config/businessLines'
 import { defaultImageOf } from '@/config/defaultImages'
 import { useChannelPaging, isPagedBlock, totalPages } from '@/composables/useChannelPaging'
+import { useMultiFilter } from '@/composables/useMultiFilter'
+import type { FilterDimension } from '@/composables/useMultiFilter'
+import { useLeadModal } from '@/composables/useLeadModal'
+import type { MenuNode } from '@/api/menu'
 import SkeletonRows from '@/components/common/SkeletonRows.vue'
+import MultiFilterBar from './MultiFilterBar.vue'
+import type { FilterDimensionDef } from './MultiFilterBar.vue'
+import { blockHasContent, isExtraLayout } from './blockExtra'
 import PageHero from './PageHero.vue'
 import ContentBlock from './ContentBlock.vue'
 import Style2PageHero from './Style2PageHero.vue'
@@ -113,8 +146,24 @@ const props = defineProps<{ pageKey: string }>()
 
 const theme = useThemeStore()
 const siteStore = useSiteStore()
+
+/** 在菜单树里按 key 找节点：业务三页等挂在别的菜单项下，需逐层查找 */
+function findMenuNode(nodes: MenuNode[], key: string): MenuNode | undefined {
+  for (const n of nodes) {
+    if (n.key === key) return n
+    const hit = n.children ? findMenuNode(n.children, key) : undefined
+    if (hit) return hit
+  }
+  return undefined
+}
+
 // 当前位置显示栏目名（导航上的名字），而非头图主标题——主标题常是一句宣传语
-const channelName = computed(() => siteStore.menu.find(m => m.key === props.pageKey)?.label || content.value?.hero.title || '')
+const channelName = computed(() => findMenuNode(siteStore.menu, props.pageKey)?.label || content.value?.hero.title || '')
+
+const { openLead } = useLeadModal()
+/** 需要在页头放「预约线上演示」入口的业务页 */
+const DEMO_CTA_KEYS = new Set(['business-energy', 'business-building', 'business-living'])
+const showDemoCta = computed(() => DEMO_CTA_KEYS.has(props.pageKey))
 const heroComp = computed(() => (theme.isStyle2 ? Style2PageHero : PageHero))
 const blockComp = computed(() => (theme.isStyle2 ? Style2ContentBlock : ContentBlock))
 /** 本栏目的缺省配图：头图未配 Banner、图文条目未配图时显示 */
@@ -151,10 +200,71 @@ function categoriesOf(block: PageBlock): string[] {
   return rule ? categoryTitles.value[rule.source] ?? [] : []
 }
 
-const paging = useChannelPaging(content, categoriesOf)
+// 多标签组合筛选：规则按栏目登记，只有登记过的区块才带筛选参数，防止手改地址筛到不该筛的区块
+const multi = useMultiFilter()
+const multiRules = computed(() => multiFilterRulesOf(props.pageKey))
+const multiRuleOf = (block: PageBlock): MultiFilterRule | undefined =>
+  multiRules.value.find(r => r.target === block.channelKey)
+
+/** 标签选项，按区块锚点归档：取未筛选时的全量条目去重，筛选后不随结果收缩 */
+const tagOptions = ref<Record<string, string[]>>({})
+
+const paging = useChannelPaging(content, categoriesOf, block => (multiRuleOf(block) ? multi.paramsOf(block) : {}))
 
 function filterOptionsOf(block: PageBlock): FilterOption[] {
   return categoriesOf(block).map(title => ({ label: title, value: title }))
+}
+
+/** 取某维度的候选值 */
+function optionValuesOf(block: PageBlock, dim: FilterDimension): string[] {
+  if (dim === 'business') return BUSINESS_LINE_OPTIONS.map(o => o.value)
+  if (dim === 'industry') return [...INDUSTRY_OPTIONS]
+  return tagOptions.value[block.anchor] ?? []
+}
+
+/**
+ * 某区块的筛选维度定义
+ * 地址里已选、但不在候选里的取值（如标签被下线）也并入，保证它仍可被看到并取消
+ */
+function multiDimensionsOf(block: PageBlock): FilterDimensionDef[] {
+  const rule = multiRuleOf(block)
+  if (!rule) return []
+  const selected = multi.selectedOf(block)
+  return rule.dimensions.map((dim) => {
+    const labelOf = (v: string) => BUSINESS_LINE_OPTIONS.find(o => o.value === v && dim === 'business')?.label ?? v
+    const base = optionValuesOf(block, dim)
+    const values = [...base, ...selected[dim].filter(v => !base.includes(v))]
+    return { key: dim, label: DIMENSION_LABEL[dim], options: values.map(v => ({ label: labelOf(v), value: v })) }
+  })
+}
+
+/** 从条目 extra 汇总去重后的标签，保持首次出现的顺序 */
+function collectTags(items: PageBlock['items']): string[] {
+  const out: string[] = []
+  for (const it of items) {
+    for (const t of it.extra?.tags ?? []) if (t && !t.includes(',') && !out.includes(t)) out.push(t)
+  }
+  return out
+}
+
+/** 取需要「标签」维度的区块的全量条目并汇总标签；首屏已含全部条目时直接用，取不到沿用首屏那一页 */
+async function loadTagOptions(page: PageContent): Promise<void> {
+  const result: Record<string, string[]> = {}
+  await Promise.all(multiRules.value.filter(r => r.dimensions.includes('tag')).map(async (rule) => {
+    const block = page.blocks.find(b => b.channelKey === rule.target)
+    if (!block) return
+    let items = block.items
+    if (block.total > block.items.length) {
+      try {
+        const res = await getBlockItems(rule.target, 1, OPTION_FETCH_SIZE)
+        if (res.code === API_SUCCESS_CODE && res.data) items = res.data.items
+      } catch {
+        // 取不到就沿用首屏那一页：选项不全好过筛选条整个消失
+      }
+    }
+    result[block.anchor] = collectTags(items)
+  }))
+  tagOptions.value = result
 }
 
 /**
@@ -164,7 +274,8 @@ function filterOptionsOf(block: PageBlock): FilterOption[] {
 const visibleBlocks = computed(() => {
   if (!content.value) return []
   const sources = new Set(rules.value.map(r => r.source))
-  return content.value.blocks.filter(b => !sources.has(b.channelKey))
+  // 结构化区块无数据时整段不渲染，避免只剩一圈空白留白
+  return content.value.blocks.filter(b => !sources.has(b.channelKey) && (!isExtraLayout(b.layout) || blockHasContent(b)))
 })
 
 /** 以该区块为筛选目标的分类栏目的锚点 */
@@ -194,18 +305,25 @@ async function loadCategories(page: PageContent): Promise<void> {
   categoryTitles.value = result
 }
 
+/** 加载序号：多条路由共用本组件，快速切换栏目时只采纳最新一次的响应 */
+let loadSeq = 0
+
 async function load(key: string) {
+  const seq = ++loadSeq
   loading.value = true
   content.value = null
   notFound.value = false
   clearPageSeo()
   categoryTitles.value = {}
+  tagOptions.value = {}
   paging.reset()
   try {
     const res = await getPageContent(key)
+    if (seq !== loadSeq) return
     if (res.code === API_SUCCESS_CODE && res.data) {
-      // 先拿到分类再按地址同步：地址里的分类要与可选分类比对，拿不到就判不了是否有效
-      await loadCategories(res.data)
+      // 先拿到分类与标签选项再按地址同步：地址里的分类要与可选分类比对，拿不到就判不了是否有效
+      await Promise.all([loadCategories(res.data), loadTagOptions(res.data)])
+      if (seq !== loadSeq) return
       content.value = res.data
       paging.syncAll()
     } else if (res.code === NOT_FOUND_CODE) {
@@ -214,18 +332,23 @@ async function load(key: string) {
       setPageSeo({ title: '页面不存在', noindex: true })
     }
   } catch {
-    content.value = null
+    if (seq === loadSeq) content.value = null
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
-onMounted(() => {
-  // 访问埋点，失败静默忽略
-  recordVisit(props.pageKey).catch(() => {})
-})
-
-watch(() => props.pageKey, (key) => load(key), { immediate: true })
+// 埋点跟着 pageKey 走而不是 onMounted：业务/产品/方案等路由复用本组件实例，
+// 站内切换栏目不会重新挂载，放在 onMounted 里只会记到第一个栏目
+watch(
+  () => props.pageKey,
+  (key) => {
+    // 访问埋点，失败静默忽略
+    recordVisit(key).catch(() => {})
+    void load(key)
+  },
+  { immediate: true },
+)
 
 // 离开页面时清掉「不存在」的 noindex 覆盖，否则会残留到下一个页面
 onUnmounted(() => clearPageSeo())
@@ -236,6 +359,36 @@ onUnmounted(() => clearPageSeo())
   padding-top: var(--section-py);
   padding-bottom: var(--section-py);
 }
+/* 页头转化按钮：样式一品牌蓝圆角，样式二集团红直角；最小触控高度 44px 便于移动端点按 */
+.cp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-brand-600);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-fast);
+}
+.cp-cta:hover { background: var(--color-brand-700); }
+.cp-cta--style2 {
+  background: var(--rs-primary);
+  border-radius: 0;
+}
+.cp-cta--style2:hover { background: var(--rs-primary); filter: brightness(0.92); }
+/* 筛选无结果时的「清空筛选」 */
+.cp-clear {
+  margin-top: 16px;
+  min-height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  border: 1px solid var(--color-line);
+  color: var(--color-ink-700);
+}
+.cp-clear:hover { border-color: var(--color-brand-600); color: var(--color-brand-600); }
 .rs-channel-section {
   padding-top: var(--rs-section-py);
   padding-bottom: var(--rs-section-py);
