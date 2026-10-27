@@ -2,19 +2,19 @@
   <div class="s1-home">
     <!-- 首屏：背景图/视频 + 深色遮罩，标语与两个行动入口，底部业绩数据条 -->
     <section class="s1-hero">
-      <video v-if="showHeroVideo" class="s1-hero-media" :src="heroVideo" :poster="heroImage || undefined" autoplay muted loop playsinline @error="markHeroVideoFailed" />
+      <video v-if="showHeroVideo" ref="heroVideoRef" class="s1-hero-media" :src="heroVideo" :poster="heroImage || undefined" autoplay muted loop playsinline @error="markHeroVideoFailed" />
       <img v-else-if="heroImage" :src="heroImage" alt="" class="s1-hero-media" width="1920" height="1080" fetchpriority="high" />
+      <HeroVideoToggle :video="heroVideoRef" class="home-hero-toggle" />
       <div class="s1-hero-overlay" aria-hidden="true"></div>
-      <div class="s1-glow-orb" aria-hidden="true"></div>
 
       <div class="s1-hero-inner">
         <div class="s1-hero-content">
           <p class="s1-hero-tag"><span class="s1-tag-dot" aria-hidden="true"></span>{{ heroTag }}</p>
-          <h1 class="s1-hero-title">{{ heroTitle }}</h1>
+          <h1 class="s1-hero-title"><span v-for="(part, i) in heroTitleParts" :key="i" class="s1-hero-title-part">{{ part }}</span></h1>
           <p v-if="heroDesc" class="s1-hero-desc">{{ heroDesc }}</p>
           <div class="s1-hero-actions">
-            <button type="button" class="s1-btn-primary" @click="scrollToAnchor('business')">{{ heroPrimaryText }}</button>
-            <button type="button" class="s1-btn-outline" @click="scrollToAnchor('contact')">{{ heroSecondaryText }}</button>
+            <button type="button" class="s1-btn-primary" @click="openLead('energyAssess', '首页首屏')">{{ heroPrimaryText }}</button>
+            <button v-if="primaryAnchor" type="button" class="s1-btn-outline" @click="scrollToAnchor(primaryAnchor)">{{ heroSecondaryText }}</button>
           </div>
         </div>
       </div>
@@ -23,274 +23,66 @@
         <div class="s1-container s1-stats-grid">
           <HeroStat v-for="a in sections.achievements.slice(0, 4)" :key="a.id" :value="a.value" :suffix="a.suffix" :label="a.label" />
         </div>
+        <!-- 数据口径：统计时间与来源，后台基本信息里填，留空不显示 -->
+        <p v-if="statsNote" class="s1-container s1-stats-note">{{ statsNote }}</p>
       </div>
     </section>
 
-    <!-- 新版模块：愿景使命轮播（后端未下发时不渲染） -->
-    <HomeVision :items="sections?.vision ?? []" />
-
-    <!-- 公司简介 -->
-    <section id="about" class="s1-section s1-section--white">
-      <div class="s1-container">
-        <SkeletonRows v-if="loading" :rows="1" tall />
-        <div v-else-if="sections?.about.content" :ref="track('about')" class="s1-about-grid fade-up" :class="{ visible: shown.has('about') }">
-          <div>
-            <span class="s1-eyebrow">{{ heading('about').eyebrow }}</span>
-            <h2 class="s1-h2">{{ sections.about.title || heading('about').eyebrow }}</h2>
-            <p v-if="sections.about.subtitle" class="s1-about-subtitle">{{ sections.about.subtitle }}</p>
-          </div>
-          <p class="s1-about-text">{{ sections.about.content }}</p>
-        </div>
-        <EmptyState v-else />
-      </div>
-    </section>
-
-    <!-- 新版模块：三大业务简介、标杆案例看板（缺数据时不占位） -->
-    <HomeBusinessTrio :briefs="briefs" />
-    <HomeCaseShowcase :cases="cases" :metrics="caseMetrics" />
-
-    <!-- 业务与行业 -->
-    <section id="business" class="s1-section s1-section--surface">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('business')" />
-        <SkeletonRows v-if="loading" :rows="4" />
-        <div v-else-if="sections?.business.length" class="s1-grid-4">
-          <article
-            v-for="(item, i) in sections.business"
-            :key="item.id"
-            :ref="track(`biz-${item.id}`)"
-            class="s1-card fade-up"
-            :class="[`delay-${(i % 4) * 100}`, { visible: shown.has(`biz-${item.id}`) }]"
-          >
-            <!-- 后台选了图标显示图标，未选（或图标已下架）回落为序号 -->
-            <component :is="homeIconOf(item.icon)" v-if="homeIconOf(item.icon)" class="s1-card-icon" aria-hidden="true" />
-            <div v-else class="s1-card-index">{{ String(i + 1).padStart(2, '0') }}</div>
-            <h3 class="s1-card-title">{{ item.title }}</h3>
-            <p class="s1-card-desc">{{ item.desc }}</p>
-          </article>
-        </div>
-        <EmptyState v-else />
-      </div>
-    </section>
-
-    <!-- 主要产品：左图右文，图缺失时显示品牌底色占位 -->
-    <section id="product" class="s1-section s1-section--white">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('product')" />
-        <SkeletonRows v-if="loading" :rows="2" tall />
-        <div v-else-if="sections?.products.length" class="s1-product-list">
-          <article
-            v-for="(item, i) in sections.products"
-            :key="item.id"
-            :ref="track(`product-${item.id}`)"
-            class="s1-product fade-up"
-            :class="{ visible: shown.has(`product-${item.id}`), 's1-product--reverse': i % 2 === 1 }"
-          >
-            <div class="s1-product-media">
-              <SafeImage :src="item.image" :fallback="HOME_DEFAULT_IMAGES.product" :alt="item.name" :width="640" :height="400" />
-            </div>
-            <div class="s1-product-body">
-              <span class="s1-product-num">{{ String(i + 1).padStart(2, '0') }}</span>
-              <h3 class="s1-product-name">{{ item.name }}</h3>
-              <p class="s1-product-summary">{{ item.summary }}</p>
-              <ul v-if="item.features?.length" class="s1-product-features">
-                <li v-for="f in item.features" :key="f">{{ f }}</li>
-              </ul>
-            </div>
-          </article>
-        </div>
-        <EmptyState v-else />
-      </div>
-    </section>
-
-    <!-- 技术支持及服务 -->
-    <section id="service" class="s1-section s1-section--surface">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('service')" />
-        <SkeletonRows v-if="loading" :rows="4" />
-        <div v-else-if="sections?.services.length" class="s1-grid-4">
-          <article
-            v-for="(item, i) in sections.services"
-            :key="item.id"
-            :ref="track(`svc-${item.id}`)"
-            class="s1-card s1-card--plain fade-up"
-            :class="[`delay-${(i % 4) * 100}`, { visible: shown.has(`svc-${item.id}`) }]"
-          >
-            <!-- 后台选了图标才显示；服务卡片原本无序号，未选时保持原样 -->
-            <component :is="homeIconOf(item.icon)" v-if="homeIconOf(item.icon)" class="s1-card-icon" aria-hidden="true" />
-            <h3 class="s1-card-title">{{ item.title }}</h3>
-            <p class="s1-card-desc">{{ item.desc }}</p>
-          </article>
-        </div>
-        <EmptyState v-else />
-      </div>
-    </section>
-
-    <!-- 经营理念 -->
-    <section id="philosophy" class="s1-section s1-section--brand">
-      <div class="s1-container">
-        <div :ref="track('philosophy')" class="s1-philosophy fade-up" :class="{ visible: shown.has('philosophy') }">
-          <p class="s1-philosophy-eyebrow">{{ heading('philosophy').eyebrow }}</p>
-          <h2 class="s1-philosophy-title">{{ sections?.philosophy.title || site.slogan || heading('philosophy').eyebrow }}</h2>
-          <p v-if="sections?.philosophy.content" class="s1-philosophy-body">{{ sections.philosophy.content }}</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 合作伙伴：有 Logo 展示 Logo（灰度，悬停恢复彩色），无 Logo 展示名称 -->
-    <section id="partner" class="s1-section s1-section--white">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('partner')" />
-        <div v-if="sections?.partners.length" class="s1-partner-grid">
-          <component
-            :is="safeExternalUrl(p.link) ? 'a' : 'div'"
-            v-for="p in sections.partners"
-            :key="p.id"
-            :href="safeExternalUrl(p.link) || undefined"
-            :target="safeExternalUrl(p.link) ? '_blank' : undefined"
-            :rel="safeExternalUrl(p.link) ? 'noopener noreferrer' : undefined"
-            class="s1-partner"
-          >
-            <!-- Logo 挂了回退为名称，不显示破图（SRS 图片加载失败） -->
-            <img v-if="imgs.usable(p.logo)" :src="p.logo" :alt="p.name" class="s1-partner-logo" width="140" height="48" loading="lazy" @error="imgs.markBroken(p.logo)" />
-            <span v-else>{{ p.name }}</span>
-          </component>
-        </div>
-        <EmptyState v-else-if="!loading" />
-      </div>
-    </section>
-
-    <!-- 公司业绩 -->
-    <section id="achievement" class="s1-section s1-section--dark">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('achievement')" on-dark />
-        <div v-if="sections?.achievements.length" class="s1-achievement-grid">
-          <AchievementStat v-for="a in sections.achievements" :key="a.id" :value="a.value" :suffix="a.suffix" :label="a.label" on-dark />
-        </div>
-        <EmptyState v-else-if="!loading" on-dark />
-      </div>
-    </section>
-
-    <!-- 新版模块：媒体采访与客户证言、资质与研发实力（后端未下发时不渲染） -->
-    <HomeTestimony :items="sections?.testimonies ?? []" />
-    <HomeHonor :items="sections?.honors ?? []" />
-
-    <!-- 我眼中的中瑞恒：媒体报道与行业评价；无内容时整块不显示，不占首页篇幅 -->
-    <section v-if="sections?.views?.length" id="view" class="s1-section s1-section--white">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('view')" />
-        <div class="s1-grid-4">
-          <component
-            :is="v.link ? 'a' : 'article'"
-            v-for="(v, i) in sections.views"
-            :key="v.id"
-            :ref="track(`view-${v.id}`)"
-            :href="v.link || undefined"
-            :target="v.link ? '_blank' : undefined"
-            :rel="v.link ? 'noopener noreferrer' : undefined"
-            class="s1-card s1-view-card fade-up"
-            :class="[`delay-${(i % 4) * 100}`, { visible: shown.has(`view-${v.id}`) }]"
-          >
-            <div class="s1-view-media">
-              <SafeImage :src="v.image" :fallback="HOME_DEFAULT_IMAGES.view" :alt="v.title" :width="400" :height="225" />
-            </div>
-            <h3 class="s1-card-title">{{ v.title }}</h3>
-            <p v-if="v.desc" class="s1-card-desc">{{ v.desc }}</p>
-          </component>
-        </div>
-      </div>
-    </section>
-
-    <!-- 社会贡献 -->
-    <section id="social" class="s1-section s1-section--surface">
-      <div class="s1-container">
-        <Style1Heading v-bind="heading('social')" />
-        <SkeletonRows v-if="loading" :rows="3" tall />
-        <div v-else-if="sections?.social.length" class="s1-grid-3">
-          <article
-            v-for="(s, i) in sections.social"
-            :key="s.id"
-            :ref="track(`social-${s.id}`)"
-            class="s1-social fade-up"
-            :class="[`delay-${i * 100}`, { visible: shown.has(`social-${s.id}`) }]"
-          >
-            <div class="s1-social-media">
-              <SafeImage :src="s.image" :fallback="HOME_DEFAULT_IMAGES.social" :alt="s.title" :width="480" :height="300" />
-            </div>
-            <div class="s1-social-body">
-              <h3 class="s1-card-title">{{ s.title }}</h3>
-              <p class="s1-card-desc">{{ s.desc }}</p>
-            </div>
-          </article>
-        </div>
-        <EmptyState v-else />
-      </div>
-    </section>
-
-    <!-- 联系我们 -->
-    <section id="contact" class="s1-section s1-section--white">
-      <div class="s1-container">
-        <Style1Heading v-bind="contactHeading" />
-        <ContactSection :site="site" />
-      </div>
-    </section>
+    <!-- 首屏之后的板块：顺序、显隐、标题、底色由后台「基本信息 → 首页布局」配置；缺数据的板块整块不渲染 -->
+    <SkeletonRows v-if="loading && !rendered.length" :rows="3" tall class="s1-container py-16" />
+    <HomeSectionList :sections="rendered" :data="sections" :site="site" :briefs="briefs" :news="news" :cases="cases" />
   </div>
 </template>
 
 <script setup lang="ts">
-// 首页样式一（深蓝科技风）：首屏 + 9 大板块，数据来自后台内容管理与基本信息管理
+// 首页样式一（深蓝科技风）：按框架图第三版，首屏 + 6 个板块，数据来自后台内容管理与基本信息管理
 import { ref, computed, onMounted } from 'vue'
 import { getHomeSections, recordVisit } from '@/api/home'
 import type { HomeSections } from '@/api/home'
 import { useSiteStore } from '@/stores/site'
 import { API_SUCCESS_CODE } from '@/config'
 import { useHeroVideo } from '@/composables/useHeroVideo'
-import { useReveal } from '@/composables/useReveal'
+import HeroVideoToggle from '@/components/common/HeroVideoToggle.vue'
 import { scrollToAnchor } from '@/composables/useWindowScroll'
-import { safeExternalUrl } from '@/utils/sanitize'
-import EmptyState from '@/components/sections/EmptyState.vue'
-import SafeImage from '@/components/common/SafeImage.vue'
 import SkeletonRows from '@/components/common/SkeletonRows.vue'
-import AchievementStat from './components/AchievementStat.vue'
 import HeroStat from './components/HeroStat.vue'
-import Style1Heading from './components/Style1Heading.vue'
-import ContactSection from './components/ContactSection.vue'
-import HomeVision from './components/HomeVision.vue'
-import HomeBusinessTrio from './components/HomeBusinessTrio.vue'
-import HomeCaseShowcase from './components/HomeCaseShowcase.vue'
-import HomeTestimony from './components/HomeTestimony.vue'
-import HomeHonor from './components/HomeHonor.vue'
-import { useBusinessBriefs, useCaseShowcase } from '@/composables/useHomeShowcase'
-import { useBrokenImages } from '@/composables/useBrokenImages'
+import HomeSectionList from './components/HomeSectionList.vue'
+import { useBusinessBriefs, useHomeCases, useHomeNews } from '@/composables/useHomeShowcase'
+import { useLeadModal } from '@/composables/useLeadModal'
+import { useHomeLayout } from '@/composables/useHomeLayout'
 import { useHomeCopy } from '@/composables/useHomeCopy'
-import { homeIconOf } from '@/config/homeIcons'
 import { HOME_DEFAULT_IMAGES } from '@/config/defaultImages'
-
-/** 合作伙伴 Logo 失效登记 */
-const imgs = useBrokenImages()
 
 const sections = ref<HomeSections | null>(null)
 const loading = ref(true)
 const siteStore = useSiteStore()
 // 站点信息取自 site store，与页眉/页脚共享同一次请求
 const site = computed(() => siteStore.site)
-const { shown, track } = useReveal()
-// 新版首页模块的数据：三大业务简介、标杆案例（指标看板 + 案例卡片）
+// 取自其他页面的板块：三大业务（业务页解决方案区块）、新闻资讯（新闻页）
 const { briefs } = useBusinessBriefs()
-const { cases, metrics: caseMetrics } = useCaseShowcase()
-// 板块标题、首屏按钮、联系板块标题：后台配了用后台，否则内置文案
-const { heading, contactHeading, heroPrimaryText, heroSecondaryText } = useHomeCopy(sections, site)
+const { news } = useHomeNews()
+const { cases } = useHomeCases()
+// 首屏主按钮直接唤起预约弹窗（预选节能测算），不用先滚到页底找表单
+const { openLead } = useLeadModal()
+// 首屏按钮文案：后台配了用后台，否则内置文案
+const { heroPrimaryText, heroSecondaryText } = useHomeCopy(sections, site)
+// 板块顺序与显隐按后台首页布局；首屏主按钮跳到第一个实际渲染的板块
+const { rendered, primaryAnchor } = useHomeLayout(sections, site, briefs, news, cases)
 
 // 首屏文案：主标语、副标语取自基本信息管理，描述取站点描述；未配置时用内置文案
 const heroTitle = computed(() => site.value.slogan || '让建筑更节能　让环境更舒适')
+// 按空白（含全角空格）拆分短语，窄屏只在短语之间换行
+const heroTitleParts = computed(() => heroTitle.value.split(/[\s\u3000]+/).filter(Boolean))
 const heroTag = computed(() => site.value.subSlogan || '您身边专业的智慧能源提供商')
 const heroDesc = computed(() => site.value.description || '')
+const statsNote = computed(() => site.value.heroStatsNote?.trim() || '')
 
 // 首屏背景媒体：窄屏与减少动效偏好下不播背景视频，回落到背景图
 const heroImage = computed(() => site.value.heroImage || sections.value?.backgrounds?.hero || HOME_DEFAULT_IMAGES.hero)
 const heroVideo = computed(() => site.value.heroVideo || '')
 const { blocked: heroVideoBlocked, markFailed: markHeroVideoFailed } = useHeroVideo()
 const showHeroVideo = computed(() => !!heroVideo.value && !heroVideoBlocked.value)
+const heroVideoRef = ref<HTMLVideoElement | null>(null)
 
 onMounted(async () => {
   recordVisit('home').catch(() => {})

@@ -17,11 +17,12 @@ import { AdminService } from './admin.service'
 import { AdminGuard, type CurrentAdminInfo } from '../../common/guards/admin.guard'
 import { CurrentAdmin } from '../../common/decorators/current-admin.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
-import { toAdminVo } from './vo/admin.vo'
+import { parsePerms, toAdminVo } from './vo/admin.vo'
 import {
   AdminListQueryDto,
   CreateAdminDto,
   ResetAdminPasswordDto,
+  SaveRoleDto,
   UpdateAdminDto,
 } from './dto/admin.dto'
 
@@ -79,6 +80,30 @@ export class MgmtAdminController {
     this.assertSuper(admin)
     await this.service.resetPassword(body.id, body.password)
     return raw(null, '密码已重置')
+  }
+
+  /** 角色列表（附使用账号数） */
+  @Get('roles')
+  async roles(@CurrentAdmin() admin: CurrentAdminInfo) {
+    this.assertSuper(admin)
+    const rows = await this.service.listRoles()
+    return rows.map(r => ({ id: r.id, name: r.name, perms: parsePerms(r.perms), remark: r.remark, adminCount: r.adminCount }))
+  }
+
+  /** 新增 / 修改角色；修改后用该角色的账号下一次请求即按新权限生效 */
+  @Post('role/save')
+  async saveRole(@CurrentAdmin() admin: CurrentAdminInfo, @Body() dto: SaveRoleDto) {
+    this.assertSuper(admin)
+    const r = await this.service.saveRole(dto)
+    return raw({ id: r.id, name: r.name, perms: parsePerms(r.perms), remark: r.remark }, '保存成功')
+  }
+
+  /** 删除角色（仍有账号在用时拒绝） */
+  @Delete('role/delete')
+  async removeRole(@CurrentAdmin() admin: CurrentAdminInfo, @Query('id', ParseIntPipe) id: number) {
+    this.assertSuper(admin)
+    await this.service.removeRole(id)
+    return raw(null, '删除成功')
   }
 
   /** 删除管理员；不可删除自己，也不可删除超管 */

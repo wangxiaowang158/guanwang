@@ -2,9 +2,9 @@
   <!-- 样式二·图集：直角等分网格，间隔用细线分隔 -->
   <div v-if="images.length">
     <Style2SectionHead :heading="heading" :subheading="subheading" :on-dark="onDark" />
-    <ul class="rs-ig-grid">
+    <ul class="rs-ig-grid" :class="{ 'rs-ig-grid--fixed': cols }" :style="cols ? { '--cols': cols } : undefined">
       <li v-for="(src, i) in images" :key="`${i}-${src}`" class="rs-ig-item">
-        <SafeImage :src="src" :alt="`${altPrefix}${i + 1}`" :width="640" :height="400" />
+        <SafeMedia v-bind="isVideoUrl(src) ? { video: src } : { image: src }" :alt="`${altPrefix}${i + 1}`" :width="640" :height="400" />
       </li>
     </ul>
   </div>
@@ -12,7 +12,8 @@
 
 <script setup lang="ts">
 // 样式二图集：props 约定同 ImageGallery
-import SafeImage from '@/components/common/SafeImage.vue'
+import SafeMedia from '@/components/common/SafeMedia.vue'
+import { isVideoUrl } from '@/utils/media'
 import Style2SectionHead from './Style2SectionHead.vue'
 
 withDefaults(defineProps<{
@@ -21,6 +22,8 @@ withDefaults(defineProps<{
   subheading?: string
   onDark?: boolean
   altPrefix?: string
+  /** 电脑端每行列数，后台「区块外观」配置；缺省按宽度自适应 */
+  cols?: number
 }>(), { altPrefix: '现场图片 ' })
 </script>
 
@@ -33,6 +36,10 @@ withDefaults(defineProps<{
   padding: 0;
   list-style: none;
 }
+/* 后台指定了每行列数：电脑端按配置，平板 2 列，手机 1 列 */
+.rs-ig-grid--fixed { grid-template-columns: 1fr; }
+@media (min-width: 640px) { .rs-ig-grid--fixed { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .rs-ig-grid--fixed { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); } }
 .rs-ig-item { aspect-ratio: 4 / 3; overflow: hidden; background: var(--rs-bg-cream); }
 .rs-ig-item :deep(img) { transition: transform 0.5s ease; }
 .rs-ig-item:hover :deep(img) { transform: scale(1.05); }

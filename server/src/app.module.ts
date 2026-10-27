@@ -16,6 +16,8 @@ import { UploadModule } from './modules/upload/upload.module'
 import { VisitModule } from './modules/visit/visit.module'
 import { OpLogModule } from './modules/op-log/op-log.module'
 import { KvModule } from './modules/kv/kv.module'
+import { RedirectModule } from './modules/redirect/redirect.module'
+import { BackupModule } from './modules/backup/backup.module'
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { KvModule } from './modules/kv/kv.module'
     UploadModule,
     VisitModule,
     OpLogModule,
+    RedirectModule,
+    BackupModule,
   ],
   controllers: [HealthController],
 })

@@ -60,15 +60,19 @@ function waitForHeight(minHeight: number): Promise<void> {
   })
 }
 
-/** 新版官网的数据驱动栏目页：子路径相对 DefaultLayout 根，key 为栏目 key 与路由 name */
+/**
+ * 首页板块等前台代码按 key 直接引用的栏目页：子路径相对 DefaultLayout 根，key 为栏目 key 与路由 name
+ * 其余栏目页（三大解决方案及其子页、后台新建的页面）一律走下面的通用路由 channel，按地址取内容
+ */
 const CHANNEL_PAGE_ROUTES = [
   { path: 'business', key: 'business' },
   { path: 'business/energy', key: 'business-energy' },
   { path: 'business/building', key: 'business-building' },
   { path: 'business/living', key: 'business-living' },
-  { path: 'products', key: 'products' },
-  { path: 'solutions', key: 'solutions' },
 ]
+
+/** 栏目页路径段：小写字母数字连字符，与后端 normalizePortalPath、网关白名单同一口径 */
+const SEGMENT = '[a-zA-Z0-9][a-zA-Z0-9-]*'
 
 // 注意：新增前台路由须同步 docker/nginx/gateway.conf 的已知路由正则，
 // 否则网关会对该地址返回 404 状态码（页面仍能渲染，但搜索引擎不收录）
@@ -89,7 +93,9 @@ const router = createRouter({
       const found = await waitForAnchor(to.hash)
       // vue-router 按 el 定位时内部用 window.scrollTo，不吃 html 的 scroll-padding-top，
       // 固定顶栏的遮挡得在这里显式让出（与 style.css 的 scroll-padding-top 同值）
-      return found ? { el: to.hash, top: ANCHOR_OFFSET, behavior: 'smooth' } : { top: 0 }
+      // 栏目页有页内目录条时（ChannelSubNav 写入 --subnav-h），再多让出它的高度
+      const subnav = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue('--subnav-h'), 10) || 0
+      return found ? { el: to.hash, top: ANCHOR_OFFSET + subnav, behavior: 'smooth' } : { top: 0 }
     }
     if (to.path === from.path) return false
     return { top: 0 }
@@ -107,7 +113,6 @@ const router = createRouter({
           component: () => import('@/components/sections/ChannelPage.vue'),
           props: { pageKey: key },
         })),
-        { path: 'case', name: 'case', component: () => import('@/views/case/index.vue') },
         { path: 'news', name: 'news', component: () => import('@/views/news/index.vue') },
         { path: 'alliance', name: 'alliance', component: () => import('@/views/alliance/index.vue') },
         { path: 'about', name: 'about', component: () => import('@/views/about/index.vue') },
@@ -125,12 +130,28 @@ const router = createRouter({
           component: () => import('@/views/legal/Privacy.vue'),
           meta: { title: '隐私政策 - 中瑞恒' },
         },
+        // 站内搜索：结果页不收录（搜索结果是内容的重复聚合，收录了会稀释正文页）
+        {
+          path: 'search',
+          name: 'search',
+          component: () => import('@/views/search/index.vue'),
+          meta: { title: '站内搜索 - 中瑞恒', noindex: true },
+        },
         // 会员中心随官网顶栏一起呈现，需登录
         {
           path: 'member/center',
           name: 'member-center',
           component: () => import('@/views/member/center/index.vue'),
           meta: { requiresMember: true, title: '会员中心 - 中瑞恒' },
+        },
+        // 通用栏目页：一~两段路径按地址向后端取页面（三大解决方案、后台新建的页面）。
+        // vue-router 按路径得分排序，静态段的固定路由天然优先于这里的参数段；
+        // 地址不对应任何栏目时由 ChannelPage 呈现「页面不存在」
+        {
+          path: `:seg1(${SEGMENT})/:seg2(${SEGMENT})?`,
+          name: 'channel',
+          component: () => import('@/components/sections/ChannelPage.vue'),
+          props: route => ({ pagePath: route.path }),
         },
         // 未匹配地址：套官网壳展示 404，不再 redirect 到首页。
         // 原先跳首页有两个实际损失：用户不知道自己点错了地址，

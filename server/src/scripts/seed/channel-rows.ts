@@ -7,6 +7,7 @@ import {
   FLATTEN_TO_LIST, FLATTEN_TO_SINGLE, FLATTENED_FORM_FIELDS, FLATTENED_KEYS, FLATTENED_LIST_COLUMNS,
 } from './flatten-groups'
 import { V2_OVERRIDES, buildV2Rows, isLegacyKey } from './channel-rows-v2'
+import { V3_RETIRED_KEYS, V3_SORTS, buildV3Rows } from './channel-rows-v3'
 
 /** 顶级栏目 → 前台路由路径。不在表内的栏目不对前台开放 */
 export const PORTAL_PATHS: Record<string, string> = {
@@ -71,6 +72,8 @@ export interface ChannelRow {
   menuDesc?: string | null
   /** 仅新建时生效：改版后不再对外的旧页面隐藏，已存在的栏目不改，尊重后台已有设置 */
   hidden?: boolean
+  /** 导航外链地址；缺省无 */
+  externalUrl?: string | null
 }
 
 type RawChannel = (typeof channels)[number]
@@ -146,8 +149,17 @@ export function buildChannelRows(): ChannelRow[] {
   // 新版官网：既有栏目套菜单/排序覆盖，再追加新增的一级与子级栏目
   for (const row of rows) Object.assign(row, V2_OVERRIDES[row.key])
   rows.push(...buildV2Rows())
+  // 第三版：同 key 的行以第三版为准（业务三页的菜单与头图文案按框架图重写），其余追加
+  const v3 = buildV3Rows()
+  const v3Keys = new Set(v3.map(r => r.key))
+  const merged = [...rows.filter(r => !v3Keys.has(r.key)), ...v3]
+  for (const row of merged) {
+    if (V3_SORTS[row.key] !== undefined) row.sort = V3_SORTS[row.key]
+    // 改版下线的页面与区块：新建库时直接建成隐藏（已有库由种子脚本的升级步骤处理）
+    if (V3_RETIRED_KEYS.includes(row.key)) row.hidden = true
+  }
   // 旧版四个页面及其子栏目、头图栏目不再生成
-  return rows.filter(r => !isLegacyKey(r.key))
+  return merged.filter(r => !isLegacyKey(r.key))
 }
 
 /** alliance / about 两页缺失的子栏目 */

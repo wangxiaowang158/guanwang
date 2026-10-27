@@ -33,6 +33,10 @@ export class Admin {
   @Column({ type: 'varchar', length: 1000, default: '[]' })
   perms!: string
 
+  /** 所属角色 id；最终权限为角色权限与上面 perms 的并集。null 表示不套角色 */
+  @Column({ type: 'int', nullable: true })
+  roleId!: number | null
+
   /** 是否超级管理员：不受权限清单限制，且不可被停用或删除 */
   @Column({ type: 'boolean', default: false })
   isSuper!: boolean

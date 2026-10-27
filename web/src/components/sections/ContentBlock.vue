@@ -1,7 +1,7 @@
 <template>
   <!-- 样式一内容块：按 layout 渲染 图文条目 / 条目列表 / 名称集合 / 序号步骤 / 富文本 / 视频；onDark 用于背景图区块 -->
   <section v-if="renderable" :id="block.anchor">
-    <SectionHeading :heading="block.heading" :subheading="block.subheading" :on-dark="onDark" />
+    <SectionHeading :heading="block.heading" :subheading="block.subheading" :on-dark="onDark" :align="block.align" />
     <slot name="filter" />
 
     <slot v-if="!block.items.length" name="empty"><EmptyState :on-dark="onDark" /></slot>
@@ -11,7 +11,12 @@
     <ProcessFlow v-else-if="block.layout === 'flow'" :items="steps" :on-dark="onDark" />
     <MetricBoard v-else-if="block.layout === 'metrics'" :items="metrics" :on-dark="onDark" />
     <CooperationModes v-else-if="block.layout === 'modes'" :items="modes" :on-dark="onDark" />
-    <ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" />
+    <ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" :cols="block.columns" />
+    <!-- 第三版区块：图片/视频展示、品牌介绍（故事弹窗）、图片磁贴；两套模板共用组件，style2 切配色 -->
+    <MediaShowcase v-else-if="block.layout === 'media'" :items="block.items" :heading="block.heading" :on-dark="onDark" />
+    <BrandStories v-else-if="block.layout === 'brand'" :items="block.items" :cols="block.columns" />
+    <ImageTiles v-else-if="block.layout === 'tiles'" :items="block.items" :cols="block.columns" />
+    <JobList v-else-if="block.layout === 'jobs'" :items="block.items" :on-dark="onDark" />
     <!-- 证言：单条直接展示，多条轮播 -->
     <template v-else-if="block.layout === 'quote'">
       <TestimonialQuote v-if="quotes.length === 1" :quote="quotes[0]" :on-dark="onDark" />
@@ -21,13 +26,13 @@
     </template>
 
     <!-- 图文条目：有图显示缩略图，无图显示序号；可点击时整卡为入口 -->
-    <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 sm:grid-cols-2 gap-6" :class="cardCols">
       <ItemLink v-for="item in block.items" :key="item.id" :item="item" link-class="cb-card-link" class="cb-card">
-        <div v-if="item.image || fallbackImage" class="cb-card-media">
-          <SafeImage :src="item.image" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
+        <div v-if="item.image || item.video || fallbackImage" class="cb-card-media">
+          <SafeMedia :image="item.image" :video="item.video" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
         </div>
         <div class="cb-card-body">
-          <div v-if="!item.image && !fallbackImage" class="cb-card-index tabular-nums">{{ String(item.sort).padStart(2, '0') }}</div>
+          <div v-if="!item.image && !item.video && !fallbackImage" class="cb-card-index tabular-nums">{{ String(item.sort).padStart(2, '0') }}</div>
           <div v-if="item.tag || item.date" class="flex items-center gap-3 mb-3 text-xs">
             <span v-if="item.tag" class="cb-tag">{{ item.tag }}</span>
             <time v-if="item.date" :datetime="item.date" class="text-ink-500 tabular-nums">{{ item.date }}</time>
@@ -107,8 +112,9 @@
       <div v-for="item in block.items" :key="item.id">
         <h3 class="text-lg font-semibold mb-3" :class="onDark ? 'text-white' : 'text-ink-900'">{{ item.title }}</h3>
         <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 richHtml -->
-        <div v-if="item.html" class="rich-html text-[15px] leading-loose" :class="onDark ? 'text-slate-200' : 'text-ink-700'" v-html="richHtml(item.html)"></div>
-        <p v-else-if="item.desc" class="text-[15px] leading-loose" :class="onDark ? 'text-slate-200' : 'text-ink-700'">{{ item.desc }}</p>
+        <div v-if="item.html" class="rich-html text-fs-body leading-loose" :class="onDark ? 'text-slate-200' : 'text-ink-700'" v-html="richHtml(item.html)"></div>
+        <p v-else-if="item.desc" class="text-fs-body leading-loose" :class="onDark ? 'text-slate-200' : 'text-ink-700'">{{ item.desc }}</p>
+        <AttachmentLink v-if="item.file" class="mt-4" :file="item.file" :name="item.title" :on-dark="onDark" />
       </div>
     </div>
   </section>
@@ -120,8 +126,9 @@
 import { computed } from 'vue'
 import type { PageBlock } from '@/api/page'
 import { sanitizeRichText } from '@/utils/sanitize'
-import SafeImage from '@/components/common/SafeImage.vue'
+import SafeMedia from '@/components/common/SafeMedia.vue'
 import BaseCarousel from '@/components/common/BaseCarousel.vue'
+import AttachmentLink from '@/components/common/AttachmentLink.vue'
 import SectionHeading from './SectionHeading.vue'
 import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
@@ -132,6 +139,10 @@ import MetricBoard from './MetricBoard.vue'
 import CooperationModes from './CooperationModes.vue'
 import TestimonialQuote from './TestimonialQuote.vue'
 import ImageGallery from './ImageGallery.vue'
+import MediaShowcase from './MediaShowcase.vue'
+import BrandStories from './BrandStories.vue'
+import ImageTiles from './ImageTiles.vue'
+import JobList from './JobList.vue'
 import { blockHasContent, galleryOf, isExtraLayout, metricsOf, modesOf, painsOf, quotesOf, stepsOf } from './blockExtra'
 import { chipsOf } from './itemChips'
 
@@ -141,6 +152,10 @@ const props = defineProps<{
   /** 条目未配图时的缺省配图（按所在栏目主题），不传则无图条目显示序号 */
   fallbackImage?: string
 }>()
+
+/** 卡片每行列数（电脑端）：后台配了按配置，缺省 3 列；类名写全，Tailwind 才扫得到 */
+const CARD_COLS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }
+const cardCols = computed(() => CARD_COLS[props.block.columns ?? 3] ?? CARD_COLS[3])
 
 // 视频区块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
 const playable = computed(() => props.block.items.filter(item => item.video))

@@ -24,12 +24,21 @@ export interface ChannelVo {
   portalPath?: string
   anchor?: string
   subheading?: string
+  /** 菜单挂靠的顶级页面 key */
+  menuParent?: string
   menuGroup?: string
   menuDesc?: string
   layout?: string
   heroEyebrow?: string
   heroTitle?: string
   heroDesc?: string
+  heroBg?: string
+  heroVideo?: string
+  externalUrl?: string
+  blockTone?: string
+  blockBg?: string
+  blockColumns?: number
+  headingAlign?: string
   updateTime?: string
 }
 
@@ -37,8 +46,11 @@ export interface ChannelVo {
 export interface MenuNodeVo {
   key: string
   label: string
+  /** 站内路径；外链节点为空串 */
   path: string
   anchor?: string
+  /** 外部链接（http/https），有值时前台用 <a target="_blank"> 打开 */
+  external?: string
   /** 超级下拉菜单分组名，同组子项归为一列；缺省按单列展示 */
   group?: string
   /** 子项下方的一句说明 */
@@ -60,9 +72,11 @@ export interface PageItemVo {
   desc?: string
   tag?: string
   image?: string
-  /** 视频地址，video 板块的播放源 */
+  /** 副标题，品牌口号等 */
+  subtitle?: string
+  /** 视频地址，video / media 板块的播放源 */
   video?: string
-  /** 已净化的富文本正文，rich 板块渲染用 */
+  /** 已净化的富文本正文，rich / brand 板块渲染用 */
   html?: string
   date?: string
   sort: number
@@ -75,6 +89,29 @@ export interface PageItemVo {
    * 否则有 link 新窗口打开；都没有则条目不可点
    */
   link?: string
+  /** 附件下载地址（产品手册、白皮书等），站内 /uploads/ 或 http(s) */
+  file?: AttachmentVo
+  /** 品牌 / 部门（招聘职位用作所属部门） */
+  brand?: string
+}
+
+/** 附件 */
+export interface AttachmentVo {
+  url: string
+  /** 扩展名大写，如 PDF，前台作文件类型标签 */
+  ext: string
+}
+
+/**
+ * 附件地址出库校验：只放行站内上传目录与 http(s)，挡掉 javascript: 等伪协议
+ * 后台的附件字段历史上是自由文本，不能信任库里的值
+ */
+export function toAttachment(raw: string | null | undefined): AttachmentVo | undefined {
+  const url = (raw ?? '').trim()
+  if (!url || /[\s"'<>\\]/.test(url)) return undefined
+  if (!url.startsWith('/uploads/') && !/^https?:\/\//i.test(url)) return undefined
+  const ext = /\.([a-z0-9]{1,5})(?:[?#]|$)/i.exec(url)?.[1]?.toUpperCase() ?? ''
+  return { url, ext }
 }
 
 /** 前台文章详情，新闻/案例等有正文的条目点进来看 */
@@ -94,6 +131,8 @@ export interface ArticleDetailVo {
   date?: string
   author?: string
   source?: string
+  /** 附件下载 */
+  file?: AttachmentVo
   /** 所属栏目名与其顶级栏目路径，前台用于面包屑与返回链接 */
   channelName: string
   parentName: string
@@ -107,6 +146,8 @@ export interface ArticleDetailVo {
   /** 同栏目上一篇/下一篇，无则为 null */
   prev: ArticleNavVo | null
   next: ArticleNavVo | null
+  /** 相关推荐：同栏目里业务线/行业相近的几条，没有则为空数组 */
+  related: ArticleRelatedVo[]
 }
 
 /** 上一篇/下一篇导航条目 */
@@ -115,13 +156,27 @@ export interface ArticleNavVo {
   title: string
 }
 
+/** 相关推荐卡片：标题 + 封面 + 一句成效（取第一个量化指标） */
+export interface ArticleRelatedVo extends ArticleNavVo {
+  image?: string
+  /** 如「综合节能率 32%」；没有量化指标时不给 */
+  highlight?: string
+}
+
 /** 前台栏目页区块 */
 export interface PageBlockVo {
   anchor: string
   heading: string
   subheading?: string
   layout: BlockLayout
+  /** 背景图（后台选了「背景图」底色时下发），前台叠深色遮罩、文字反白 */
   bg?: string
+  /** 底色：white / surface / dark；缺省为模板默认的奇偶交替 */
+  tone?: 'white' | 'surface' | 'dark'
+  /** 桌面每行列数；缺省为展示形态默认 */
+  columns?: number
+  /** 标题对齐；缺省为模板默认 */
+  align?: 'center' | 'left'
   items: PageItemVo[]
   /** 所属子栏目 key，前台续取本区块条目时回传 */
   channelKey: string
@@ -143,8 +198,17 @@ export interface BlockItemsVo {
 /** 前台栏目页完整内容 */
 export interface PageContentVo {
   key: string
-  hero: { eyebrow: string; title: string; desc: string; bg?: string }
+  /** 页面名（导航上的名字），前台当前位置用 */
+  name: string
+  hero: { eyebrow: string; title: string; desc: string; bg?: string; video?: string }
   blocks: PageBlockVo[]
+  /** 草稿预览模式（令牌校验通过）：含未发布内容，前台显示预览条、不索引、不出「加载更多」 */
+  preview?: boolean
+  /**
+   * 分组页（如「智慧能源解决方案」）本身无区块时，指向其下第一个挂靠子页的路径，
+   * 前台据此直接跳过去，而不是展示一个空页面
+   */
+  redirect?: string
 }
 
 /** 把 JSON 字符串安全还原为字符串数组，解析失败按空数组处理 */
@@ -213,12 +277,20 @@ export function toChannelVo(c: Channel): ChannelVo {
     portalPath: orUndefined(c.portalPath),
     anchor: orUndefined(c.anchor),
     subheading: orUndefined(c.subheading),
+    menuParent: orUndefined(c.menuParent),
     menuGroup: orUndefined(c.menuGroup),
     menuDesc: orUndefined(c.menuDesc),
     layout: orUndefined(c.layout),
     heroEyebrow: orUndefined(c.heroEyebrow),
     heroTitle: orUndefined(c.heroTitle),
     heroDesc: orUndefined(c.heroDesc),
+    heroBg: orUndefined(c.heroBg),
+    heroVideo: orUndefined(c.heroVideo),
+    externalUrl: orUndefined(c.externalUrl),
+    blockTone: orUndefined(c.blockTone),
+    blockBg: orUndefined(c.blockBg),
+    blockColumns: c.blockColumns ?? undefined,
+    headingAlign: orUndefined(c.headingAlign),
     updateTime: formatDateTime(c.updatedAt),
   }
 }
@@ -277,12 +349,16 @@ export function toPageItemVo(c: Content, index: number, includeHtml = true): Pag
     tag: orUndefined(c.category),
     image: orUndefined(c.cover),
     video: orUndefined(c.video),
+    subtitle: orUndefined(c.subtitle),
+    brand: orUndefined(c.brand),
     // 列表只展示运营明确指定的发布时间：回落创建日期的话，产品、服务这类非资讯条目
     // 也会平白多出一个日期。详情页的发布信息才按 SRS 3.5.1 回落创建日期
     date: formatDate(c.publishAt),
     sort: index + 1,
     link: safeLink(c.link),
   }
+  const file = toAttachment(c.file)
+  if (file) vo.file = file
   const extra = normalizeExtra(c.extra)
   if (extra) vo.extra = extra
   if (includeHtml) {
@@ -308,6 +384,7 @@ export function toArticleDetailVo(
     parentKey: string
     prev: ArticleNavVo | null
     next: ArticleNavVo | null
+    related?: ArticleRelatedVo[]
   },
 ): ArticleDetailVo {
   return {
@@ -324,11 +401,13 @@ export function toArticleDetailVo(
     date: formatDate(c.publishAt ?? c.createdAt),
     author: orUndefined(c.author),
     source: orUndefined(c.source),
+    file: toAttachment(c.file),
     channelName: ctx.channelName,
     parentName: ctx.parentName,
     parentPath: ctx.parentPath,
     parentKey: ctx.parentKey,
     prev: ctx.prev,
     next: ctx.next,
+    related: ctx.related ?? [],
   }
 }

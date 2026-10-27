@@ -13,6 +13,8 @@ function build() {
   const kv = new MemoryKvStore()
   const adminService = {
     verifyCredentials: jest.fn(async (_u: string, p: string) => (p === 'good' ? ADMIN : null)),
+    // 登录成功时按「角色 ∪ 自身」算最终权限下发给前端；本套件只关心锁定，给空即可
+    effectivePerms: jest.fn(async () => []),
   } as unknown as AdminService
   const jwt = { signAsync: jest.fn().mockResolvedValue('token') } as unknown as JwtService
   return { svc: new AdminAuthService(adminService, jwt, kv), kv, adminService }

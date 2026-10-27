@@ -6,11 +6,15 @@ import { DB_SQLITE_PATH, DB_SYNCHRONIZE, DB_TYPE, MYSQL } from './app.config'
 import { Member } from '../modules/member/member.entity'
 import { Feedback } from '../modules/feedback/feedback.entity'
 import { FeedbackReply } from '../modules/feedback/feedback-reply.entity'
+import { NotifyConfig } from '../modules/feedback/notify-config.entity'
 import { MemberLoginLog } from '../modules/login-log/login-log.entity'
 import { AuthConfig } from '../modules/auth-config/auth-config.entity'
 import { Admin } from '../modules/admin/admin.entity'
+import { AdminRole } from '../modules/admin/admin-role.entity'
 import { Channel } from '../modules/cms/channel.entity'
 import { Content } from '../modules/cms/content.entity'
+import { ContentRevision } from '../modules/cms/content-revision.entity'
+import { RedirectRule } from '../modules/redirect/redirect.entity'
 import { SiteConfig } from '../modules/cms/site-config.entity'
 import { VisitLog } from '../modules/visit/visit-log.entity'
 import { AdminOpLog } from '../modules/op-log/op-log.entity'
@@ -19,7 +23,8 @@ import { MIGRATIONS } from '../migrations'
 /** 全部实体，集中登记避免 glob 扫描在打包后失效 */
 export const ENTITIES = [
   Member, Feedback, FeedbackReply, MemberLoginLog, AuthConfig,
-  Admin, Channel, Content, SiteConfig, VisitLog, AdminOpLog,
+  Admin, Channel, Content, ContentRevision, SiteConfig, VisitLog, AdminOpLog, NotifyConfig,
+  RedirectRule, AdminRole,
 ]
 
 /** 构建 TypeORM 配置 */

@@ -8,7 +8,10 @@ export interface AdminItem {
   id: number
   account: string
   name: string
+  /** 账号单独勾选的权限（不含角色带来的） */
   perms: string[]
+  /** 所属角色 id，null 为不套角色 */
+  roleId: number | null
   /** 超管不受权限清单限制，且不可删除 */
   isSuper: boolean
   wechatBound: boolean
@@ -21,6 +24,7 @@ export interface CreateAdminParams {
   name: string
   password: string
   perms: string[]
+  roleId?: number | null
   wechatBound?: boolean
 }
 
@@ -29,7 +33,19 @@ export interface UpdateAdminParams {
   id: number
   name: string
   perms: string[]
+  /** 传 null 表示取消角色 */
+  roleId?: number | null
   wechatBound?: boolean
+}
+
+/** 角色：一组可复用的菜单权限；账号最终权限 = 角色权限 ∪ 账号单独勾选的权限 */
+export interface AdminRole {
+  id: number
+  name: string
+  perms: string[]
+  remark: string
+  /** 使用该角色的账号数 */
+  adminCount: number
 }
 
 /** 管理员列表分页结果 */
@@ -59,6 +75,17 @@ export const updateAdmin = (data: UpdateAdminParams) =>
 /** 重置指定管理员的密码（不少于 8 位） */
 export const resetAdminPassword = (id: number, password: string) =>
   axios.put<ApiResult<null>>('/api/mgmt/admin/reset-password', { id, password })
+
+/** 角色列表（附使用账号数） */
+export const getRoles = () => axios.get<ApiResult<AdminRole[]>>('/api/mgmt/admin/roles')
+
+/** 新增 / 修改角色；修改后使用该角色的账号立即按新权限生效 */
+export const saveRole = (data: { id?: number; name: string; perms: string[]; remark?: string }) =>
+  axios.post<ApiResult<Omit<AdminRole, 'adminCount'>>>('/api/mgmt/admin/role/save', data)
+
+/** 删除角色（仍有账号在用时后端拒绝） */
+export const deleteRole = (id: number) =>
+  axios.delete<ApiResult<null>>('/api/mgmt/admin/role/delete', { params: { id } })
 
 /** 删除管理员（超管与当前登录账号不可删除） */
 export const deleteAdmin = (id: number) =>

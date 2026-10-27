@@ -35,6 +35,9 @@ export const FEEDBACK_LEAD_TYPE_LABEL: Record<FeedbackLeadType, string> = {
   consult: '方案咨询',
 }
 
+/** 线索类型筛选里「普通留言」的取值，与服务端 LEAD_TYPE_NONE 一致 */
+export const LEAD_TYPE_NONE = 'none'
+
 /** 处理状态 */
 export type FeedbackStatus = 'pending' | 'processing' | 'replied' | 'closed'
 
@@ -79,6 +82,8 @@ export interface FeedbackListItem {
   company: string | null
   name: string
   phoneMasked: string | null
+  /** 线索类型：预约/咨询入口提交时才有，空为普通留言 */
+  leadType: FeedbackLeadType | null
   feedbackType: FeedbackType | null
   content: string
   status: FeedbackStatus
@@ -116,6 +121,8 @@ export interface FeedbackQuery {
   source?: FeedbackSource
   status?: FeedbackStatus
   feedbackType?: FeedbackType
+  /** 线索类型；none 为普通留言（未带线索类型的提交） */
+  leadType?: FeedbackLeadType | typeof LEAD_TYPE_NONE
   startDate?: string
   endDate?: string
   page?: number
@@ -177,3 +184,36 @@ export const batchDeleteFeedback = (ids: number[]) =>
   axios.delete<ApiResult<{ removed: number } | null>>('/api/mgmt/feedback/batch', {
     params: { ids: ids.join(',') },
   })
+
+// ---------------- 新留言推送 ----------------
+
+/** 推送机器人类型 */
+export type NotifyType = 'wecom' | 'dingtalk' | 'feishu'
+
+/** 推送配置（地址已打码，不含机器人密钥） */
+export interface NotifyConfig {
+  type: NotifyType
+  webhookMasked: string
+  /** admin 后台配置 / env 服务器环境变量 / none 未配置 */
+  from: 'admin' | 'env' | 'none'
+}
+
+export const NOTIFY_TYPE_OPTIONS: { value: NotifyType; label: string; host: string }[] = [
+  { value: 'wecom', label: '企业微信群机器人', host: 'qyapi.weixin.qq.com' },
+  { value: 'dingtalk', label: '钉钉群机器人', host: 'oapi.dingtalk.com' },
+  { value: 'feishu', label: '飞书群机器人', host: 'open.feishu.cn' },
+]
+
+export const getNotifyConfig = () =>
+  axios.get<ApiResult<NotifyConfig>>('/api/mgmt/feedback/notify-config')
+
+/**
+ * 保存推送配置
+ * @param webhookUrl 不传＝只改类型保留原地址；空串＝清除后台配置
+ */
+export const saveNotifyConfig = (type: NotifyType, webhookUrl?: string) =>
+  axios.put<ApiResult<NotifyConfig>>('/api/mgmt/feedback/notify-config', { type, webhookUrl })
+
+/** 发一条测试消息到群里 */
+export const sendNotifyTest = () =>
+  axios.post<ApiResult<null>>('/api/mgmt/feedback/notify-test')

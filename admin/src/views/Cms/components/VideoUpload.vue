@@ -21,8 +21,16 @@
       <span class="tip">{{ tip || defaultTip }}</span>
     </div>
 
-    <!-- 上传进度：视频体积大，没有进度提示会让人以为卡住了 -->
-    <a-progress v-if="uploading" :percent="progress" size="small" class="progress" />
+    <!-- 上传进度：视频体积大，没有进度提示会让人以为卡住了；传完字节后进入服务端校验阶段 -->
+    <div v-if="uploading" class="status-row">
+      <a-progress :percent="progress" size="small" class="progress" />
+      <span class="tip">{{ processing ? '处理中…' : '' }}</span>
+      <a-button size="small" :disabled="processing" @click="cancel">取消上传</a-button>
+    </div>
+    <div v-else-if="failedFile" class="status-row">
+      <span class="tip">「{{ failedFile.name }}」上传失败</span>
+      <a-button size="small" type="link" @click="onRetry">重试</a-button>
+    </div>
 
     <!-- 隐藏的文件选择 -->
     <input
@@ -68,10 +76,18 @@ const fileRef = ref<HTMLInputElement>()
 const previewVisible = ref(false)
 const pickerOpen = ref(false)
 
-const { uploading, progress, pickAndUpload } = useVideoUpload()
+const { uploading, progress, processing, failedFile, pickAndUpload, retry, cancel } = useVideoUpload()
 
-// 未指定提示时，把格式与体积限制直接写在控件旁，省得用户上传失败才知道
-const defaultTip = computed(() => `支持 ${UPLOAD_VIDEO_LABEL}，不超过 ${UPLOAD_VIDEO_MAX_MB}MB`)
+// 未指定提示时，把格式与体积限制直接写在控件旁，省得用户上传失败才知道；
+// 只认容器格式，HEVC 编码的 MP4 部分浏览器放不了，故点明 H.264
+const defaultTip = computed(
+  () => `支持 ${UPLOAD_VIDEO_LABEL}（推荐 H.264 编码的 MP4），不超过 ${UPLOAD_VIDEO_MAX_MB}MB`
+)
+
+const onRetry = async () => {
+  const url = await retry()
+  if (url) emit('update:modelValue', url)
+}
 
 const triggerPick = () => {
   if (uploading.value) return
@@ -120,8 +136,14 @@ const onClear = () => emit('update:modelValue', '')
   font-size: 12px;
 }
 
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .progress {
-  /* 与输入框左边缘对齐，不跟着 flex 居中 */
+  flex: 1;
   margin: 0;
 }
 

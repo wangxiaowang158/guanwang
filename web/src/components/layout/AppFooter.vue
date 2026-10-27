@@ -6,12 +6,12 @@
         <!-- 品牌与联系方式 -->
         <div class="lg:col-span-4">
           <div class="flex items-center gap-2.5 mb-5">
-            <img v-if="footerLogo" :src="footerLogo" :alt="COMPANY_SHORT" class="h-9 w-auto max-w-[160px] object-contain" width="144" height="36" loading="lazy" />
+            <img v-if="footerLogo" :src="footerLogo" :alt="companyShort" class="h-9 w-auto max-w-[160px] object-contain" width="144" height="36" loading="lazy" />
             <template v-else>
               <span class="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white text-base font-bold" aria-hidden="true">恒</span>
               <span class="flex flex-col leading-none">
-                <span class="font-bold text-lg text-white">{{ COMPANY_SHORT }}</span>
-                <span class="text-[10px] text-slate-400 tracking-[0.2em] mt-1">{{ COMPANY_EN }}</span>
+                <span class="font-bold text-lg text-white">{{ companyShort }}</span>
+                <span class="text-[10px] text-slate-400 tracking-[0.2em] mt-1">{{ companyEn }}</span>
               </span>
             </template>
           </div>
@@ -60,6 +60,8 @@
         </div>
       </div>
 
+      <FooterExtras :config="footerConfig" />
+
       <div class="border-t border-white/10 mt-12 pt-6 flex flex-col md:flex-row md:justify-between md:items-center gap-3 text-[13px] text-slate-400">
         <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 useFooterInfo -->
         <p v-if="copyrightHtml" class="footer-copyright" v-html="copyrightHtml"></p>
@@ -76,10 +78,12 @@
 
 <script setup lang="ts">
 // 样式一页脚：取值口径见 useFooterInfo，本组件只管呈现
-import { COMPANY_EN, COMPANY_SHORT } from '@/config/brand'
+import { useBrand } from '@/composables/useBrand'
 import { useFooterInfo } from '@/composables/useFooterInfo'
+import FooterExtras from './FooterExtras.vue'
 
-const { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo } = useFooterInfo()
+const { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo, footerConfig } = useFooterInfo()
+const { companyShort, companyEn } = useBrand()
 </script>
 
 <style scoped>

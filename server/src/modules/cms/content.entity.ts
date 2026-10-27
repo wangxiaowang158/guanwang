@@ -1,6 +1,6 @@
 // 内容记录实体 —— 一张宽表承载所有栏目的内容
 // 各栏目按自己的 formFields 取用其中一部分字段，未启用的字段留空，避免每个栏目建一张表
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 import { CONTENT_STATUS, type ContentStatus } from '../../common/enums'
 
 @Entity('content')
@@ -118,4 +118,13 @@ export class Content {
   /** 更新时间 */
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt!: Date
+
+  /**
+   * 删除时间（回收站）：非空即已删除
+   * 用 DeleteDateColumn 而非手写条件：TypeORM 的 find / QueryBuilder 会自动排除已删除行，
+   * 前台与后台的十几条取数路径不必逐一补 WHERE，漏补一处就是「删了前台还在」
+   */
+  @Index()
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deletedAt!: Date | null
 }

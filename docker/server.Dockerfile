@@ -31,6 +31,12 @@ ENV NODE_ENV=production
 # 已实测：node:22-bookworm-slim 自带 zoneinfo，无需另装 tzdata
 ENV TZ=Asia/Shanghai
 
+# 中文字体：图片水印（sharp 渲染 SVG 文字）要用，slim 镜像不带任何 CJK 字体，
+# 缺了中文水印会渲染成一排方框。文泉驿微米黑约 4MB，比 Noto CJK（数百 MB）小两个量级
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-wqy-microhei fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+
 # 容器内进程以非 root 运行；node 用户由基础镜像预置
 # 数据目录用于 DB_TYPE=sqlite 时落盘，MySQL 模式下留空不影响
 # uploads 必须在镜像里先建出来：命名卷只有在挂载点已存在时才继承其属主，
@@ -41,6 +47,8 @@ RUN mkdir -p /app/data/uploads && chown -R node:node /app
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/package.json ./package.json
+# 种子素材（框架图裁出的信息图等）：种子脚本按 /app/seed-assets 读取并复制进上传卷
+COPY --chown=node:node server/seed-assets ./seed-assets
 # 启动脚本：先迁移、再空库种子、最后起主进程，见脚本内说明
 COPY --chmod=755 docker/server-entrypoint.sh /usr/local/bin/server-entrypoint.sh
 

@@ -11,6 +11,7 @@ import cmsRoutes from './modules/cms'
 import dashboardRoutes from './modules/dashboard'
 import mediaRoutes from './modules/media'
 import statsRoutes from './modules/stats'
+import siteToolsRoutes from './modules/siteTools'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -29,6 +30,7 @@ const routes: RouteRecordRaw[] = [
       ...statsRoutes,
       ...cmsRoutes,
       ...mediaRoutes,
+      ...siteToolsRoutes,
       // 未匹配地址：套主布局展示 404。原先没有此项，输错地址会渲染出
       // 只有侧边栏的空白页，看起来像功能坏了而不是地址错了
       {

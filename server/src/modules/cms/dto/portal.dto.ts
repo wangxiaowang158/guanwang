@@ -51,3 +51,23 @@ export class BlockItemsQueryDto {
   @Length(1, 300)
   tag?: string
 }
+
+/** 站内搜索 */
+export class SearchQueryDto {
+  /** 关键词；超长由 service 截断而非报错，用户粘了一长串进来也给结果 */
+  @IsString({ message: '请输入搜索关键词' })
+  @Length(1, 200, { message: '请输入搜索关键词' })
+  q!: string
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  pageSize?: number
+}

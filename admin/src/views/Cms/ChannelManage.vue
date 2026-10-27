@@ -3,56 +3,15 @@
     <div class="channel-manage">
       <div class="page-title">栏目管理</div>
       <div class="layout">
-        <!-- 栏目树 -->
-        <div class="tree-pane">
-          <div class="pane-head">
-            <span>栏目结构</span>
-            <a-button type="primary" size="small" @click="openAdd(null)">
-              <template #icon><PlusOutlined /></template>
-              顶级栏目
-            </a-button>
-          </div>
-          <a-spin :spinning="loadingTree">
-            <a-tree
-              :tree-data="treeData"
-              :field-names="{ title: 'name', key: 'id', children: 'children' }"
-              default-expand-all
-              block-node
-              draggable
-              :allow-drop="allowTreeDrop"
-              @select="onSelect"
-              @dragstart="onTreeDragStart"
-              @dragend="onTreeDragEnd"
-              @drop="onTreeDrop"
-            >
-              <template #title="node">
-                <span class="node-row">
-                  <span class="node-main">
-                    <span class="node-name" :class="{ 'node-hidden': node.hidden }">{{ node.name }}</span>
-                    <a-tag v-if="node.hidden" class="node-hidden-tag">已隐藏</a-tag>
-                    <a-tooltip title="按住拖动调整同级顺序">
-                      <ControlOutlined class="node-drag-handle" />
-                    </a-tooltip>
-                  </span>
-                  <a-switch
-                    v-if="hideable(node)"
-                    class="node-switch"
-                    size="small"
-                    :checked="!node.hidden"
-                    :loading="toggling === node.id"
-                    @click="(_v: boolean, e: Event) => e.stopPropagation()"
-                    @change="(v: boolean) => onToggleEnabled(node, v)"
-                  />
-                  <span class="node-ops">
-                    <PlusOutlined title="新增子栏目" @click.stop="openAdd(node.id)" />
-                    <EditOutlined title="编辑" @click.stop="openEdit(node)" />
-                    <DeleteOutlined v-if="canDelete(node)" title="删除" @click.stop="onDelete(node)" />
-                  </span>
-                </span>
-              </template>
-            </a-tree>
-          </a-spin>
-        </div>
+        <ChannelTree
+          :flat="flat"
+          :loading="loadingTree"
+          @add="openAdd"
+          @edit="openEdit"
+          @remove="onDelete"
+          @changed="load(true)"
+          @failed="fetchList"
+        />
 
         <!-- 编辑面板 -->
         <div class="form-pane">
@@ -61,20 +20,13 @@
             <a-form-item label="栏目名称" required>
               <a-input v-model:value="form.name" placeholder="请输入栏目名称" />
             </a-form-item>
-            <a-form-item label="栏目标识">
-              <a-input
-                v-model:value="form.key"
-                placeholder="小写字母开头，只含小写字母、数字与连字符，如 news-list"
-                :disabled="!!form.id"
-              />
-            </a-form-item>
             <!-- 类型与上级栏目创建后不可改：后端不接收这两项，改了内容会与栏目失联 -->
             <a-form-item label="栏目类型" :extra="form.id ? '创建后不可修改' : undefined">
               <a-select v-model:value="form.type" :options="typeOptions" :disabled="!!form.id" />
             </a-form-item>
             <a-form-item
               label="上级栏目"
-              :extra="form.id ? '创建后不可修改' : '不选则为后台顶级菜单；官网前台的一级页面固定，不会因此新增'"
+              :extra="form.id ? '创建后不可修改' : '不选则为一级栏目（可在下方设为官网页面）；选了则为该页面里的一个区块'"
             >
               <a-tree-select
                 v-model:value="form.parentId"
@@ -94,27 +46,14 @@
                 @change="(v: boolean) => (form.hidden = !v)"
               />
             </a-form-item>
-            <a-form-item label="图标名称">
-              <a-input v-model:value="form.icon" placeholder="Ant Design 图标名，如 HomeOutlined" />
-            </a-form-item>
-            <a-form-item v-if="form.type === 'list' || form.type === 'single'" label="编辑字段">
-              <a-checkbox-group v-model:value="form.formFields" :options="fieldOptions" />
-            </a-form-item>
-            <a-form-item v-if="form.type === 'list' || form.type === 'single'" label="扩展字段">
-              <a-checkbox-group v-model:value="form.formFields" :options="extraFieldOptions" />
-              <div class="field-tip">存放业务线、行业、标签、指标等结构化信息，不占用基础字段</div>
-            </a-form-item>
-            <a-form-item v-if="form.type === 'list'" label="列表列">
-              <a-checkbox-group v-model:value="form.listColumns" :options="columnOptions" />
-            </a-form-item>
-            <!-- 首页板块：版式固定，不需要锚点与展示形态，只配两行标题 -->
-            <template v-if="isHomeSection">
-              <a-divider style="margin: 4px 0 16px">首页板块标题</a-divider>
-              <div class="field-tip" style="margin: -8px 0 12px">上方「栏目名称」即板块小标题</div>
-              <a-form-item label="板块主标题">
-                <a-input v-model:value="form.subheading" placeholder="选填，留空时前台显示内置文案" :maxlength="100" />
-              </a-form-item>
-            </template>
+            <!-- 首页板块：版式固定；标题统一在「首页布局」里改，这里不再重复提供入口 -->
+            <a-alert
+              v-if="isHomeSection"
+              type="info"
+              show-icon
+              class="home-tip"
+              message="首页板块的标题、顺序、显隐与底色，请到「基本信息管理 → 首页布局」中修改"
+            />
             <!-- 前台区块配置：子栏目会作为父页面的一个内容区块呈现 -->
             <template v-else-if="showBlockConfig">
               <a-divider style="margin: 4px 0 16px">前台区块</a-divider>
@@ -133,6 +72,8 @@
                 <a-select v-model:value="form.layout" :options="layoutOptions" placeholder="默认图标卡片" allow-clear />
                 <div class="field-tip">
                   选「视频」时，内容的视频字段作为播放源、封面图片作为播放前首帧；
+                  「图片/视频展示」每条内容一张大图或一段视频，按原比例完整显示；
+                  「品牌介绍」用副标题作口号、正文作品牌故事；
                   痛点、流程、看板、合作模式、证言、图集这几种，数据取自内容的对应扩展字段
                 </div>
               </a-form-item>
@@ -143,7 +84,10 @@
               <a-form-item label="菜单说明">
                 <a-input v-model:value="form.menuDesc" placeholder="选填，显示在菜单项下方的一句话" :maxlength="100" />
               </a-form-item>
+              <BlockAppearanceFields v-model="form" />
             </template>
+            <!-- 官网页面：一级栏目可设为站内页面（路径 + 菜单挂靠 + 头图素材）或导航外链 -->
+            <ChannelPageFields v-if="showPageFields" :key="formSeq" ref="pageFieldsRef" v-model="form" :channels="flat" />
             <!-- 页面头图文案：走通用栏目页模板的板块可填，对应前台页面顶部 -->
             <template v-if="showHero">
               <a-divider style="margin: 4px 0 16px">页面头图</a-divider>
@@ -157,7 +101,7 @@
                 <a-textarea v-model:value="form.heroDesc" placeholder="选填，显示在主标题下方" :rows="3" :maxlength="1000" />
               </a-form-item>
               <div class="field-tip" style="margin: -8px 0 16px">
-                头图背景图片在「Banner管理」中按页面维护，此处只配文案
+                头图背景图与视频在上方「官网页面」里上传；未上传时沿用「Banner管理」里该页面的头图
               </div>
             </template>
             <!-- SEO 信息（TDK）：仅顶级板块页可填，用于前台页面搜索引擎优化 -->
@@ -172,7 +116,16 @@
               <a-form-item label="SEO 描述">
                 <a-textarea v-model:value="form.seoDescription" placeholder="搜索结果摘要，建议 150 字以内" :rows="3" :maxlength="500" show-count />
               </a-form-item>
+              <!-- 未填 SEO 标题时前台用网站名称，这里同口径回落，预览才与实际一致 -->
+              <SeoPreview
+                class="seo-preview-gap"
+                :title="form.seoTitle || form.name"
+                :description="form.seoDescription"
+                :image="form.heroBg"
+                :url="form.portalPath || editingPortalPath"
+              />
             </template>
+            <ChannelAdvancedFields :key="formSeq" v-model="form" />
             <a-form-item :wrapper-col="{ offset: 0 }" class="form-actions">
               <a-space>
                 <a-button type="primary" :loading="saving" @click="onSave">保存</a-button>
@@ -190,17 +143,19 @@
 // 栏目管理：可视化增删改菜单结构与字段配置
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import type { AntTreeNodeDropEvent, AntTreeNodeMouseEvent } from 'ant-design-vue/es/tree'
-import type { DataNode } from 'ant-design-vue/es/vc-tree/interface'
-import type { AllowDropOptions } from 'ant-design-vue/es/vc-tree/props'
-import { PlusOutlined, EditOutlined, DeleteOutlined, ControlOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/PageContainer/index.vue'
 import {
   getChannelList, addChannel, updateChannel, deleteChannel,
-  BLOCK_LAYOUT_OPTIONS, type BlockLayout, type Channel
+  BLOCK_LAYOUT_OPTIONS, LAYOUT_DEFAULT_FIELDS, type BlockLayout, type BlockTone, type Channel
 } from '@/api/cms'
 import { useChannels } from '@/composables/useChannels'
-import { FIELD_DEFS, COLUMN_LABELS, EXTRA_FIELD_OPTIONS, isExtraField } from './fieldDefs'
+import { pruneChannelPayload } from './channelPayload'
+import { hideable } from './channelRules'
+import ChannelTree from './components/ChannelTree.vue'
+import ChannelPageFields from './components/ChannelPageFields.vue'
+import BlockAppearanceFields from './components/BlockAppearanceFields.vue'
+import ChannelAdvancedFields from './components/ChannelAdvancedFields.vue'
+import SeoPreview from '@/components/SeoPreview/index.vue'
 
 const { load, channels } = useChannels()
 
@@ -212,9 +167,9 @@ const saving = ref(false)
 const loadingTree = ref(false)
 
 const typeOptions = [
-  { label: '纯父级分组', value: 'group' },
-  { label: '列表+编辑', value: 'list' },
-  { label: '单条富文本', value: 'single' },
+  { label: '分组（只用来归类，本身无内容）', value: 'group' },
+  { label: '多条内容（如新闻、产品、案例）', value: 'list' },
+  { label: '单页内容（如公司简介）', value: 'single' },
   { label: '基本信息', value: 'siteconfig' },
   { label: '管理员管理', value: 'admins' },
   { label: '会员管理', value: 'members' },
@@ -222,12 +177,6 @@ const typeOptions = [
   { label: '注册登录配置', value: 'authconfig' },
   { label: '登录日志', value: 'loginlog' }
 ]
-// 基础字段（content 顶层列）与扩展字段（content.extra）分组显示，两组共用同一个 formFields 数组
-const fieldOptions = Object.keys(FIELD_DEFS)
-  .filter(k => !isExtraField(k))
-  .map(k => ({ label: FIELD_DEFS[k].label, value: k }))
-const extraFieldOptions = EXTRA_FIELD_OPTIONS
-const columnOptions = Object.keys(COLUMN_LABELS).map(k => ({ label: COLUMN_LABELS[k], value: k }))
 const layoutOptions = BLOCK_LAYOUT_OPTIONS
 
 const defaultForm = () => ({
@@ -239,9 +188,22 @@ const defaultForm = () => ({
   anchor: '', subheading: '', layout: undefined as BlockLayout | undefined,
   menuGroup: '', menuDesc: '',
   heroEyebrow: '', heroTitle: '', heroDesc: '',
-  seoTitle: '', seoKeywords: '', seoDescription: ''
+  seoTitle: '', seoKeywords: '', seoDescription: '',
+  // 官网页面字段（仅一级栏目）
+  portalPath: '', menuParent: undefined as string | undefined, externalUrl: '', heroBg: '', heroVideo: '',
+  // 区块外观（仅区块子栏目）：auto / 0 / 空串 即模板默认
+  blockTone: 'auto' as BlockTone, blockBg: '', blockColumns: 0, headingAlign: '' as '' | 'center' | 'left'
 })
 const form = reactive(defaultForm())
+
+/** 系统功能栏目：没有官网页面 */
+const SYSTEM_TYPES = ['siteconfig', 'admins', 'members', 'feedback', 'authconfig', 'loginlog', 'oplog']
+/** 只做后台菜单分组、不对应官网页面的一级栏目 */
+const NON_PAGE_KEYS = ['banner', 'member-center']
+// 官网页面配置只对一级内容栏目开放
+const showPageFields = computed(() =>
+  form.parentId === null && !SYSTEM_TYPES.includes(form.type) && !NON_PAGE_KEYS.includes(form.key)
+)
 
 // SEO（TDK）仅对顶级公开板块页开放：排除系统类栏目与不对外的分组容器
 // （Banner 管理、会员中心都是后台菜单分组，前台没有对应页面，配了 SEO 也不会输出）
@@ -251,48 +213,15 @@ const SEO_EXCLUDE_TYPES = [
 ]
 const SEO_EXCLUDE_KEYS = ['banner', 'member-center']
 
-/** 后端拒删的系统功能栏目类型，须与 server channel.service.ts remove() 的清单一致 */
-const UNDELETABLE_TYPES = [
-  'siteconfig', 'admins', 'members', 'feedback', 'authconfig', 'loginlog', 'oplog',
-]
-/**
- * 是否显示删除入口：官网一级页面与系统栏目后端必拒，不给入口免得点了才被告知不行。
- * 「后代含系统栏目」这类需要查整棵树的情况仍交给后端判断并提示
- */
-const canDelete = (node: Channel) => !node.portalPath && !UNDELETABLE_TYPES.includes(node.type)
 const showSeo = computed(() =>
   form.parentId === null &&
   !SEO_EXCLUDE_TYPES.includes(form.type) &&
   !SEO_EXCLUDE_KEYS.includes(form.key)
 )
 
-// 启用/禁用对一级与二级栏目都开放，与后端 assertHideable 口径一致：
-// 系统功能栏目禁用后会失去入口，首页是前台根路径
-const hideable = (node: { type: string; portalPath?: string | null }) =>
-  !UNDELETABLE_TYPES.includes(node.type) && node.portalPath !== '/'
-
 const canHide = computed(() =>
   !!form.id && hideable({ type: form.type, portalPath: editingPortalPath.value })
 )
-
-// 栏目树上的就地开关：不必进编辑面板，一处集中管理所有栏目的启用状态
-const toggling = ref<number | null>(null)
-const onToggleEnabled = async (node: Channel, enabled: boolean) => {
-  toggling.value = node.id
-  try {
-    const res = await updateChannel({ id: node.id, hidden: !enabled })
-    if (res.data.code === 200) {
-      message.success(enabled ? `已启用「${node.name}」` : `已禁用「${node.name}」`)
-      await load(true) // 刷新树与侧边栏
-    } else {
-      message.error(res.data.message || '操作失败')
-    }
-  } catch {
-    message.error('操作失败')
-  } finally {
-    toggling.value = null
-  }
-}
 
 // 当前编辑节点的前台路径，仅用于判断是否展示头图配置，不参与提交
 const editingPortalPath = ref('')
@@ -300,8 +229,9 @@ const editingPortalPath = ref('')
 // 页面头图文案只对走通用栏目页模板的前台页面开放：
 // 有 portalPath 才是前台页面；首页有独立首屏设计，不读栏目头图字段，配了也不生效
 const HERO_EXCLUDE_KEYS = ['home']
+// 跟随表单里正在编辑的路径：新建页面填了路径即可同时配头图文案
 const showHero = computed(() =>
-  !!editingPortalPath.value && !HERO_EXCLUDE_KEYS.includes(form.key)
+  form.parentId === null && !!(form.portalPath || editingPortalPath.value) && !HERO_EXCLUDE_KEYS.includes(form.key)
 )
 
 /** 是否首页板块栏目（父级为 home）：前台由固定版式渲染，只有标题可配 */
@@ -317,17 +247,6 @@ const showBlockConfig = computed(() =>
   (form.type === 'list' || form.type === 'single')
 )
 
-// 扁平 → 树
-const treeData = computed(() => {
-  type ChannelTreeNode = Channel & { children: ChannelTreeNode[] }
-  const toTree = (parentId: number | null): ChannelTreeNode[] =>
-    flat.value
-      .filter(c => c.parentId === parentId)
-      .sort((a, b) => a.sort - b.sort)
-      .map(c => ({ ...c, children: toTree(c.id) }))
-  return toTree(null)
-})
-
 const fetchList = async () => {
   loadingTree.value = true
   try {
@@ -341,75 +260,30 @@ const fetchList = async () => {
   }
 }
 
-const onSelect = (keys: (string | number)[]) => {
-  if (!keys.length) return
-  const node = flat.value.find(c => c.id === Number(keys[0]))
-  if (node) openEdit(node)
-}
-
-// 仅允许同级排序：拖到节点之间的间隙（非放入节点内部），且与拖动节点同父
-const allowTreeDrop = ({ dropNode, dropPosition }: AllowDropOptions<DataNode>) => {
-  if (dropPosition === 0) return false // 0 = 放到节点内部，禁止改变层级
-  const target = flat.value.find(c => c.id === dropNode.id)
-  return !!target && target.parentId === draggingParentId
-}
-
-let draggingParentId: number | null = null
-const onTreeDragStart = ({ node }: AntTreeNodeMouseEvent) => {
-  const n = flat.value.find(c => c.id === node.id)
-  draggingParentId = n ? n.parentId : null
-}
-// 拖拽结束（含取消）统一清空，避免残留值影响下一次 allowDrop 校验
-const onTreeDragEnd = () => { draggingParentId = null }
-
-// 拖拽放下：在同一父级内按新顺序重排并回写 sort
-const onTreeDrop = async (info: AntTreeNodeDropEvent) => {
-  try {
-    const drag = flat.value.find(c => c.id === info.dragNode.id)
-    const drop = flat.value.find(c => c.id === info.node.id)
-    if (!drag || !drop || drag.parentId !== drop.parentId) return
-
-    // 计算相对位置：>0 落在 drop 之后，<0 落在 drop 之前，0 放入内部（禁止）
-    const dropPos = String(info.node.pos).split('-')
-    const relative = info.dropPosition - Number(dropPos[dropPos.length - 1])
-    if (relative === 0) return
-
-    // 当前父级下的同级节点（按 sort 升序），移除拖动项后插入目标位置
-    const siblings = flat.value
-      .filter(c => c.parentId === drag.parentId)
+// 上级栏目下拉用的树（扁平 → 树）
+const treeData = computed(() => {
+  type ChannelTreeNode = Channel & { children: ChannelTreeNode[] }
+  const toTree = (parentId: number | null): ChannelTreeNode[] =>
+    flat.value
+      .filter(c => c.parentId === parentId)
       .sort((a, b) => a.sort - b.sort)
-    const fromIdx = siblings.findIndex(c => c.id === drag.id)
-    if (fromIdx === -1) return
-    siblings.splice(fromIdx, 1)
-    const dropIdx = siblings.findIndex(c => c.id === drop.id)
-    if (dropIdx === -1) return // 目标已不在同级，放弃以防错位
-    siblings.splice(relative > 0 ? dropIdx + 1 : dropIdx, 0, drag)
+      .map(c => ({ ...c, children: toTree(c.id) }))
+  return toTree(null)
+})
 
-    // 重新分配连续 sort，仅回写变化项
-    const changed: Channel[] = []
-    siblings.forEach((c, i) => {
-      const newSort = i + 1
-      if (c.sort !== newSort) {
-        c.sort = newSort
-        changed.push(c)
-      }
-    })
-    if (!changed.length) return
+// 新建区块选定展示形态时，按形态自动勾选它会用到的内容字段（已建栏目不动，尊重已有配置）
+watch(() => form.layout, (layout) => {
+  if (form.id || !layout) return
+  const fields = LAYOUT_DEFAULT_FIELDS[layout]
+  if (fields) form.formFields = [...fields]
+})
 
-    try {
-      await Promise.all(changed.map(c => updateChannel({ id: c.id, sort: c.sort })))
-      message.success('排序已更新')
-      await load(true) // 同步刷新侧边栏菜单
-    } catch {
-      message.error('排序更新失败')
-      await fetchList()
-    }
-  } finally {
-    draggingParentId = null
-  }
-}
+/** 每次打开编辑面板递增，作为页面配置组件的 key 强制重建，重新推断页面类型 */
+const formSeq = ref(0)
+const pageFieldsRef = ref<InstanceType<typeof ChannelPageFields>>()
 
 const openAdd = (parentId: number | null) => {
+  formSeq.value += 1
   Object.assign(form, defaultForm())
   form.parentId = parentId
   // 新建栏目还没有前台路径，不展示头图配置
@@ -418,6 +292,7 @@ const openAdd = (parentId: number | null) => {
 }
 
 const openEdit = (node: Channel) => {
+  formSeq.value += 1
   editingPortalPath.value = node.portalPath || ''
   Object.assign(form, defaultForm(), {
     id: node.id,
@@ -440,7 +315,16 @@ const openEdit = (node: Channel) => {
     heroDesc: node.heroDesc || '',
     seoTitle: node.seoTitle || '',
     seoKeywords: node.seoKeywords || '',
-    seoDescription: node.seoDescription || ''
+    seoDescription: node.seoDescription || '',
+    portalPath: node.portalPath || '',
+    menuParent: node.menuParent || undefined,
+    externalUrl: node.externalUrl || '',
+    heroBg: node.heroBg || '',
+    heroVideo: node.heroVideo || '',
+    blockTone: node.blockTone || 'auto',
+    blockBg: node.blockBg || '',
+    blockColumns: node.blockColumns || 0,
+    headingAlign: node.headingAlign || ''
   })
   editing.value = true
 }
@@ -450,43 +334,32 @@ const onSave = async () => {
     message.error('请输入栏目名称')
     return
   }
+  if (!form.id && !form.key.trim()) {
+    message.error('请在「高级设置」里填写栏目标识')
+    return
+  }
+  const block = showBlockConfig.value && !isHomeSection.value
+  if (block && form.blockTone === 'image' && !form.blockBg) {
+    message.error('区块底色选了「背景图」，请上传背景图')
+    return
+  }
+  if (showPageFields.value) {
+    const pageError = pageFieldsRef.value?.validate()
+    if (pageError) {
+      message.error(pageError)
+      return
+    }
+  }
   saving.value = true
   try {
-    const payload = { ...form }
-    // 非顶级板块页不保存 SEO 字段，避免污染子栏目数据
-    if (!showSeo.value) {
-      const seoPayload = payload as Partial<typeof payload>
-      delete seoPayload.seoTitle
-      delete seoPayload.seoKeywords
-      delete seoPayload.seoDescription
-    }
-    // 不展示头图表单的栏目（子栏目、系统栏目、首页）不提交头图字段
-    if (!showHero.value) {
-      const heroPayload = payload as Partial<typeof payload>
-      delete heroPayload.heroEyebrow
-      delete heroPayload.heroTitle
-      delete heroPayload.heroDesc
-    }
-    // 首页板块只提交主标题：锚点与展示形态界面上不展示，提交空值会把库里的值清掉
-    if (isHomeSection.value) {
-      const homePayload = payload as Partial<typeof payload>
-      delete homePayload.anchor
-      delete homePayload.layout
-    } else if (!showBlockConfig.value) {
-      // 顶级栏目本身是页面不是区块，不保存区块字段
-      const blockPayload = payload as Partial<typeof payload>
-      delete blockPayload.anchor
-      delete blockPayload.subheading
-      delete blockPayload.layout
-      delete blockPayload.menuGroup
-      delete blockPayload.menuDesc
-    }
-    // 首页板块同样不在界面上展示菜单字段，提交空值会清掉库里的值
-    if (isHomeSection.value) {
-      const menuPayload = payload as Partial<typeof payload>
-      delete menuPayload.menuGroup
-      delete menuPayload.menuDesc
-    }
+    // 界面上没展示的字段不提交，否则默认空值会把库里已有的值清掉
+    const payload = pruneChannelPayload(form, {
+      seo: showSeo.value,
+      hero: showHero.value,
+      homeSection: isHomeSection.value,
+      block: showBlockConfig.value,
+      page: showPageFields.value
+    })
     const res = payload.id
       ? await updateChannel(payload as Channel)
       : await addChannel(payload as Partial<Channel>)
@@ -535,6 +408,10 @@ onMounted(fetchList)
 </script>
 
 <style scoped>
+.seo-preview-gap {
+  margin-bottom: 16px;
+}
+
 .channel-manage {
   background: transparent;
 }
@@ -546,36 +423,10 @@ onMounted(fetchList)
   margin-bottom: 16px;
 }
 
-.node-hidden {
-  color: #bfbfbf;
-}
-
-.node-hidden-tag {
-  margin-left: 8px;
-}
-
 .layout {
   display: flex;
   gap: 16px;
   align-items: flex-start;
-}
-
-.tree-pane {
-  width: 380px;
-  flex-shrink: 0;
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  max-height: calc(100vh - 180px);
-  overflow: auto;
-}
-
-.pane-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  font-weight: 600;
 }
 
 .form-pane {
@@ -593,61 +444,13 @@ onMounted(fetchList)
   padding-left: 100px;
 }
 
-/* 树节点就地启用开关：与操作图标一样，仅鼠标移入时显示 */
-.node-switch {
-  display: none;
-  margin-right: 10px;
-}
-
-.node-row:hover .node-switch {
-  display: inline-block;
-}
-
-.node-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.node-main {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.node-drag-handle {
-  color: #bfbfbf;
-  font-size: 14px;
-  cursor: grab;
-}
-
-.node-drag-handle:hover {
-  color: #2f7cff;
-}
-
-.node-drag-handle:active {
-  cursor: grabbing;
-}
-
-.node-ops {
-  display: none;
-  gap: 10px;
-  color: #8c8c8c;
-}
-
-.node-ops .anticon:hover {
-  color: #2f7cff;
-}
-
-.node-row:hover .node-ops {
-  display: inline-flex;
-}
-
 .field-tip {
   margin-top: 4px;
   font-size: 12px;
   color: #8c8c8c;
+}
+
+.home-tip {
+  margin-bottom: 16px;
 }
 </style>

@@ -6,8 +6,10 @@ export interface AdminVo {
   id: number
   account: string
   name: string
-  /** 已授权的一级菜单名；超管返回空数组，由 isSuper 表达「全部权限」 */
+  /** 账号单独勾选的一级菜单名（不含角色带来的）；超管返回空数组，由 isSuper 表达「全部权限」 */
   perms: string[]
+  /** 所属角色 id，null 为不套角色 */
+  roleId: number | null
   isSuper: boolean
   wechatBound: boolean
   createTime: string
@@ -40,19 +42,23 @@ export function toAdminVo(a: Admin): AdminVo {
     account: a.account,
     name: a.name,
     perms: parsePerms(a.perms),
+    roleId: a.roleId ?? null,
     isSuper: a.isSuper,
     wechatBound: a.wechatBound,
     createTime: a.createdAt?.toISOString() ?? '',
   }
 }
 
-/** 实体转当前登录身份 VO */
-export function toAdminProfileVo(a: Admin): AdminProfileVo {
+/**
+ * 实体转当前登录身份 VO
+ * @param perms 最终权限（含角色带来的），由 AdminService.effectivePerms 算出
+ */
+export function toAdminProfileVo(a: Admin, perms: string[]): AdminProfileVo {
   return {
     id: a.id,
     account: a.account,
     name: a.name,
-    perms: parsePerms(a.perms),
+    perms,
     isSuper: a.isSuper,
   }
 }

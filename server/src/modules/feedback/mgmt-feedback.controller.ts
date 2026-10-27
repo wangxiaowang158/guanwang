@@ -11,7 +11,9 @@ import { CurrentAdmin } from '../../common/decorators/current-admin.decorator'
 import { PermGuard } from '../../common/guards/perm.guard'
 import { PERM, RequirePerm } from '../../common/decorators/require-perm.decorator'
 import { raw } from '../../common/interceptors/transform.interceptor'
-import { FeedbackQueryDto, ReplyFeedbackDto, UpdateFeedbackStatusDto } from './dto/feedback.dto'
+import { FeedbackQueryDto, ReplyFeedbackDto, SaveNotifyConfigDto, UpdateFeedbackStatusDto } from './dto/feedback.dto'
+import { FeedbackNotifyService } from './feedback-notify.service'
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 
 @Controller('mgmt/feedback')
 @UseGuards(AdminGuard, PermGuard)
@@ -20,6 +22,7 @@ export class MgmtFeedbackController {
   constructor(
     private readonly service: FeedbackService,
     private readonly exportService: FeedbackExportService,
+    private readonly notify: FeedbackNotifyService,
   ) {}
 
   /** 反馈列表（分页 + 来源/状态/类型/关键词/日期筛选） */
@@ -98,5 +101,27 @@ export class MgmtFeedbackController {
 
     const result = await this.service.remove(parsed)
     return result.ok ? raw(result.data, '删除成功') : raw(null, result.message, 404)
+  }
+
+  /** 新留言推送配置（地址打码返回，不回显机器人密钥） */
+  @Get('notify-config')
+  notifyConfig() {
+    return this.notify.getConfig()
+  }
+
+  /** 保存推送配置；地址限定三家官方机器人域名 */
+  @Put('notify-config')
+  async saveNotifyConfig(@Body() dto: SaveNotifyConfigDto) {
+    await this.notify.saveConfig(dto.type, dto.webhookUrl)
+    return raw(await this.notify.getConfig(), '已保存')
+  }
+
+  /** 发一条测试消息到群里；限流防止误点刷屏 */
+  @Post('notify-test')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  async notifyTest() {
+    const err = await this.notify.sendTest()
+    return err ? raw(null, `推送失败：${err}`, 400) : raw(null, '测试消息已发送，请到群里查看')
   }
 }

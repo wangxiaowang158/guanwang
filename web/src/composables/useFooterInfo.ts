@@ -3,7 +3,7 @@
 import { computed, onMounted } from 'vue'
 import type { MenuNode } from '@/api/menu'
 import { useSiteStore } from '@/stores/site'
-import { defaultCopyright } from '@/config/brand'
+import { useBrand } from './useBrand'
 import { sanitizeRichText } from '@/utils/sanitize'
 
 /** 页脚按栏目分栏展示的列数上限，其余一级栏目只在「更多」列里出现名称 */
@@ -27,12 +27,26 @@ export function useFooterInfo() {
     const raw = (site.value.copyright || '').trim()
     return raw ? sanitizeRichText(raw.replace(/\n/g, '<br>')) : ''
   })
-  const copyrightFallback = defaultCopyright()
+  // 公司全称后台可改，兜底文案随之变化
+  const { copyrightFallback } = useBrand()
 
-  /** 有子栏目的一级栏目，按栏目分栏展示其子菜单 */
-  const groups = computed(() => menu.value.filter(m => m.children?.length).slice(0, FOOTER_GROUP_MAX))
-  /** 其余一级栏目：归入「更多」列 */
+  /** 页脚设置（分栏、友情链接、社交账号），后台「基本信息 → 页脚设置」维护 */
+  const footerConfig = computed(() => site.value.footerConfig)
+  /** 后台选了分栏：只显示所选导航、按所选顺序，不再出「更多」列 */
+  const pickedColumns = computed(() => footerConfig.value?.columns ?? [])
+
+  /** 分栏：后台选了按所选；没选时取有子栏目的一级栏目，最多 4 栏 */
+  const groups = computed(() => {
+    if (pickedColumns.value.length) {
+      return pickedColumns.value
+        .map(key => menu.value.find(m => m.key === key))
+        .filter((m): m is MenuNode => !!m)
+    }
+    return menu.value.filter(m => m.children?.length).slice(0, FOOTER_GROUP_MAX)
+  })
+  /** 其余一级栏目：归入「更多」列；后台选了分栏时不出这一列 */
   const others = computed(() => {
+    if (pickedColumns.value.length) return []
     const grouped = new Set(groups.value.map(g => g.key))
     return menu.value.filter(m => !grouped.has(m.key))
   })
@@ -46,5 +60,5 @@ export function useFooterInfo() {
     siteStore.fetchMenu()
   })
 
-  return { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo }
+  return { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo, footerConfig }
 }

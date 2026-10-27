@@ -42,9 +42,11 @@
       >
         <PageHeader v-model:collapsed="collapsed" style="position: sticky; top: 0; z-index: 10" />
         <a-layout-content :style="{ margin: '16px' }">
-          <router-view v-slot="{ Component }">
+          <router-view v-slot="{ Component, route: r }">
             <transition name="fade" mode="out-in">
-              <component :is="Component" />
+              <!-- 编辑页按地址重建：/edit/1 → /edit/2（浏览器前进后退）同一路由会复用实例，
+                   载入只在挂载时跑，不重建就会停留在上一条内容上。其余页面不加 key，保持原有复用 -->
+              <component :is="Component" :key="r.name === 'CmsEdit' ? r.path : undefined" />
             </transition>
           </router-view>
         </a-layout-content>

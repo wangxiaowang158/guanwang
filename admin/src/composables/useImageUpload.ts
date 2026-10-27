@@ -18,9 +18,10 @@ export function useImageUpload() {
    * 校验并上传文件选择框里的图片
    * 类型必须在前端校验：accept 只约束选择框，用户仍可拖拽或改筛选条件绕过
    * @param input 触发 change 的 file 输入框，处理完会被清空以便重复选同一文件
+   * @param raw 原图上传，不加水印、不转格式（品牌素材用）
    * @returns 上传成功返回图片地址，校验不通过或失败返回 null
    */
-  const pickAndUpload = async (input: HTMLInputElement): Promise<string | null> => {
+  const pickAndUpload = async (input: HTMLInputElement, raw = false): Promise<string | null> => {
     const file = input.files?.[0]
     input.value = ''
     if (!file) return null
@@ -34,7 +35,7 @@ export function useImageUpload() {
     }
     uploading.value = true
     try {
-      const res = await uploadImage(file)
+      const res = await uploadImage(file, raw)
       if (res.data.code !== 200 || !res.data.data?.url) {
         message.error(res.data.message || UPLOAD_FAILED)
         return null

@@ -5,37 +5,43 @@
     :class="solid ? 'bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]' : 'bg-transparent'"
     @keydown.esc="onEscape"
   >
-    <div class="mx-auto px-6 lg:px-10" style="max-width: var(--rs-content-max)">
+    <!-- 左右边距与正文容器同一 token，任何屏宽下 Logo 与板块内容左缘对齐 -->
+    <div class="mx-auto" style="max-width: var(--rs-content-max); padding-inline: var(--rs-content-px)">
       <div class="flex items-center justify-between h-[76px]">
-        <RouterLink to="/" class="flex items-center gap-3 no-underline shrink-0" :aria-label="`${COMPANY_SHORT} 首页`">
-          <img v-if="siteLogo" :src="siteLogo" :alt="COMPANY_SHORT" class="h-10 w-auto max-w-[160px] object-contain" width="144" height="40" fetchpriority="high" />
+        <RouterLink to="/" class="flex items-center gap-3 no-underline shrink-0" :aria-label="`${companyShort} 首页`">
+          <img v-if="siteLogo" :src="siteLogo" :alt="companyShort" class="h-10 w-auto max-w-[160px] object-contain" width="144" height="40" fetchpriority="high" />
           <template v-else>
             <span class="w-10 h-10 flex items-center justify-center text-white text-lg font-bold" style="background: var(--rs-primary)" aria-hidden="true">恒</span>
             <span class="flex flex-col leading-none">
-              <span class="font-bold text-lg transition-colors" :class="textColor">{{ COMPANY_SHORT }}</span>
-              <span class="text-[10px] tracking-[0.25em] mt-1 transition-colors" :class="subColor">{{ COMPANY_EN }}</span>
+              <span class="font-bold text-lg transition-colors" :class="textColor">{{ companyShort }}</span>
+              <span class="text-[10px] tracking-[0.25em] mt-1 transition-colors" :class="subColor">{{ companyEn }}</span>
             </span>
           </template>
         </RouterLink>
 
-        <nav class="hidden lg:flex items-stretch gap-1 h-full" aria-label="主导航">
+        <!-- 一行放不下的栏目收进末尾「更多」，见 useNavOverflow；占满 Logo 与右侧入口之间的宽度，栏目靠右排 -->
+        <nav ref="navRef" class="hidden lg:flex items-stretch justify-end gap-1 h-full flex-1 min-w-0 mx-6" aria-label="主导航">
           <div
             v-for="(item, idx) in menu"
             :key="item.key"
+            data-nav-item
             class="relative flex"
+            :class="{ 'rs-nav-item--overflow': isOverflow(idx) }"
+            :aria-hidden="isOverflow(idx) || undefined"
             @mouseenter="openDropdown(item.key)"
             @mouseleave="scheduleClose"
             @focusin="openDropdown(item.key)"
             @focusout="onFocusOut"
           >
-            <RouterLink
+            <NavLink
               :to="item.path"
+              :external="item.external"
               class="flex items-center px-4 text-sm font-medium transition-colors no-underline whitespace-nowrap rs-nav-link"
               :class="[textColor, { 'is-active': isActive(item) }]"
               :aria-current="isActive(item) ? 'page' : undefined"
               :aria-controls="item.children?.length ? `nav-panel-${item.key}` : undefined"
               :aria-expanded="item.children?.length ? openKey === item.key : undefined"
-            >{{ item.label }}</RouterLink>
+            >{{ item.label }}</NavLink>
 
             <Transition name="rs-dropdown">
               <!-- 子项带分组：超级菜单多列展示，显示分组标题与说明 -->
@@ -43,18 +49,18 @@
                 v-if="item.children?.length && openKey === item.key && groupChildren(item.children)"
                 :id="`nav-panel-${item.key}`"
                 class="rs-mega absolute top-full bg-white shadow-xl border-t-2"
-                :class="idx >= menu.length / 2 ? 'right-0' : 'left-0'"
+                :class="idx >= visibleMenu.length / 2 ? 'right-0' : 'left-0'"
                 :style="{ borderColor: 'var(--rs-primary)', '--mega-cols': Math.min(groupChildren(item.children)?.length ?? 1, 4) }"
               >
                 <section v-for="g in groupChildren(item.children)" :key="g.title" class="min-w-0">
                   <p v-if="g.title" class="rs-mega-title">{{ g.title }}</p>
-                  <RouterLink v-for="child in g.items" :key="child.key" :to="childTo(child)" class="rs-dropdown-link rs-mega-link">
+                  <NavLink v-for="child in g.items" :key="child.key" :to="childTo(child)" :external="child.external" class="rs-dropdown-link rs-mega-link">
                     <img v-if="child.icon" :src="child.icon" alt="" class="rs-mega-icon" width="24" height="24" loading="lazy" />
                     <span class="min-w-0">
                       <span class="block">{{ child.label }}</span>
                       <span v-if="child.desc" class="rs-mega-desc">{{ child.desc }}</span>
                     </span>
-                  </RouterLink>
+                  </NavLink>
                 </section>
               </div>
               <!-- 无分组：保持原有单列 -->
@@ -63,27 +69,74 @@
                 class="absolute left-0 top-full min-w-48 bg-white shadow-xl py-2 border-t-2"
                 style="border-color: var(--rs-primary)"
               >
-                <RouterLink
+                <NavLink
                   v-for="child in item.children"
                   :key="child.key"
                   :to="childTo(child)"
+                  :external="child.external"
                   class="block px-5 py-2.5 text-sm text-ink-700 transition-colors no-underline whitespace-nowrap rs-dropdown-link"
-                >{{ child.label }}</RouterLink>
+                >{{ child.label }}</NavLink>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- 「更多」：始终渲染以便测量宽度，无溢出时隐藏 -->
+          <div
+            data-nav-more
+            class="relative flex"
+            :class="{ 'rs-nav-item--overflow': !overflowMenu.length }"
+            :aria-hidden="!overflowMenu.length || undefined"
+            @mouseenter="openDropdown(MORE_KEY)"
+            @mouseleave="scheduleClose"
+            @focusin="openDropdown(MORE_KEY)"
+            @focusout="onFocusOut"
+          >
+            <button
+              type="button"
+              class="flex items-center px-4 text-sm font-medium transition-colors whitespace-nowrap rs-nav-link rs-nav-more"
+              :class="[textColor, { 'is-active': overflowMenu.some(isActive) }]"
+              :aria-controls="`nav-panel-${MORE_KEY}`"
+              :aria-expanded="openKey === MORE_KEY"
+              @click="openDropdown(MORE_KEY)"
+            >更多</button>
+            <Transition name="rs-dropdown">
+              <div
+                v-if="overflowMenu.length && openKey === MORE_KEY"
+                :id="`nav-panel-${MORE_KEY}`"
+                class="rs-more absolute right-0 top-full min-w-56 bg-white shadow-xl py-2 border-t-2"
+                style="border-color: var(--rs-primary)"
+              >
+                <section v-for="item in overflowMenu" :key="item.key" class="rs-more-group">
+                  <NavLink
+                    :to="item.path"
+                    :external="item.external"
+                    class="block px-5 py-2.5 text-sm font-bold text-ink-900 no-underline whitespace-nowrap rs-dropdown-link"
+                    :aria-current="isActive(item) ? 'page' : undefined"
+                  >{{ item.label }}</NavLink>
+                  <NavLink
+                    v-for="child in item.children"
+                    :key="child.key"
+                    :to="childTo(child)"
+                    :external="child.external"
+                    class="block pl-9 pr-5 py-2 text-sm text-ink-700 no-underline whitespace-nowrap rs-dropdown-link"
+                  >{{ child.label }}</NavLink>
+                </section>
               </div>
             </Transition>
           </div>
         </nav>
 
         <div class="flex items-center gap-4 shrink-0">
+          <SearchEntry class="hidden lg:inline-flex transition-colors" :class="textColor" />
           <MemberEntry class="hidden lg:flex transition-colors" :class="textColor" />
-          <a
-            v-if="sitePhone"
-            :href="`tel:${sitePhone}`"
-            class="rs-call hidden lg:flex items-center gap-2 px-5 h-10 text-sm font-medium text-white no-underline tabular-nums"
+          <!-- 常驻咨询入口：顶栏容器定宽，导航 + 会员 + 咨询已占满，电话改由右下角悬浮栏、移动端抽屉与页脚承担 -->
+          <button
+            type="button"
+            class="rs-call hidden lg:flex items-center px-5 h-10 text-sm font-medium text-white"
+            @click="openLead('consult', '顶栏')"
           >
-            <PhoneIcon class="w-4 h-4" />
-            {{ sitePhone }}
-          </a>
+            项目咨询
+          </button>
           <button
             type="button"
             class="lg:hidden p-2 -mr-2 transition-colors"
@@ -119,13 +172,17 @@
 
 <script setup lang="ts">
 // 样式二顶栏：行为逻辑见 useHeaderNav，本组件只管呈现与「透明/实底」切换
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { COMPANY_EN, COMPANY_SHORT } from '@/config/brand'
+import { useBrand } from '@/composables/useBrand'
 import { groupChildren, useHeaderNav } from '@/composables/useHeaderNav'
+import { MORE_KEY, useNavOverflow } from '@/composables/useNavOverflow'
+import { useLeadModal } from '@/composables/useLeadModal'
 import MemberEntry from './MemberEntry.vue'
+import SearchEntry from './SearchEntry.vue'
 import MobileNav from './MobileNav.vue'
-import PhoneIcon from './PhoneIcon.vue'
+import NavLink from './NavLink.vue'
+import { channelHeroReady } from '@/composables/useChannelHero'
 
 const route = useRoute()
 const {
@@ -133,6 +190,10 @@ const {
   menuOpen, openKey, expandedKey,
   isActive, childTo, openDropdown, scheduleClose, onFocusOut, onEscape, closeMobile,
 } = useHeaderNav()
+const { companyShort, companyEn } = useBrand()
+const { openLead } = useLeadModal()
+const navRef = ref<HTMLElement | null>(null)
+const { visibleMenu, overflowMenu, isOverflow } = useNavOverflow(navRef, menu)
 
 /**
  * 带深色首屏的页面：首页与 8 个栏目页（样式二的首屏与栏目头图都是深色底）
@@ -140,9 +201,11 @@ const {
  */
 const DARK_HERO_ROUTES = new Set([
   'home', 'business', 'business-energy', 'business-building', 'business-living',
-  'products', 'solutions', 'case', 'news', 'alliance', 'about',
+  'news', 'alliance', 'about',
 ])
-const onDarkHero = computed(() => DARK_HERO_ROUTES.has(String(route.name ?? '')))
+// 通用栏目路由能匹配任意地址，是否深色头图由栏目页告知（不存在、加载失败时是浅底）
+const onDarkHero = computed(() =>
+  route.name === 'channel' ? channelHeroReady.value : DARK_HERO_ROUTES.has(String(route.name ?? '')))
 
 // 实底：离开深色首屏、已滚动、或移动端抽屉展开（抽屉是白底，顶栏须同色）
 const solid = computed(() => !onDarkHero.value || scrolled.value || menuOpen.value)
@@ -210,6 +273,18 @@ const subColor = computed(() => (solid.value ? 'text-ink-500' : 'text-white/60')
 /* 悬停整行变红底时，说明文字同步转白，否则灰字压红底看不清 */
 .rs-mega-link:hover .rs-mega-desc,
 .rs-mega-link:focus-visible .rs-mega-desc { color: rgba(255, 255, 255, 0.85); }
+/* 被收纳进「更多」的栏目：脱离文档流且不可见、不可聚焦，但保留宽度供重新测量 */
+.rs-nav-item--overflow {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+.rs-nav-more { background: none; border: 0; cursor: pointer; font-family: inherit; }
+.rs-more {
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.rs-more-group + .rs-more-group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rs-border); }
 .rs-call {
   background: var(--rs-primary);
   transition: background 0.2s ease;

@@ -56,8 +56,10 @@ onMounted(() => {
 <style scoped>
 .me {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   font-size: 14px;
 }
 

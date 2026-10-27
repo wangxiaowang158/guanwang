@@ -39,11 +39,12 @@ const BLOCK_MAX_ITEMS = 8
 /**
  * 允许预渲染的路径形态
  * 先按形状挡一道再查库：随机 URL 打过来时连一次栏目查询都不用发。
- * 只放行小写字母数字连字符的单层路径与 /article/数字，会员中心（多层、要登录态）不在其列。
+ * 只放行小写字母数字连字符的一~两层路径（栏目页，如 /energy-solutions/overview）与 /article/数字；
+ * 会员中心要登录态，形态上虽能通过，但没有对应栏目，正文片段自然为空。
  * /privacy 形态上被放行：正文片段因无对应栏目自然为空（静态文案不预渲染），
  * head 片段则按固定口径输出隐私政策的标题描述
  */
-const PATH_PATTERN = /^\/(?:[a-z0-9-]{1,32}|article\/\d{1,12})?$/
+const PATH_PATTERN = /^\/(?:[a-z0-9-]{1,32}(?:\/[a-z0-9-]{1,32})?|article\/\d{1,12})?$/
 
 /** head 片段的缓存键前缀，与正文片段共用一张表而互不冲突 */
 const HEAD_CACHE_PREFIX = 'head:'
@@ -55,7 +56,7 @@ const HEAD_CACHE_PREFIX = 'head:'
 const HEAD_FALLBACK_CACHE_KEY = `${HEAD_CACHE_PREFIX}#fallback`
 
 /** 正文就地渲染的板块形态，与 portal-cms.service 的口径一致 */
-const INLINE_HTML_LAYOUTS = new Set<string>([BLOCK_LAYOUT.RICH, BLOCK_LAYOUT.VIDEO])
+const INLINE_HTML_LAYOUTS = new Set<string>([BLOCK_LAYOUT.RICH, BLOCK_LAYOUT.VIDEO, BLOCK_LAYOUT.BRAND, BLOCK_LAYOUT.JOBS])
 
 /**
  * 站内链接判定：只认单个 / 开头的相对路径

@@ -10,7 +10,7 @@ import { AdminGuard } from '../../common/guards/admin.guard'
 import { PermGuard } from '../../common/guards/perm.guard'
 import { raw } from '../../common/interceptors/transform.interceptor'
 import { ChannelService } from './channel.service'
-import { ChannelQueryDto, CreateChannelDto, UpdateChannelDto } from './dto/channel.dto'
+import { ChannelQueryDto, CreateChannelDto, SortChannelsDto, UpdateChannelDto } from './dto/channel.dto'
 import { toChannelVo } from './vo/cms.vo'
 
 @Controller('mgmt/channel')
@@ -45,6 +45,14 @@ export class MgmtChannelController {
   @RequirePerm(PERM.CHANNEL_MANAGE)
   async update(@Body() dto: UpdateChannelDto) {
     await this.service.update(dto)
+    return raw(null, '保存成功')
+  }
+
+  /** 批量调整排序与显隐（导航排序） */
+  @Post('sort')
+  @RequirePerm(PERM.CHANNEL_MANAGE)
+  async sort(@Body() dto: SortChannelsDto) {
+    await this.service.sortBatch(dto)
     return raw(null, '保存成功')
   }
 

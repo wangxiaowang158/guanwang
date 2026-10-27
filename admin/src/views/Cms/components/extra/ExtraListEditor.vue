@@ -29,8 +29,13 @@
           :class="{ 'cell-wide': col.type !== 'input' }"
         >
           <label class="cell-label">{{ col.label }}<i v-if="col.required" class="req">*</i></label>
+          <MediaCell
+            v-if="col.type === 'media'"
+            :model-value="row[col.key]"
+            @update:model-value="(v) => setCell(index, col.key, v)"
+          />
           <ImageUpload
-            v-if="col.type === 'image'"
+            v-else-if="col.type === 'image'"
             :model-value="row[col.key]"
             @update:model-value="(v) => setCell(index, col.key, v)"
           />
@@ -64,6 +69,7 @@
 // 扩展字段通用行编辑器：按列配置渲染每行，可新增、删除、上下移；条数上限 30
 import { ArrowUpOutlined, ArrowDownOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import ImageUpload from '../ImageUpload.vue'
+import MediaCell from './MediaCell.vue'
 import { EXTRA_MAX_ROWS as MAX_ROWS, type ExtraColumn, type ExtraRow } from './extraDraft'
 
 const props = defineProps<{

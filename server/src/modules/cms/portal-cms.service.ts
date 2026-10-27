@@ -1,6 +1,6 @@
 // 前台内容装配服务 —— 把栏目树与内容表组装成前台各接口需要的形状
 // 前台只读，不做任何写操作；栏目有 portalPath 才对外，子栏目有内容才成为区块
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { IsNull, Repository } from 'typeorm'
 import { BLOCK_LAYOUT, CONTENT_STATUS } from '../../common/enums'
@@ -8,10 +8,12 @@ import type { ExtraFilter } from '../../common/content-extra'
 import { Channel } from './channel.entity'
 import { Content } from './content.entity'
 import { ContentService, PORTAL_BLOCK_PAGE_SIZE } from './content.service'
+import { verifyPreviewToken } from './preview-token'
 import type {
-  ArticleDetailVo, ArticleNavVo, BlockItemsVo, MenuNodeVo, PageBlockVo, PageContentVo, SeoConfigVo,
+  ArticleDetailVo, ArticleNavVo, ArticleRelatedVo, BlockItemsVo, MenuNodeVo, PageBlockVo, PageContentVo, SeoConfigVo,
 } from './vo/cms.vo'
-import { toArticleDetailVo, toPageItemVo } from './vo/cms.vo'
+import { safeLink, toArticleDetailVo, toPageItemVo } from './vo/cms.vo'
+import { pickRelated } from './related-content'
 
 /** Banner 栏目 key 前缀，约定 `banner-<页面 key>` 存该页面的头图 */
 const BANNER_PREFIX = 'banner-'
@@ -21,10 +23,37 @@ const BANNER_PREFIX = 'banner-'
  * 这两种板块本身就是展开全文的，列表响应里必须带正文；
  * 其余形态（卡片/列表/标签/流程）只出标题摘要，正文留给详情页
  */
-const INLINE_HTML_LAYOUTS = new Set<string>([BLOCK_LAYOUT.RICH, BLOCK_LAYOUT.VIDEO])
+export const INLINE_HTML_LAYOUTS = new Set<string>([
+  BLOCK_LAYOUT.RICH, BLOCK_LAYOUT.VIDEO,
+  // 品牌故事在弹窗里就地展示，不跳详情页
+  BLOCK_LAYOUT.BRAND,
+  // 职位职责与要求在列表里就地展开
+  BLOCK_LAYOUT.JOBS,
+])
 
 /** 前台文章详情页路径前缀，须与 web 路由 `/article/:id` 保持一致 */
 const ARTICLE_PATH_PREFIX = '/article/'
+
+/** 栏目页路径形态：根路径，或 1~2 段小写字母数字连字符 */
+const PORTAL_PATH_SHAPE = /^\/(?:[a-z0-9][a-z0-9-]{0,31}(?:\/[a-z0-9][a-z0-9-]{0,31})?)?$/
+
+/**
+ * 规整前台传来的页面路径：去尾斜杠、转小写，形态不符返回 null
+ * 先按形状挡一道再查库，随机地址打过来时连一次查询都不用发
+ */
+export function normalizePortalPath(raw: string): string | null {
+  const trimmed = (raw || '').trim().toLowerCase()
+  const path = trimmed.length > 1 ? trimmed.replace(/\/+$/, '') : trimmed
+  return PORTAL_PATH_SHAPE.test(path) ? path : null
+}
+
+/** 顶级栏目 → 导航节点：外链栏目 path 为空串、带 external */
+function toTopMenuNode(c: Channel): MenuNodeVo {
+  const external = c.portalPath ? undefined : safeLink(c.externalUrl)
+  const node: MenuNodeVo = { key: c.key, label: c.name, path: c.portalPath ?? '' }
+  if (external) node.external = external
+  return node
+}
 
 @Injectable()
 export class PortalCmsService {
@@ -37,23 +66,25 @@ export class PortalCmsService {
   /** 前台导航菜单树：只含配了 portalPath 的顶级栏目，及其有内容的子栏目 */
   async menu(): Promise<MenuNodeVo[]> {
     const all = await this.channelRepo.find({ order: { sort: 'ASC', id: 'ASC' } })
-    const tops = all.filter(c => !c.parentId && c.portalPath && !c.hidden)
+    // 对外的顶级栏目：站内页面（portalPath）或导航外链（externalUrl，如「小鹿爱家技术服务」）
+    const tops = all.filter(c => !c.parentId && !c.hidden && (c.portalPath || safeLink(c.externalUrl)))
     const nonEmpty = await this.nonEmptyChannelKeys()
     // 挂靠页面：自身是独立页面，但在导航里归到别的顶级栏目之下
-    const rootKeys = new Set(tops.filter(c => !c.menuParent).map(c => c.key))
+    const rootKeys = new Set(tops.filter(c => !c.menuParent && c.portalPath).map(c => c.key))
     const docked = tops.filter(c => c.menuParent && rootKeys.has(c.menuParent))
 
     return tops.filter(c => !c.menuParent || !rootKeys.has(c.menuParent)).map(top => {
       const dockedNodes = docked
         .filter(d => d.menuParent === top.key)
         .map<MenuNodeVo>(d => {
-          const node: MenuNodeVo = { key: d.key, label: d.name, path: d.portalPath as string }
+          const node = toTopMenuNode(d)
           if (d.menuGroup) node.group = d.menuGroup
           if (d.menuDesc) node.desc = d.menuDesc
           return node
         })
+      // 页内锚点子项只对站内页面有意义，外链栏目没有区块
       const children = all
-        .filter(c => c.parentId === top.id && !c.hidden && c.anchor && nonEmpty.has(c.key))
+        .filter(c => top.portalPath && c.parentId === top.id && !c.hidden && c.anchor && nonEmpty.has(c.key))
         .map<MenuNodeVo>(c => {
           const child: MenuNodeVo = {
             key: c.key,
@@ -65,7 +96,7 @@ export class PortalCmsService {
           if (c.menuDesc) child.desc = c.menuDesc
           return child
         })
-      const node: MenuNodeVo = { key: top.key, label: top.name, path: top.portalPath as string }
+      const node = toTopMenuNode(top)
       // 挂靠页面排在页内锚点之前：它们是一级页面，比页内区块更值得放在菜单前面
       const menuChildren = [...dockedNodes, ...children]
       if (menuChildren.length) node.children = menuChildren
@@ -95,9 +126,14 @@ export class PortalCmsService {
    * 单个栏目页内容：Hero 取顶级栏目自身字段，区块由子栏目 + 其内容组装
    * @param key 顶级栏目标识
    */
-  async pageContent(key: string): Promise<PageContentVo> {
+  async pageContent(key: string, previewToken?: string): Promise<PageContentVo> {
     const top = await this.channelRepo.findOne({ where: { key } })
     if (!top || !top.portalPath || top.hidden) throw new NotFoundException('栏目不存在')
+    // 草稿预览：令牌须是本页面的、未过期；带了令牌却无效时明确报错，不悄悄退回已发布内容让人以为草稿丢了
+    const preview = previewToken !== undefined && previewToken !== ''
+    if (preview && !verifyPreviewToken(previewToken, key)) {
+      throw new ForbiddenException('预览链接已过期或无效，请回后台重新点「预览」')
+    }
 
     const children = await this.channelRepo.find({
       where: { parentId: top.id },
@@ -108,8 +144,8 @@ export class PortalCmsService {
     // 首屏每区块限条：内容随运营持续增长，不限条意味着整栏目全部条目一次下发。
     // 超出部分由 blockItems() 按页续取
     const [contents, totals] = await Promise.all([
-      this.contentService.listByChannelKeys(childKeys, PORTAL_BLOCK_PAGE_SIZE),
-      this.contentService.countByChannelKeys(childKeys),
+      this.contentService.listByChannelKeys(childKeys, PORTAL_BLOCK_PAGE_SIZE, preview),
+      this.contentService.countByChannelKeys(childKeys, preview),
     ])
 
     const blocks: PageBlockVo[] = []
@@ -133,18 +169,60 @@ export class PortalCmsService {
         pageSize: PORTAL_BLOCK_PAGE_SIZE,
       }
       if (child.subheading) block.subheading = child.subheading
+      // 区块外观：只下发配置过的项，前台缺省按模板默认处理
+      if (child.blockTone === 'image' && child.blockBg) block.bg = child.blockBg
+      else if (child.blockTone && child.blockTone !== 'image') block.tone = child.blockTone as PageBlockVo['tone']
+      if (child.blockColumns) block.columns = child.blockColumns
+      if (child.headingAlign) block.align = child.headingAlign as PageBlockVo['align']
       blocks.push(block)
     }
 
-    const bg = await this.bannerImage(key)
+    // 头图背景：栏目自身配置优先，未配时回落 banner-<key> 栏目（改版前的头图存法）
+    const bg = top.heroBg || (await this.bannerImage(key))
     const hero: PageContentVo['hero'] = {
       eyebrow: top.heroEyebrow ?? '',
       title: top.heroTitle ?? top.name,
       desc: top.heroDesc ?? '',
     }
     if (bg) hero.bg = bg
+    if (top.heroVideo) hero.video = top.heroVideo
 
-    return { key: top.key, hero, blocks }
+    const vo: PageContentVo = { key: top.key, name: top.name, hero, blocks }
+    // 预览只给首屏：续页接口不认令牌，「加载更多」拿到的是已发布口径，会和首屏对不上，前台据此不出「加载更多」
+    if (preview) vo.preview = true
+    if (!blocks.length && !preview) {
+      const redirect = await this.firstDockedPath(top.key)
+      if (redirect) vo.redirect = redirect
+    }
+    return vo
+  }
+
+  /**
+   * 按前台路径取栏目页内容：前台通用路由只知道地址，不知道栏目 key
+   * @param rawPath 前台路径，如 /energy-solutions/overview；尾斜杠与大小写不敏感
+   */
+  async pageContentByPath(rawPath: string, previewToken?: string): Promise<PageContentVo> {
+    const path = normalizePortalPath(rawPath)
+    if (!path) throw new NotFoundException('栏目不存在')
+    const top = await this.channelRepo.findOne({ where: { portalPath: path, parentId: IsNull() } })
+    if (!top) throw new NotFoundException('栏目不存在')
+    return this.pageContent(top.key, previewToken)
+  }
+
+  /**
+   * 分组栏目下第一个对外的挂靠页路径（按导航顺序）
+   * 「智慧能源解决方案」这类一级菜单本身不放区块，点进来应直接落到其下第一个页面
+   */
+  private async firstDockedPath(key: string): Promise<string | undefined> {
+    const top = await this.channelRepo.findOne({ where: { key } })
+    // 自身挂靠在别处的页面不是分组页，不跳：防止并发保存造成的互相挂靠变成 A↔B 循环跳转
+    if (!top || top.menuParent) return undefined
+    const docked = await this.channelRepo.find({
+      where: { menuParent: key, parentId: IsNull(), hidden: false },
+      order: { sort: 'ASC', id: 'ASC' },
+    })
+    // 排除自身与同路径，避免自环
+    return docked.find(c => c.key !== key && c.portalPath && c.portalPath !== top.portalPath)?.portalPath ?? undefined
   }
 
   /**
@@ -204,7 +282,7 @@ export class PortalCmsService {
       : channel
     if (!parent?.portalPath || parent.hidden) throw new NotFoundException('内容不存在')
 
-    const { prev, next } = await this.siblingNav(content)
+    const { prev, next, related } = await this.siblingNav(content)
     return toArticleDetailVo(content, {
       channelName: channel.name,
       parentName: parent.name,
@@ -212,22 +290,24 @@ export class PortalCmsService {
       parentKey: parent.key,
       prev,
       next,
+      related,
     })
   }
 
   /**
-   * 同栏目相邻文章
+   * 同栏目相邻文章与相关推荐，一次查询同时得出
    * 排序口径与列表一致（isTop → sort → id 降序），"上一篇"指列表中更靠前的那条
    * @param content 当前内容
    */
   private async siblingNav(
     content: Content,
-  ): Promise<{ prev: ArticleNavVo | null; next: ArticleNavVo | null }> {
+  ): Promise<{ prev: ArticleNavVo | null; next: ArticleNavVo | null; related: ArticleRelatedVo[] }> {
     // 只在有正文的条目间跳转：无正文条目进不了详情（前台不给入口），
     // 跳过去就是一个空壳详情页。口径与 articleSitemapEntries 一致
+    // 带上 cover / extra：相关推荐要封面与相近度，不必再查一次
     const siblings = await this.contentRepo
       .createQueryBuilder('c')
-      .select(['c.id', 'c.title', 'c.name'])
+      .select(['c.id', 'c.title', 'c.name', 'c.cover', 'c.extra'])
       .where('c.channelKey = :key', { key: content.channelKey })
       .andWhere('c.status = :status', { status: CONTENT_STATUS.PUBLISHED })
       .andWhere("COALESCE(c.content, '') <> ''")
@@ -236,10 +316,15 @@ export class PortalCmsService {
       .addOrderBy('c.id', 'DESC')
       .getMany()
     const index = siblings.findIndex(s => s.id === content.id)
-    if (index < 0) return { prev: null, next: null }
+    if (index < 0) return { prev: null, next: null, related: [] }
     const toNav = (c: Content | undefined): ArticleNavVo | null =>
       c ? { id: c.id, title: c.title || c.name || '' } : null
-    return { prev: toNav(siblings[index - 1]), next: toNav(siblings[index + 1]) }
+    const prev = toNav(siblings[index - 1])
+    const next = toNav(siblings[index + 1])
+    // 推荐里去掉上一篇/下一篇：下方已有入口，重复出现浪费一个推荐位
+    const navIds = new Set([prev?.id, next?.id])
+    const related = pickRelated(content, siblings.filter(s => !navIds.has(s.id)))
+    return { prev, next, related }
   }
 
   /** 页面头图：取 `banner-<页面 key>` 栏目下第一条内容的封面 */
@@ -262,7 +347,16 @@ export class PortalCmsService {
       where: { parentId: IsNull() },
       order: { sort: 'ASC', id: 'ASC' },
     })
-    const pages = tops.filter(c => c.portalPath && !c.hidden)
+    // 只做跳转的分组页（自身没有区块、其下有挂靠页，如「智慧能源解决方案」）不收录：
+    // 爬虫拿到的是空正文，跳转在前台发生，会被当成薄内容重复页；其下的子页各自收录
+    const withBlocks = new Set(
+      (await this.channelRepo.find({ where: { hidden: false } }))
+        .filter(c => c.parentId !== null && c.anchor)
+        .map(c => c.parentId as number),
+    )
+    const dockTargets = new Set(tops.filter(c => c.menuParent && !c.hidden).map(c => c.menuParent as string))
+    const isRedirectOnly = (c: Channel) => !withBlocks.has(c.id) && dockTargets.has(c.key) && !c.menuParent
+    const pages = tops.filter(c => c.portalPath && !c.hidden && !isRedirectOnly(c))
 
     // 首页不对应任何栏目，单独补一条；更新时间取各栏目里最新的一个，
     // 首页内容本就由多个 home-* 栏目拼成，取最大值比写死当前时间更贴近实际

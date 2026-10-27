@@ -1,6 +1,7 @@
 <template>
   <!-- 样式一栏目页头图：左对齐标题区 + 当前位置导航；配背景图时叠深色遮罩，未配时为品牌深色底 -->
-  <section class="page-hero" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined" :class="{ 'page-hero--img': bg }">
+  <section class="page-hero" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined" :class="{ 'page-hero--img': bg || video }">
+    <HeroVideoLayer :src="video" :poster="bg" />
     <div class="page-hero-overlay" aria-hidden="true"></div>
     <div class="relative site-container">
       <nav class="page-hero-crumb" aria-label="当前位置">
@@ -18,12 +19,16 @@
 </template>
 
 <script setup lang="ts">
-// 栏目页顶部视觉区，纯展示组件；bg 为背景图地址（来自 Banner 管理），为空时用品牌深色底
+// 栏目页顶部视觉区，纯展示组件；bg 为背景图地址（栏目管理或 Banner 管理），为空时用品牌深色底
+import HeroVideoLayer from './HeroVideoLayer.vue'
+
 defineProps<{
   eyebrow: string
   title: string
   desc: string
   bg?: string
+  /** 背景视频地址，静音循环播放，bg 作首帧 */
+  video?: string
   /** 当前位置末级显示的栏目名，缺省时用主标题 */
   crumb?: string
 }>()

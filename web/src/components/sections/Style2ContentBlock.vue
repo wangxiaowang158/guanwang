@@ -2,9 +2,11 @@
   <!-- 样式二内容块：按 layout 渲染 cards/list/tags/steps/rich，集团红风格；onDark 用于背景图板块 -->
   <section v-if="renderable" :id="block.anchor" class="scroll-mt-20" :class="{ 'rs-block--ondark': onDark }">
     <!-- 区块名是这一段的标题，读屏与大纲都靠 h2；副标题是说明文字 -->
-    <h2 class="rs-block-eyebrow">{{ block.heading }}</h2>
-    <p v-if="block.subheading" class="rs-block-sub">{{ block.subheading }}</p>
-    <div class="rs-block-bar"></div>
+    <div :class="{ 'rs-block-head--center': block.align === 'center' }">
+      <h2 class="rs-block-eyebrow">{{ block.heading }}</h2>
+      <p v-if="block.subheading" class="rs-block-sub">{{ block.subheading }}</p>
+      <div class="rs-block-bar"></div>
+    </div>
 
     <slot name="filter" />
     <slot v-if="!sorted.length" name="empty"><EmptyState :on-dark="onDark" /></slot>
@@ -14,7 +16,12 @@
     <Style2ProcessFlow v-else-if="block.layout === 'flow'" :items="steps" :on-dark="onDark" />
     <Style2MetricBoard v-else-if="block.layout === 'metrics'" :items="metrics" :on-dark="onDark" />
     <Style2CooperationModes v-else-if="block.layout === 'modes'" :items="modes" :on-dark="onDark" />
-    <Style2ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" />
+    <Style2ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" :cols="block.columns" />
+    <!-- 第三版区块：与样式一共用组件，style2 切为集团红、直角 -->
+    <MediaShowcase v-else-if="block.layout === 'media'" :items="sorted" :heading="block.heading" :on-dark="onDark" style2 />
+    <BrandStories v-else-if="block.layout === 'brand'" :items="sorted" style2 :cols="block.columns" />
+    <ImageTiles v-else-if="block.layout === 'tiles'" :items="sorted" style2 :cols="block.columns" />
+    <JobList v-else-if="block.layout === 'jobs'" :items="sorted" style2 :on-dark="onDark" />
     <!-- 证言：单条直接展示，多条轮播 -->
     <template v-else-if="block.layout === 'quote'">
       <Style2TestimonialQuote v-if="quotes.length === 1" :quote="quotes[0]" :on-dark="onDark" />
@@ -24,10 +31,10 @@
     </template>
 
     <!-- 图文条目：有图显示配图，无图显示编号；可点击时整卡为入口 -->
-    <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px" style="background: var(--rs-border)">
+    <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 gap-px" :class="cardCols" style="background: var(--rs-border)">
       <ItemLink v-for="item in sorted" :key="item.id" :item="item" link-class="rs-card--link" class="rs-card block">
-        <div v-if="item.image || fallbackImage" class="rs-card-media">
-          <SafeImage :src="item.image" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
+        <div v-if="item.image || item.video || fallbackImage" class="rs-card-media">
+          <SafeMedia :image="item.image" :video="item.video" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
         </div>
         <span v-else class="rs-card-index">{{ String(item.sort).padStart(2, '0') }}</span>
         <div v-if="item.tag || item.date" class="flex items-center gap-3 mb-3 text-xs">
@@ -105,6 +112,7 @@
           v-html="richHtml(item.html)"
         ></div>
         <p v-else-if="item.desc" class="rs-rich-text text-base leading-loose">{{ item.desc }}</p>
+        <AttachmentLink v-if="item.file" class="mt-4" :file="item.file" :name="item.title" :on-dark="onDark" />
       </div>
     </div>
   </section>
@@ -114,7 +122,7 @@
 import { computed } from 'vue'
 import type { PageBlock } from '@/api/page'
 import { sanitizeRichText } from '@/utils/sanitize'
-import SafeImage from '@/components/common/SafeImage.vue'
+import SafeMedia from '@/components/common/SafeMedia.vue'
 import BaseCarousel from '@/components/common/BaseCarousel.vue'
 import EmptyState from './EmptyState.vue'
 import VideoPlayer from './VideoPlayer.vue'
@@ -125,6 +133,11 @@ import Style2MetricBoard from './Style2MetricBoard.vue'
 import Style2CooperationModes from './Style2CooperationModes.vue'
 import Style2TestimonialQuote from './Style2TestimonialQuote.vue'
 import Style2ImageGallery from './Style2ImageGallery.vue'
+import MediaShowcase from './MediaShowcase.vue'
+import BrandStories from './BrandStories.vue'
+import ImageTiles from './ImageTiles.vue'
+import JobList from './JobList.vue'
+import AttachmentLink from '@/components/common/AttachmentLink.vue'
 import { blockHasContent, galleryOf, isExtraLayout, metricsOf, modesOf, painsOf, quotesOf, stepsOf } from './blockExtra'
 import { chipsOf } from './itemChips'
 
@@ -139,6 +152,9 @@ const props = defineProps<{
 const sorted = computed(() => props.block.items)
 
 // 视频板块只渲染真有视频地址的条目，没传视频的条目跳过而不是留个黑框
+/** 卡片每行列数（电脑端）：后台配了按配置，缺省 3 列；类名写全，Tailwind 才扫得到 */
+const CARD_COLS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }
+const cardCols = computed(() => CARD_COLS[props.block.columns ?? 3] ?? CARD_COLS[3])
 const playable = computed(() => sorted.value.filter(item => item.video))
 
 // 结构化区块的汇总数据；无数据的结构化区块整块不渲染，普通区块仍走空态
@@ -164,7 +180,7 @@ const richHtml = (html: string) => sanitizeRichText(html)
 }
 .rs-block-sub {
   margin: 12px 0 0;
-  font-size: 15px;
+  font-size: var(--text-fs-body);
   line-height: 1.8;
   color: var(--rs-text-body);
   max-width: 48rem;
@@ -178,6 +194,10 @@ const richHtml = (html: string) => sanitizeRichText(html)
   background: var(--rs-primary);
   margin: 18px 0 36px;
 }
+/* 后台「区块外观」选了居中 */
+.rs-block-head--center { text-align: center; }
+.rs-block-head--center .rs-block-sub { margin-left: auto; margin-right: auto; }
+.rs-block-head--center .rs-block-bar { margin-left: auto; margin-right: auto; }
 .rs-card {
   position: relative;
   background: #fff;

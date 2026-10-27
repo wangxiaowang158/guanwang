@@ -5,11 +5,14 @@
 import 'reflect-metadata'
 import { config } from 'dotenv'
 import { NestFactory } from '@nestjs/core'
-import { DataSource } from 'typeorm'
+import { DataSource, type EntityManager } from 'typeorm'
 import { CONTENT_STATUS } from '../common/enums'
 import { serializeExtra } from '../common/content-extra'
 import { buildChannelRows } from './seed/channel-rows'
+import { In } from 'typeorm'
 import { V2_OVERRIDES, isLegacyKey } from './seed/channel-rows-v2'
+import { V3_MARKER_KEY, V3_RETIRED_KEYS, V3_SORTS, buildV3Rows } from './seed/channel-rows-v3'
+import { copySeedAssets } from './seed/seed-assets'
 import { buildContentRows } from './seed/content-rows'
 import siteJson from '../modules/cms/seed/site.json'
 import webSiteJson from '../modules/cms/seed/web-site.json'
@@ -18,7 +21,7 @@ import { say } from './report'
 config()
 
 /** 写入栏目树。父子关系按 key 解析，故先写顶级再写子级 */
-async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated: number }> {
+async function seedChannels(ds: EntityManager): Promise<{ inserted: number; updated: number }> {
   const { Channel } = await import('../modules/cms/channel.entity')
   const repo = ds.getRepository(Channel)
   const rows = buildChannelRows()
@@ -31,6 +34,9 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
   // 新版栏目首次入库的那一次，才套用保留栏目的新导航顺序；
   // 之后重跑种子不再动，免得覆盖运营在后台调过的排序
   const upgradingToV2 = !(await repo.findOne({ where: { key: 'business' } }))
+  // 第三版首次入库：业务三页等既有栏目要按框架图第三版整体改写一次（名称、排序、版式、表单字段）
+  const upgradingToV3 = !(await repo.findOne({ where: { key: V3_MARKER_KEY } }))
+  const v3Keys = new Set(buildV3Rows().map(r => r.key))
 
   for (const row of ordered) {
     const parentId = row.parentKey ? idByKey.get(row.parentKey) ?? null : null
@@ -40,8 +46,10 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
 
     const existing = await repo.findOne({ where: { key: row.key } })
     const entity = existing ?? repo.create({ key: row.key })
-    // 已存在的栏目只补齐前台呈现字段，不覆盖后台可能已改过的名称与排序
-    if (!existing) {
+    // 已存在的栏目只补齐前台呈现字段，不覆盖后台可能已改过的名称与排序；
+    // 第三版升级那一次例外：第三版接管的栏目按新结构整体改写
+    const rewrite = !existing || (upgradingToV3 && v3Keys.has(row.key))
+    if (rewrite) {
       entity.name = row.name
       entity.type = row.type as typeof entity.type
       entity.parentId = parentId
@@ -49,23 +57,28 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
       entity.icon = row.icon
       entity.formFields = JSON.stringify(row.formFields)
       entity.listColumns = JSON.stringify(row.listColumns)
-      entity.seoTitle = row.seoTitle
-      entity.seoKeywords = row.seoKeywords
-      entity.seoDescription = row.seoDescription
+      // SEO 是运营录入的，升级改写也不清掉已有值
+      entity.seoTitle = entity.seoTitle ?? row.seoTitle
+      entity.seoKeywords = entity.seoKeywords ?? row.seoKeywords
+      entity.seoDescription = entity.seoDescription ?? row.seoDescription
     }
-    // 菜单字段与 portalPath 同属种子维护；hidden 只在新建时写，已存在的栏目保留后台设置
-    // menuParent 由种子独占；menuGroup / menuDesc 后台可编辑，只在库里为空时补，不覆盖运营改过的值
-    entity.menuParent = row.menuParent ?? null
-    entity.menuGroup = entity.menuGroup ?? row.menuGroup ?? null
-    entity.menuDesc = entity.menuDesc ?? row.menuDesc ?? null
+    // 第三版起页面路径、挂靠、锚点、版式、头图文案都可在后台改：只在新建、升级改写，
+    // 或从第一版直升（库里还没有 v2 的「主营业务」）时写入；平时重跑种子不再覆盖运营的配置
+    // （hidden 同理，只在新建时写）
+    if (rewrite || upgradingToV2) {
+      entity.menuParent = row.menuParent ?? null
+      entity.menuGroup = row.menuGroup ?? null
+      entity.menuDesc = row.menuDesc ?? null
+      entity.portalPath = row.portalPath
+      entity.externalUrl = entity.externalUrl ?? row.externalUrl ?? null
+      entity.anchor = row.anchor
+      entity.subheading = row.subheading
+      entity.layout = row.layout as typeof entity.layout
+      entity.heroEyebrow = row.heroEyebrow
+      entity.heroTitle = row.heroTitle
+      entity.heroDesc = row.heroDesc
+    }
     if (!existing && row.hidden !== undefined) entity.hidden = row.hidden
-    entity.portalPath = row.portalPath
-    entity.anchor = row.anchor
-    entity.subheading = row.subheading
-    entity.layout = row.layout as typeof entity.layout
-    entity.heroEyebrow = row.heroEyebrow
-    entity.heroTitle = row.heroTitle
-    entity.heroDesc = row.heroDesc
 
     const saved = await repo.save(entity)
     idByKey.set(saved.key, saved.id)
@@ -78,6 +91,14 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
     for (const [key, o] of Object.entries(V2_OVERRIDES)) {
       if (o.sort !== undefined) await repo.update({ key }, { sort: o.sort })
     }
+  }
+
+  if (upgradingToV3) {
+    // 第三版：首页 / 联盟 / 关于套用新导航顺序；改版下线的页面与区块隐藏（栏目与内容保留，可恢复）
+    for (const [key, sort] of Object.entries(V3_SORTS)) await repo.update({ key }, { sort })
+    const retired = await repo.find({ where: { key: In(V3_RETIRED_KEYS) } })
+    for (const c of retired) await repo.update({ id: c.id }, { hidden: true })
+    if (retired.length) say(`  第三版已下线：${retired.map(c => c.name).join('、')}`)
   }
 
   // 旧库里改版前的页面（暖通 / 综合能源 / 智慧能源 / 智能家居）：种子不再生成它们，
@@ -93,7 +114,7 @@ async function seedChannels(ds: DataSource): Promise<{ inserted: number; updated
 }
 
 /** 写入内容。已有内容的栏目整栏跳过，避免重复执行产生副本 */
-async function seedContents(ds: DataSource): Promise<{ inserted: number; skipped: number }> {
+async function seedContents(ds: EntityManager): Promise<{ inserted: number; skipped: number }> {
   const { Channel } = await import('../modules/cms/channel.entity')
   const { Content } = await import('../modules/cms/content.entity')
   const channelRepo = ds.getRepository(Channel)
@@ -129,7 +150,7 @@ async function seedContents(ds: DataSource): Promise<{ inserted: number; skipped
 }
 
 /** 写入站点信息。已有非空标题时视为后台已维护过，不覆盖 */
-async function seedSiteConfig(ds: DataSource): Promise<'inserted' | 'skipped'> {
+async function seedSiteConfig(ds: EntityManager): Promise<'inserted' | 'skipped'> {
   const { SiteConfig } = await import('../modules/cms/site-config.entity')
   const repo = ds.getRepository(SiteConfig)
   const existing = await repo.findOne({ where: { id: 1 } })
@@ -173,6 +194,22 @@ async function seedSiteConfig(ds: DataSource): Promise<'inserted' | 'skipped'> {
  */
 const IF_EMPTY = process.argv.includes('--if-empty')
 
+/**
+ * 「关于我们」下缺招聘职位区块时补建
+ * @returns 是否新建了
+ */
+async function ensureJobsBlock(m: EntityManager): Promise<boolean> {
+  const { Channel } = await import('../modules/cms/channel.entity')
+  const repo = m.getRepository(Channel)
+  if (await repo.exists({ where: { key: 'about-jobs' } })) return false
+  const about = await repo.findOne({ where: { key: 'about' } })
+  if (!about) return false
+  const { insertJobsBlock } = await import('../migrations/1790000023000-AddJobsBlock')
+  // 走 EntityManager.query：仍在外层种子事务内，失败随整批回滚
+  await insertJobsBlock((sql, params) => m.query(sql, params), m.connection.options.type === 'mysql', about.id)
+  return true
+}
+
 /** 判断是否已初始化的标志栏目：种子栏目树的根，首页一级页面 */
 const SEED_MARKER_KEY = 'home'
 
@@ -187,24 +224,42 @@ async function main(): Promise<void> {
     if (IF_EMPTY) {
       // 以「官网首页」栏目是否存在判断是否已初始化，不能用栏目总数：
       // 迁移 AddOpLogChannel 在全新库上也会插入操作日志栏目，跑完迁移栏目表就不再为空
+      // 已初始化、且已升级到第三版才跳过：已上线的旧库在新镜像首启时自动完成一次第三版升级。
+      // 升级会把第三版接管的栏目（主营业务及三个业务页、其区块、首页战略合作）的名称、排序、
+      // 版式、表单字段、菜单与头图文案重置为第三版结构（SEO 与外链保留）；隐藏下线栏目；给空栏目补内容。
+      // 其余栏目与全部已有内容不动
       const { Channel } = await import('../modules/cms/channel.entity')
-      if (await ds.getRepository(Channel).exists({ where: { key: SEED_MARKER_KEY } })) {
+      const channelRepo = ds.getRepository(Channel)
+      const initialized = await channelRepo.exists({ where: { key: SEED_MARKER_KEY } })
+      const onV3 = await channelRepo.exists({ where: { key: V3_MARKER_KEY } })
+      if (initialized && onV3) {
         say('官网栏目已初始化，跳过 CMS 种子写入')
         return
       }
     }
 
-    say('写入栏目树…')
-    const ch = await seedChannels(ds)
-    say(`  栏目：新增 ${ch.inserted} 个，补齐 ${ch.updated} 个`)
+    // 素材复制在事务之前：同名文件跳过、可重复执行；内容里引用的图先就位
+    say('复制种子素材…')
+    say(`  素材：${await copySeedAssets()} 个文件`)
 
-    say('写入站点信息…')
-    const site = await seedSiteConfig(ds)
-    say(`  站点信息：${site === 'inserted' ? '已写入' : '已存在，跳过'}`)
+    // 栏目、站点信息、内容同一事务：第三版的判定栏目（energy-solutions）随事务一起提交，
+    // 中途任何一步失败都整体回滚，重跑时仍判定为「未升级」，不会停在半升级状态
+    await ds.transaction(async (m) => {
+      say('写入栏目树…')
+      const ch = await seedChannels(m)
+      say(`  栏目：新增 ${ch.inserted} 个，补齐 ${ch.updated} 个`)
 
-    say('写入内容…')
-    const ct = await seedContents(ds)
-    say(`  内容：新增 ${ct.inserted} 条，跳过 ${ct.skipped} 条`)
+      say('写入站点信息…')
+      const site = await seedSiteConfig(m)
+      say(`  站点信息：${site === 'inserted' ? '已写入' : '已存在，跳过'}`)
+
+      say('写入内容…')
+      const ct = await seedContents(m)
+      say(`  内容：新增 ${ct.inserted} 条，跳过 ${ct.skipped} 条`)
+
+      // 全新库上迁移先于种子运行，那时「关于我们」还不存在，招聘职位区块的迁移无处可挂，在此补上
+      if (await ensureJobsBlock(m)) say('  已补建「关于我们 → 招聘职位」区块')
+    })
 
     say('CMS 种子数据写入完成')
   } finally {

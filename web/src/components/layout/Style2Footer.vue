@@ -5,12 +5,12 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
         <div class="lg:col-span-4">
           <div class="flex items-center gap-3 mb-5">
-            <img v-if="footerLogo" :src="footerLogo" :alt="COMPANY_SHORT" class="h-10 w-auto max-w-[160px] object-contain" width="144" height="40" loading="lazy" />
+            <img v-if="footerLogo" :src="footerLogo" :alt="companyShort" class="h-10 w-auto max-w-[160px] object-contain" width="144" height="40" loading="lazy" />
             <template v-else>
               <span class="w-10 h-10 flex items-center justify-center text-white text-lg font-bold" style="background: var(--rs-primary)" aria-hidden="true">恒</span>
               <span class="flex flex-col leading-none">
-                <span class="font-bold text-xl text-white">{{ COMPANY_SHORT }}</span>
-                <span class="text-[10px] tracking-[0.25em] mt-1 text-white/50">{{ COMPANY_EN }}</span>
+                <span class="font-bold text-xl text-white">{{ companyShort }}</span>
+                <span class="text-[10px] tracking-[0.25em] mt-1 text-white/50">{{ companyEn }}</span>
               </span>
             </template>
           </div>
@@ -56,6 +56,8 @@
         </div>
       </div>
 
+      <FooterExtras :config="footerConfig" style2 />
+
       <div class="mt-12 pt-6 flex flex-col md:flex-row md:justify-between md:items-center gap-3 text-[13px] border-t text-white/50" style="border-color: var(--rs-border-dark)">
         <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 useFooterInfo -->
         <p v-if="copyrightHtml" class="rs-copyright" v-html="copyrightHtml"></p>
@@ -72,10 +74,12 @@
 
 <script setup lang="ts">
 // 样式二页脚：取值口径见 useFooterInfo，本组件只管呈现
-import { COMPANY_EN, COMPANY_SHORT } from '@/config/brand'
+import { useBrand } from '@/composables/useBrand'
 import { useFooterInfo } from '@/composables/useFooterInfo'
+import FooterExtras from './FooterExtras.vue'
 
-const { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo } = useFooterInfo()
+const { site, wechatQr, footerLogo, copyrightHtml, copyrightFallback, groups, others, childTo, footerConfig } = useFooterInfo()
+const { companyShort, companyEn } = useBrand()
 </script>
 
 <style scoped>

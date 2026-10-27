@@ -28,7 +28,21 @@ const BY_PAGE: Record<string, string> = {
   'business-living': household,
   products: hvac,
   solutions: caseImg,
+  // 第三版三大解决方案的分组页
+  'energy-solutions': energy,
+  'building-solutions': smart,
+  'living-services': household,
 }
+
+/**
+ * 栏目 key 前缀 → 缺省配图：三大解决方案下的子页（含后台新建的）按所属方案取图，
+ * 新建页面不必逐个登记
+ */
+const BY_PREFIX: [string, string][] = [
+  ['es-', energy],
+  ['bs-', smart],
+  ['ls-', household],
+]
 
 /** 首页各板块的缺省配图，按板块内容主题挑选 */
 export const HOME_DEFAULT_IMAGES = {
@@ -47,5 +61,5 @@ export const HOME_DEFAULT_IMAGES = {
  * @param pageKey 一级栏目标识；未登记的栏目回落到通用的企业插画
  */
 export function defaultImageOf(pageKey: string): string {
-  return BY_PAGE[pageKey] ?? about
+  return BY_PAGE[pageKey] ?? BY_PREFIX.find(([p]) => pageKey.startsWith(p))?.[1] ?? about
 }

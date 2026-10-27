@@ -17,14 +17,17 @@
     <a-tabs v-model:activeKey="tab">
       <!-- 素材库：复用素材网格，点击即选中 -->
       <a-tab-pane key="library" tab="素材库">
-        <a-input-search
-          v-model:value="keyword"
-          class="lib-search"
-          placeholder="按文件名搜索"
-          allow-clear
-          :maxlength="100"
-          @search="search"
-        />
+        <a-space :size="12" class="lib-search">
+          <a-input
+            v-model:value="keyword"
+            style="width: 240px"
+            placeholder="按文件名搜索"
+            allow-clear
+            :maxlength="100"
+            @press-enter="search"
+          />
+          <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
+        </a-space>
         <MediaGrid
           :items="rows"
           :loading="loading"
@@ -60,9 +63,14 @@
       </a-tab-pane>
 
       <!-- AI 生成：候选只在点「应用」时才落盘 -->
-      <a-tab-pane key="ai" tab="AI 生成">
+      <a-tab-pane v-if="!noAi" key="ai" tab="AI 生成">
         <!-- v-if="open"：每次打开都重新挂载，清掉上一批候选并重新查询是否已配置密钥 -->
-        <CoverAiPanel v-if="open" :selected-id="picked?.kind === 'ai' ? picked.id : undefined" @pick="selectAi" />
+        <CoverAiPanel
+          v-if="open"
+          :scene="aiScene"
+          :selected-id="picked?.kind === 'ai' ? picked.id : undefined"
+          @pick="selectAi"
+        />
       </a-tab-pane>
     </a-tabs>
 
@@ -77,18 +85,21 @@
 <script setup lang="ts">
 // 封面图选择弹窗：素材库 / 本地上传 / AI 生成三种来源，点「应用」后才把地址写回表单
 import { computed, ref, watch } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import { getMediaList, type MediaItem } from '@/api/media'
-import { saveAiImage, type AiImageCandidate } from '@/api/upload'
+import { saveAiImage, type AiImageCandidate, type AiImageScene } from '@/api/upload'
 import { UPLOAD_ACCEPT, UPLOAD_IMAGE_LABEL, UPLOAD_MAX_MB } from '@/config'
 import { useImageUpload } from '@/composables/useImageUpload'
 import { useServerListPage } from '@/composables/useServerListPage'
 import MediaGrid from '@/views/Media/components/MediaGrid.vue'
 import CoverAiPanel from './CoverAiPanel.vue'
 
-const props = withDefaults(defineProps<{ open: boolean; title?: string }>(), {
-  title: '选择封面图片'
-})
+const props = withDefaults(
+  // raw：本地上传走原图通道，不加水印、不转格式（Logo、二维码等品牌素材）
+  defineProps<{ open: boolean; title?: string; aiScene?: AiImageScene; noAi?: boolean; raw?: boolean }>(),
+  { title: '选择封面图片', aiScene: 'cover' }
+)
 const emit = defineEmits<{
   'update:open': [value: boolean]
   confirm: [url: string]
@@ -120,6 +131,12 @@ const { loading, rows, page, pageSize, total, search, onPageChange } =
     { immediate: false, pageSize: 8 }
   )
 
+// 重置：清空筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  search()
+}
+
 const { uploading, pickAndUpload } = useImageUpload()
 
 const pickedSrc = computed(() => {
@@ -150,7 +167,7 @@ const selectAi = (item: AiImageCandidate) => {
 
 // 上传成功后直接选中，用户再点「应用」确认
 const onFileChange = async (e: Event) => {
-  const url = await pickAndUpload(e.target as HTMLInputElement)
+  const url = await pickAndUpload(e.target as HTMLInputElement, props.raw)
   if (url) selectUrl(url)
 }
 
@@ -170,6 +187,7 @@ const onApply = async () => {
     return
   }
   saving.value = true
+  let savedUrl = ''
   try {
     const res = await saveAiImage(current.id)
     const url = res.data.data?.url
@@ -177,19 +195,23 @@ const onApply = async () => {
       message.error(res.data.message || '保存失败，请重新生成')
       return
     }
-    emit('confirm', url)
-    close()
+    savedUrl = url
   } catch {
     message.error('保存失败，请稍后重试')
   } finally {
     saving.value = false
+  }
+  // 放在 saving 复位之后：close() 在保存中会拦截关闭，写在 try 里弹窗永远关不掉
+  // 回填用发起时锁定的那张（current），保存期间界面上改选别的不影响本次结果
+  if (savedUrl) {
+    emit('confirm', savedUrl)
+    close()
   }
 }
 </script>
 
 <style scoped>
 .lib-search {
-  width: 240px;
   margin-bottom: 12px;
 }
 

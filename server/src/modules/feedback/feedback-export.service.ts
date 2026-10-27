@@ -2,8 +2,8 @@
 // 列口径与后台列表完全一致（SRS 3.5.10）：手机号隐去中间四位，提交 IP 不参与导出
 import { Injectable } from '@nestjs/common'
 import ExcelJS from 'exceljs'
-import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE } from '../../common/enums'
-import type { FeedbackSource, FeedbackStatus, FeedbackType } from '../../common/enums'
+import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE, LEAD_TYPE } from '../../common/enums'
+import type { FeedbackSource, FeedbackStatus, FeedbackType, LeadType } from '../../common/enums'
 import { maskPhone } from '../member/vo/member.vo'
 import type { Feedback } from './feedback.entity'
 
@@ -29,12 +29,21 @@ const TYPE_TEXT: Record<FeedbackType, string> = {
   [FEEDBACK_TYPE.OTHER]: '其他',
 }
 
+/** 线索类型 → 展示文案，须与后台 FEEDBACK_LEAD_TYPE_LABEL 一致；无值为普通留言 */
+const LEAD_TEXT: Record<LeadType, string> = {
+  [LEAD_TYPE.ENERGY_ASSESS]: '节能测算预约',
+  [LEAD_TYPE.PRODUCT_DEMO]: '产品演示预约',
+  [LEAD_TYPE.CHANNEL]: '渠道招商咨询',
+  [LEAD_TYPE.CONSULT]: '方案咨询',
+}
+
 /** 列定义，顺序与列表列一致 */
 const COLUMNS: { header: string; width: number }[] = [
   { header: '单位', width: 28 },
   { header: '留言人', width: 14 },
   { header: '手机号', width: 16 },
   { header: '来源', width: 10 },
+  { header: '线索类型', width: 16 },
   { header: '反馈分类', width: 12 },
   { header: '反馈内容', width: 60 },
   { header: '处理状态', width: 12 },
@@ -64,6 +73,7 @@ export class FeedbackExportService {
         f.name,
         f.phone ? maskPhone(f.phone) : '-',
         SOURCE_TEXT[f.source] ?? f.source,
+        f.leadType ? LEAD_TEXT[f.leadType] ?? f.leadType : '普通留言',
         f.feedbackType ? TYPE_TEXT[f.feedbackType] ?? '其他' : '其他',
         f.content,
         STATUS_TEXT[f.status] ?? f.status,
@@ -71,8 +81,9 @@ export class FeedbackExportService {
       ])
     }
 
-    // 反馈内容较长，整列改为顶部对齐并自动换行，避免导出后单元格挤成一行
-    sheet.getColumn(6).alignment = { wrapText: true, vertical: 'top' }
+    // 反馈内容较长，整列改为顶部对齐并自动换行，避免导出后单元格挤成一行；按表头定位，增删列不会错位
+    const contentCol = COLUMNS.findIndex(c => c.header === '反馈内容') + 1
+    sheet.getColumn(contentCol).alignment = { wrapText: true, vertical: 'top' }
 
     const buffer = await workbook.xlsx.writeBuffer()
     return Buffer.from(buffer)

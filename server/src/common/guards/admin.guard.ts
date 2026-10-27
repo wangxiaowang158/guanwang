@@ -8,7 +8,6 @@ import { JwtService } from '@nestjs/jwt'
 import type { Request } from 'express'
 import { JWT_ADMIN, SCOPE_ADMIN } from '../../config/app.config'
 import { AdminService } from '../../modules/admin/admin.service'
-import { parsePerms } from '../../modules/admin/vo/admin.vo'
 import { TokenRevocationService } from '../../modules/kv/token-revocation.service'
 
 /** 管理员令牌载荷；权限不入令牌，避免签发后权限变更无法生效 */
@@ -99,7 +98,8 @@ export class AdminGuard implements CanActivate {
       id: admin.id,
       account: admin.account,
       name: admin.name,
-      perms: parsePerms(admin.perms),
+      // 角色权限 ∪ 账号自身权限；每次请求现算，改了角色立即生效
+      perms: await this.adminService.effectivePerms(admin),
       isSuper: admin.isSuper,
     }
     return true

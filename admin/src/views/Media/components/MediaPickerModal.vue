@@ -8,13 +8,13 @@
   >
     <div class="picker-toolbar">
       <a-space :size="12" wrap>
-        <a-input-search
+        <a-input
           v-model:value="keyword"
           placeholder="按文件名搜索"
           style="width: 220px"
           allow-clear
           :maxlength="100"
-          @search="search"
+          @press-enter="search"
         />
         <a-select
           v-model:value="sort"
@@ -22,6 +22,7 @@
           :options="[...SORT_OPTIONS]"
           @change="search"
         />
+        <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
         <span class="tip">点击任一素材即选用</span>
       </a-space>
     </div>
@@ -50,6 +51,7 @@
 <script setup lang="ts">
 // 素材选择器：从已上传的素材里挑一个填回表单，避免同一张图反复上传
 import { computed, ref, watch } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { getMediaList, type MediaItem } from '@/api/media'
 import { useServerListPage } from '@/composables/useServerListPage'
 import MediaGrid from './MediaGrid.vue'
@@ -89,6 +91,13 @@ const { loading, rows, page, pageSize, total, fetchList, search, onPageChange } 
     },
     { immediate: false, pageSize: 12 }
   )
+
+// 重置：清空筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  sort.value = 'mtime-desc'
+  search()
+}
 
 const emptyText = computed(() =>
   keyword.value ? '没有符合条件的素材' : '暂无可选素材，请先上传'

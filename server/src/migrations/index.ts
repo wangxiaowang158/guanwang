@@ -17,6 +17,15 @@ import { AddChannelHidden1790000011000 } from './1790000011000-AddChannelHidden'
 import { AddContentExtra1790000012000 } from './1790000012000-AddContentExtra'
 import { AddFeedbackLeadFields1790000013000 } from './1790000013000-AddFeedbackLeadFields'
 import { AddChannelMenuFields1790000014000 } from './1790000014000-AddChannelMenuFields'
+import { AddChannelPageFields1790000015000 } from './1790000015000-AddChannelPageFields'
+import { AddVideoToImageSlots1790000016000 } from './1790000016000-AddVideoToImageSlots'
+import { AddFlexibleConfig1790000017000 } from './1790000017000-AddFlexibleConfig'
+import { AddBrandFields1790000018000 } from './1790000018000-AddBrandFields'
+import { AddNotifyConfig1790000019000 } from './1790000019000-AddNotifyConfig'
+import { AddHeroStatsNote1790000020000 } from './1790000020000-AddHeroStatsNote'
+import { AddTrashRevisionExt1790000021000 } from './1790000021000-AddTrashRevisionExt'
+import { AddRedirectAndRole1790000022000 } from './1790000022000-AddRedirectAndRole'
+import { AddJobsBlock1790000023000 } from './1790000023000-AddJobsBlock'
 
 /**
  * 全部迁移，按执行顺序排列
@@ -38,4 +47,13 @@ export const MIGRATIONS = [
   AddContentExtra1790000012000,
   AddFeedbackLeadFields1790000013000,
   AddChannelMenuFields1790000014000,
+  AddChannelPageFields1790000015000,
+  AddVideoToImageSlots1790000016000,
+  AddFlexibleConfig1790000017000,
+  AddBrandFields1790000018000,
+  AddNotifyConfig1790000019000,
+  AddHeroStatsNote1790000020000,
+  AddTrashRevisionExt1790000021000,
+  AddRedirectAndRole1790000022000,
+  AddJobsBlock1790000023000,
 ]

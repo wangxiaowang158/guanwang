@@ -10,7 +10,7 @@ export interface ExtraColumn {
   key: string
   label: string
   /** 控件类型，默认单行输入 */
-  type?: 'input' | 'textarea' | 'image'
+  type?: 'input' | 'textarea' | 'image' | 'media'
   placeholder?: string
   maxlength?: number
   required?: boolean
@@ -29,7 +29,7 @@ export interface ExtraDraft {
   steps: ExtraRow[]
   modes: ExtraRow[]
   facts: ExtraRow[]
-  /** 每张图一行，列 key 固定为 url */
+  /** 每张图或每段视频一行，列 key 固定为 url */
   gallery: ExtraRow[]
   quote: ExtraRow
 }
@@ -60,7 +60,7 @@ export const EXTRA_COLUMNS: Record<'metrics' | 'pains' | 'steps' | 'modes' | 'fa
     { key: 'label', label: '名称', maxlength: 100, required: true, placeholder: '如 建筑面积' },
     { key: 'value', label: '内容', maxlength: 100, required: true, placeholder: '如 12 万平方米' },
   ],
-  gallery: [{ key: 'url', label: '图片', type: 'image', required: true }],
+  gallery: [{ key: 'url', label: '图片或视频', type: 'media', required: true }],
 }
 
 /** 空草稿 */

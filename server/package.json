@@ -5,8 +5,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "nest start --no-shell",
+    "start:dev": "nest start --watch --no-shell",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "type-check": "tsc --noEmit",
@@ -51,6 +51,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sanitize-html": "^2.17.0",
+    "sharp": "0.34.5",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {

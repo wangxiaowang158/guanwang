@@ -3,13 +3,14 @@
   <nav class="mobile-nav lg:hidden" aria-label="移动端导航">
     <div v-for="item in menu" :key="item.key" class="mobile-item">
       <div class="flex items-center justify-between">
-        <RouterLink
+        <NavLink
           :to="item.path"
+          :external="item.external"
           class="flex-1 px-3 py-3.5 text-[15px] no-underline"
           :class="isActive(item) ? 'mobile-link--active' : 'text-ink-700'"
           :aria-current="isActive(item) ? 'page' : undefined"
           @click="$emit('navigate')"
-        >{{ item.label }}</RouterLink>
+        >{{ item.label }}</NavLink>
         <button
           v-if="item.children?.length"
           type="button"
@@ -28,31 +29,40 @@
         <template v-if="groupChildren(item.children)">
           <section v-for="g in groupChildren(item.children)" :key="g.title" class="mobile-group">
             <p v-if="g.title" class="mobile-group-title">{{ g.title }}</p>
-            <RouterLink
+            <NavLink
               v-for="child in g.items"
               :key="child.key"
               :to="childTo(child)"
+              :external="child.external"
               class="block pl-6 pr-3 py-2.5 text-sm text-ink-700 no-underline"
               @click="$emit('navigate')"
             >
               {{ child.label }}
               <span v-if="child.desc" class="mobile-desc">{{ child.desc }}</span>
-            </RouterLink>
+            </NavLink>
           </section>
         </template>
         <!-- 无分组：保持原有单列 -->
         <template v-else>
-          <RouterLink
+          <NavLink
             v-for="child in item.children"
             :key="child.key"
             :to="childTo(child)"
+            :external="child.external"
             class="block pl-6 pr-3 py-2.5 text-sm text-ink-500 no-underline"
             @click="$emit('navigate')"
-          >{{ child.label }}</RouterLink>
+          >{{ child.label }}</NavLink>
         </template>
       </div>
     </div>
-    <MemberEntry class="mt-3 justify-center py-2 text-ink-700" />
+    <RouterLink to="/search" class="mt-3 flex items-center justify-center gap-2 py-2 text-sm text-ink-700" @click="$emit('navigate')">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke-width="1.8" />
+        <path stroke-linecap="round" stroke-width="1.8" d="M20 20l-3.5-3.5" />
+      </svg>
+      站内搜索
+    </RouterLink>
+    <MemberEntry class="justify-center py-2 text-ink-700" />
     <a v-if="phone" :href="`tel:${phone}`" class="mobile-call">
       <PhoneIcon class="w-4 h-4" />
       {{ phone }}
@@ -65,6 +75,7 @@
 import type { MenuNode } from '@/api/menu'
 import { groupChildren } from '@/composables/useHeaderNav'
 import MemberEntry from './MemberEntry.vue'
+import NavLink from './NavLink.vue'
 import PhoneIcon from './PhoneIcon.vue'
 
 defineProps<{

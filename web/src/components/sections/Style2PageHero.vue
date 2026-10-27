@@ -1,6 +1,7 @@
 <template>
   <!-- 样式二栏目 Hero：深色编辑式，左对齐大标题 + 红色装饰条；bg 配置背景图时叠加于底色 -->
-  <section class="rs-page-hero" :class="{ 'rs-page-hero--img': bg }" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined">
+  <section class="rs-page-hero" :class="{ 'rs-page-hero--img': bg || video }" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined">
+    <HeroVideoLayer :src="video" :poster="bg" />
     <div class="rs-page-hero-overlay"></div>
     <div class="relative z-10 mx-auto px-6 lg:px-10 w-full" style="max-width: var(--rs-content-max)">
       <nav class="rs-page-hero-crumb" aria-label="当前位置">
@@ -19,11 +20,15 @@
 
 <script setup lang="ts">
 // 样式二栏目页顶部视觉区，纯展示组件；bg 为背景图地址（来自后台配置）
+import HeroVideoLayer from './HeroVideoLayer.vue'
+
 defineProps<{
   eyebrow: string
   title: string
   desc: string
   bg?: string
+  /** 背景视频地址，静音循环播放，bg 作首帧 */
+  video?: string
   /** 当前位置末级显示的栏目名，缺省时用主标题 */
   crumb?: string
 }>()
@@ -82,9 +87,9 @@ defineProps<{
 }
 .rs-page-hero-title {
   font-size: var(--rs-text-h1);
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
-  line-height: 1.15;
+  line-height: 1.2;
   margin-bottom: 18px;
 }
 .rs-page-hero-desc {

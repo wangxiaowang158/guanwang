@@ -27,7 +27,7 @@ defineProps<{
 .rs-head-sub {
   max-width: 48rem;
   margin: 12px 0 0;
-  font-size: 15px;
+  font-size: var(--text-fs-body);
   line-height: 1.8;
   color: var(--rs-text-body);
 }

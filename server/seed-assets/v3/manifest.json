@@ -1,0 +1,329 @@
+{
+  "be": {
+    "trend": [
+      {
+        "file": "be-trend-1.jpg",
+        "w": 1636,
+        "h": 800
+      }
+    ],
+    "solution": [
+      {
+        "file": "be-solution-1.jpg",
+        "w": 1673,
+        "h": 885
+      }
+    ],
+    "dotr": [
+      {
+        "file": "be-dotr-1.jpg",
+        "w": 592,
+        "h": 875
+      }
+    ],
+    "brand": [
+      {
+        "file": "be-brand-1.jpg",
+        "w": 292,
+        "h": 314,
+        "title": "千牛卫"
+      },
+      {
+        "file": "be-brand-2.jpg",
+        "w": 360,
+        "h": 455,
+        "title": "小马哥"
+      }
+    ]
+  },
+  "bb": {
+    "solution": [
+      {
+        "file": "bb-solution-1.jpg",
+        "w": 1466,
+        "h": 648
+      }
+    ]
+  },
+  "bl": {
+    "solution": [
+      {
+        "file": "bl-solution-1.jpg",
+        "w": 1650,
+        "h": 755
+      }
+    ],
+    "brand": [
+      {
+        "file": "bl-brand-1.jpg",
+        "w": 322,
+        "h": 508,
+        "title": "小鹿爱家"
+      }
+    ]
+  },
+  "es-overview": {
+    "solution": [
+      {
+        "file": "es-overview-solution-1.jpg",
+        "w": 1540,
+        "h": 880
+      }
+    ],
+    "value": [
+      {
+        "file": "es-overview-value-1.jpg",
+        "w": 1673,
+        "h": 282
+      }
+    ]
+  },
+  "es-consult": {
+    "features": [
+      {
+        "file": "es-consult-features-1.jpg",
+        "w": 1634,
+        "h": 1031
+      }
+    ],
+    "highlights": [
+      {
+        "file": "es-consult-highlights-1.jpg",
+        "w": 1686,
+        "h": 283
+      }
+    ]
+  },
+  "es-design": {
+    "intro": [
+      {
+        "file": "es-design-intro-1.jpg",
+        "w": 1618,
+        "h": 424
+      }
+    ],
+    "features": [
+      {
+        "file": "es-design-features-1.jpg",
+        "w": 1584,
+        "h": 1120
+      }
+    ],
+    "highlights": [
+      {
+        "file": "es-design-highlights-1.jpg",
+        "w": 1705,
+        "h": 175
+      }
+    ]
+  },
+  "es-build": {
+    "intro": [
+      {
+        "file": "es-build-intro-1.jpg",
+        "w": 751,
+        "h": 448
+      },
+      {
+        "file": "es-build-intro-2.jpg",
+        "w": 842,
+        "h": 449
+      }
+    ],
+    "features": [
+      {
+        "file": "es-build-features-1.jpg",
+        "w": 1613,
+        "h": 1189
+      }
+    ],
+    "highlights": [
+      {
+        "file": "es-build-highlights-1.jpg",
+        "w": 1625,
+        "h": 185
+      }
+    ]
+  },
+  "es-operate": {
+    "intro": [
+      {
+        "file": "es-operate-intro-1.jpg",
+        "w": 766,
+        "h": 412
+      },
+      {
+        "file": "es-operate-intro-2.jpg",
+        "w": 712,
+        "h": 394
+      }
+    ],
+    "features": [
+      {
+        "file": "es-operate-features-1.jpg",
+        "w": 1620,
+        "h": 1204
+      }
+    ],
+    "highlights": [
+      {
+        "file": "es-operate-highlights-1.jpg",
+        "w": 1398,
+        "h": 256
+      }
+    ]
+  },
+  "es-inspect": {
+    "intro": [
+      {
+        "file": "es-inspect-intro-1.jpg",
+        "w": 1632,
+        "h": 432
+      }
+    ],
+    "features": [
+      {
+        "file": "es-inspect-features-1.jpg",
+        "w": 1683,
+        "h": 784
+      }
+    ],
+    "highlights": [
+      {
+        "file": "es-inspect-highlights-1.jpg",
+        "w": 1683,
+        "h": 604
+      }
+    ]
+  },
+  "es-maintain": {
+    "intro": [
+      {
+        "file": "es-maintain-intro-1.jpg",
+        "w": 772,
+        "h": 469
+      },
+      {
+        "file": "es-maintain-intro-2.jpg",
+        "w": 782,
+        "h": 459
+      }
+    ],
+    "features": [
+      {
+        "file": "es-maintain-features-1.jpg",
+        "w": 1669,
+        "h": 989
+      }
+    ],
+    "highlights": [
+      {
+        "file": "es-maintain-highlights-1.jpg",
+        "w": 1674,
+        "h": 240
+      }
+    ]
+  },
+  "es-room": {
+    "intro": [
+      {
+        "file": "es-room-intro-1.jpg",
+        "w": 757,
+        "h": 430
+      },
+      {
+        "file": "es-room-intro-2.jpg",
+        "w": 890,
+        "h": 316
+      }
+    ],
+    "features": [
+      {
+        "file": "es-room-features-1.jpg",
+        "w": 1694,
+        "h": 819
+      }
+    ]
+  },
+  "bs-twin": {
+    "features": [
+      {
+        "file": "bs-twin-features-1.jpg",
+        "w": 720,
+        "h": 910
+      },
+      {
+        "file": "bs-twin-features-2.jpg",
+        "w": 780,
+        "h": 1030
+      }
+    ]
+  },
+  "bs-turing": {
+    "intro": [
+      {
+        "file": "bs-turing-intro-1.jpg",
+        "w": 785,
+        "h": 975
+      },
+      {
+        "file": "bs-turing-intro-2.jpg",
+        "w": 842,
+        "h": 1138
+      }
+    ]
+  },
+  "bs-safety": {
+    "intro": [
+      {
+        "file": "bs-safety-intro-1.jpg",
+        "w": 740,
+        "h": 945
+      },
+      {
+        "file": "bs-safety-intro-2.jpg",
+        "w": 723,
+        "h": 929
+      }
+    ],
+    "highlights": [
+      {
+        "file": "bs-safety-highlights-1.jpg",
+        "w": 735,
+        "h": 945
+      },
+      {
+        "file": "bs-safety-highlights-2.jpg",
+        "w": 770,
+        "h": 920
+      }
+    ]
+  },
+  "ls-overview": {
+    "solution": [
+      {
+        "file": "ls-overview-solution-1.jpg",
+        "w": 1720,
+        "h": 830
+      }
+    ],
+    "value": [
+      {
+        "file": "ls-overview-value-1.jpg",
+        "w": 1677,
+        "h": 413,
+        "title": "为人创造健康、舒适、安全、智慧的工作与生活环境"
+      }
+    ]
+  },
+  "ls-livex": {
+    "features": [
+      {
+        "file": "ls-livex-features-1.jpg",
+        "w": 1693,
+        "h": 897,
+        "title": "LiveX 系统总体设计架构"
+      }
+    ]
+  }
+}

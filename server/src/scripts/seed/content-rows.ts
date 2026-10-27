@@ -9,6 +9,7 @@ import webSite from '../../modules/cms/seed/web-site.json'
 import { HOME_SECTION_KEYS } from '../../modules/cms/home-section.service'
 import type { ContentExtra } from '../../common/content-extra'
 import { buildV2ContentRows } from './content-rows-v2'
+import { buildV3ContentRows } from './content-rows-v3'
 import { isLegacyKey } from './channel-rows-v2'
 
 /** 表单以 name 为名称字段的栏目，种子须写 name 而非 title（迁移 1790000008000 同步旧库） */
@@ -214,5 +215,6 @@ export function buildContentRows(): ContentRow[] {
     ...buildBannerRows(),
     ...buildAdminOnlyRows(),
     ...buildV2ContentRows(),
+    ...buildV3ContentRows(),
   ].filter(r => !isLegacyKey(r.channelKey))
 }

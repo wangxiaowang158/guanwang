@@ -1,13 +1,15 @@
 // 前台内容接口 —— /api/portal/*
 // 前台只读，无需登录；字段裁剪由 formFields / listColumns 决定
-import { Controller, Get, Headers, NotFoundException, Param, Query, Res } from '@nestjs/common'
+import { Controller, Get, Headers, NotFoundException, Param, Query, Res, UseGuards } from '@nestjs/common'
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 import type { Response } from 'express'
 import { HomeSectionService } from './home-section.service'
 import { PortalCmsService } from './portal-cms.service'
 import { PrerenderService } from './prerender.service'
+import { SearchService } from './search.service'
 import { SiteConfigService } from './site-config.service'
 import { normalizeOrigin } from './site-origin'
-import { BlockItemsQueryDto } from './dto/portal.dto'
+import { BlockItemsQueryDto, SearchQueryDto } from './dto/portal.dto'
 
 /** 逗号分隔的筛选值 → 去空去重数组，最多 10 个，防止超长 OR 条件 */
 function splitCsv(raw?: string): string[] | undefined {
@@ -48,6 +50,7 @@ export class PortalCmsController {
     private readonly homeSection: HomeSectionService,
     private readonly siteConfig: SiteConfigService,
     private readonly prerenderService: PrerenderService,
+    private readonly searchService: SearchService,
   ) {}
 
   /** 站点基本信息 */
@@ -74,13 +77,35 @@ export class PortalCmsController {
     return this.homeSection.sections()
   }
 
+  /** 站内搜索：每条 LIKE 扫全表，单独收紧限流，挡住拿搜索接口压库 */
+  @Get('search')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  search(@Query() query: SearchQueryDto) {
+    return this.searchService.search(query.q, query.page, query.pageSize)
+  }
+
   /**
-   * 栏目页内容
+   * 栏目页内容：按栏目 key 或前台路径取，二者择一，key 优先
+   * 后台新增的页面没有写死在前台路由里，前台通用路由只能按地址来取
    * @param key 顶级栏目 key
+   * @param path 前台路径，如 /energy-solutions/overview
    */
   @Get('page')
-  page(@Query('key') key: string) {
-    return this.portalCms.pageContent(String(key || ''))
+  page(
+    @Query('key') key: string,
+    @Query('path') path: string,
+    @Query('preview') preview: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = typeof preview === 'string' && preview ? preview : undefined
+    // 预览响应含草稿：不能被浏览器、网关或 CDN 缓存，也不能被搜索引擎收录
+    if (token) {
+      res.setHeader('Cache-Control', 'no-store')
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow')
+    }
+    if (typeof key === 'string' && key) return this.portalCms.pageContent(key, token)
+    return this.portalCms.pageContentByPath(typeof path === 'string' ? path : '', token)
   }
 
   /**
@@ -208,7 +233,8 @@ export class PortalCmsController {
     const config = await this.siteConfig.get()
     const origin = normalizeOrigin(config.website)
 
-    const lines = ['User-agent: *', 'Allow: /', 'Disallow: /member/']
+    // 搜索结果页是正文的重复聚合，且关键词组合无穷，放给爬虫会被当成海量薄内容页
+    const lines = ['User-agent: *', 'Allow: /', 'Disallow: /member/', 'Disallow: /search']
     // 域名未配置时不输出 Sitemap 行，避免给出无效地址
     if (origin) lines.push(`Sitemap: ${origin}/sitemap.xml`)
 

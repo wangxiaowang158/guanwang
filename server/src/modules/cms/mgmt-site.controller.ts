@@ -14,7 +14,7 @@ export class MgmtSiteController {
   /** 读取站点基本信息 */
   @Get('detail')
   async detail() {
-    return this.service.getPublic()
+    return this.service.getForAdmin()
   }
 
   /** 保存站点基本信息 */

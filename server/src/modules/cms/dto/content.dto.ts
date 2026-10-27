@@ -1,7 +1,7 @@
 // 内容管理入参校验
 import { Type } from 'class-transformer'
 import {
-  IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Length, Matches, Min,
+  ArrayMaxSize, ArrayNotEmpty, IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Length, Matches, Min,
 } from 'class-validator'
 import { CONTENT_STATUS, type ContentStatus } from '../../../common/enums'
 
@@ -208,6 +208,26 @@ export class ToggleTopDto {
   id!: number
 }
 
+/** 复制为草稿：与置顶同形，单独命名便于日后各自扩展 */
+export class DuplicateContentDto extends ToggleTopDto {}
+
+/** 批量改发布状态：只作用于该栏目下的记录 */
+export class BatchStatusDto {
+  @IsString()
+  @Length(1, 64)
+  channelKey!: string
+
+  @IsArray()
+  @ArrayNotEmpty({ message: '请选择要操作的内容' })
+  @ArrayMaxSize(200, { message: '一次最多操作 200 条' })
+  @Type(() => Number)
+  @IsInt({ each: true })
+  ids!: number[]
+
+  @IsIn(CONTENT_STATUS_VALUES, { message: '状态不合法' })
+  status!: ContentStatus
+}
+
 /** 修改排序值 */
 export class UpdateSortDto {
   @IsString()
@@ -222,4 +242,61 @@ export class UpdateSortDto {
   @IsInt()
   @Min(0)
   sort!: number
+}
+
+/** 回收站列表查询 */
+export class TrashListQueryDto {
+  @IsString()
+  @Length(1, 64)
+  channelKey!: string
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: '页码须为整数' })
+  @Min(1, { message: '页码须大于 0' })
+  page?: number
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: '每页条数须为整数' })
+  @Min(1, { message: '每页条数须大于 0' })
+  pageSize?: number
+}
+
+/** 回收站批量恢复 / 彻底删除（ids 只认该栏目下已在回收站的记录） */
+export class TrashBatchDto {
+  @IsString()
+  @Length(1, 64)
+  channelKey!: string
+
+  @IsArray()
+  @ArrayNotEmpty({ message: '请选择要操作的内容' })
+  @ArrayMaxSize(200, { message: '一次最多操作 200 条' })
+  @Type(() => Number)
+  @IsInt({ each: true })
+  ids!: number[]
+}
+
+/** 历史版本列表查询 */
+export class RevisionListQueryDto {
+  @IsString()
+  @Length(1, 64)
+  channelKey!: string
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  id!: number
+}
+
+/** 历史版本详情 / 恢复 */
+export class RevisionRefDto {
+  @IsString()
+  @Length(1, 64)
+  channelKey!: string
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  revisionId!: number
 }

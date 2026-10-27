@@ -35,14 +35,17 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
   title: { label: '标题', widget: 'text', required: true, maxlength: 100 },
   name: { label: '名称', widget: 'text', required: true, maxlength: 50 },
   subtitle: { label: '副标题', widget: 'text', maxlength: 100 },
-  keywords: { label: '关键字', widget: 'text', maxlength: 200 },
-  description: { label: '描述', widget: 'textarea', maxlength: 500 },
+  // keywords 只进 <meta name="keywords">，页面上不显示
+  keywords: { label: 'SEO 关键词', widget: 'text', maxlength: 200, tip: '选填。只给搜索引擎看，页面上不显示；多个词用英文逗号分隔' },
+  // description 两用：卡片/列表里的摘要文字，同时是文章页的搜索结果摘要
+  description: { label: '描述', widget: 'textarea', maxlength: 500, tip: '列表与卡片里显示的摘要，也是搜索结果里的介绍文字' },
   intro: { label: '简介', widget: 'textarea', maxlength: 500 },
   content: { label: '内容', widget: 'richtext' },
-  cover: { label: '封面图片', widget: 'cover', tip: '建议尺寸：见前台板块要求' },
-  video: { label: '视频', widget: 'video', tip: '前台视频板块的播放源；封面图会作为播放前的首帧' },
+  cover: { label: '封面图片', widget: 'cover', tip: '建议 1200×750px（16:10）；卡片里按比例裁切，主体请放在画面中间' },
+  video: { label: '视频', widget: 'video', tip: '选填。视频板块里为播放源；卡片、磁贴、品牌等图片位配了视频则改为静音循环播放；封面图作首帧' },
   whiteCover: { label: '白色图片', widget: 'image', tip: '建议尺寸：800*540px' },
-  file: { label: '文件地址', widget: 'file' },
+  // 提示写在 FileUpload 控件内（格式与大小上限），这里不再重复
+  file: { label: '附件', widget: 'file' },
   link: { label: '链接', widget: 'link' },
   // 下拉而非文本：前台按此值与分类栏目名精确比对做筛选，
   // 手输的空格或同义词会让前台筛不出内容，且后台看不出异常。选项来源见 categorySources.ts
@@ -63,7 +66,7 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
   steps: { label: '服务流程', widget: 'extra-items', tip: '按顺序展示，可上下调整' },
   modes: { label: '合作模式', widget: 'extra-items' },
   facts: { label: '基础信息', widget: 'extra-facts', tip: '如面积、业态、合作模式；名称与内容都填写才会保存' },
-  gallery: { label: '现场实拍', widget: 'extra-gallery', tip: '现场实拍、系统截图，最多 30 张' },
+  gallery: { label: '现场实拍', widget: 'extra-gallery', tip: '现场实拍、系统截图或视频，最多 30 项' },
   quote: { label: '客户证言', widget: 'extra-quote' },
 }
 
@@ -108,8 +111,26 @@ const CHANNEL_FIELD_OVERRIDES: Record<string, Record<string, Partial<FieldDef>>>
   },
   'home-customer': {
     title: { label: '合作伙伴名称' },
+    // 首页「战略合作」按此分三组展示；固定选项，避免手输出第四个组
+    category: {
+      label: '伙伴分组',
+      tip: '首页按分组展示；不选归入「合作伙伴」',
+      options: ['产业伙伴', '科创伙伴', '合作伙伴'].map(v => ({ label: v, value: v })),
+    },
     whiteCover: { label: '伙伴 Logo', tip: 'Logo 加载失败时前台显示名称' },
     link: { label: '官网链接', tip: '填写后点击 Logo 跳转，仅支持 http(s) 地址' },
+  },
+  // 招聘职位区块（layout=jobs）复用宽表通用列，逐列改成招聘语义
+  'about-jobs': {
+    title: { label: '职位名称' },
+    subtitle: { label: '工作地点', tip: '如：北京·海淀' },
+    brand: { label: '所属部门' },
+    description: { label: '职位亮点', tip: '一句话，列表里显示' },
+    content: { label: '职责与要求' },
+  },
+  'home-advantage': {
+    title: { label: '优势名称', tip: '如：方案定制' },
+    description: { label: '优势说明' },
   },
   'home-achievement': {
     title: { label: '数值', maxlength: 12, tip: '只填数字，如 300' },

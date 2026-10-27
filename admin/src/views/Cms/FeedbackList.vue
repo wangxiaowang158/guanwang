@@ -1,6 +1,7 @@
 <template>
   <div class="feedback-list">
-    <div class="page-title">意见反馈</div>
+    <!-- 标题跟随栏目名（与侧边栏一致），可在栏目管理里改名，如改成「留言与线索」 -->
+    <div class="page-title">{{ channel?.name || '留言与线索' }}</div>
 
     <div class="toolbar">
       <a-space :size="12" wrap>
@@ -19,6 +20,14 @@
           @change="search"
         />
         <a-select
+          v-model:value="leadType"
+          placeholder="全部线索类型"
+          style="width: 150px"
+          allow-clear
+          :options="leadTypeOptions"
+          @change="search"
+        />
+        <a-select
           v-model:value="feedbackType"
           placeholder="全部分类"
           style="width: 130px"
@@ -34,26 +43,34 @@
           :options="statusOptions"
           @change="search"
         />
-        <a-input-search
+        <a-input
           v-model:value="keyword"
           placeholder="姓名 / 单位 / 内容"
           style="width: 220px"
           allow-clear
           :maxlength="50"
-          @search="search"
+          @press-enter="search"
         />
+        <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
       </a-space>
     </div>
     <!-- 功能操作行：导出放这里，不与查询条件挤在同一行 -->
     <div class="actions">
-      <a-button :loading="exporting" @click="onExport">
-        <template #icon><DownloadOutlined /></template>
-        导出
-      </a-button>
+      <span class="actions-title">留言数据</span>
+      <a-space>
+        <a-button @click="notifyOpen = true">
+          <template #icon><BellOutlined /></template>
+          推送到群
+        </a-button>
+        <a-button :loading="exporting" @click="onExport">
+          <template #icon><DownloadOutlined /></template>
+          导出
+        </a-button>
+      </a-space>
     </div>
     <div v-if="selectedKeys.length" class="batch-bar">
       <span>已选 {{ selectedKeys.length }} 条</span>
-      <a-popconfirm title="确认删除选中的反馈？" @confirm="onBatchDelete">
+      <a-popconfirm :title="`确定删除选中的 ${selectedKeys.length} 条留言吗？回复记录一并删除，不可恢复`" ok-type="danger" @confirm="onBatchDelete">
         <a-button type="link" danger size="small">批量删除</a-button>
       </a-popconfirm>
     </div>
@@ -78,6 +95,10 @@
         <template v-if="column.key === 'source'">
           {{ FEEDBACK_SOURCE_LABEL[record.source as FeedbackSource] }}
         </template>
+        <template v-else-if="column.key === 'leadType'">
+          <a-tag v-if="record.leadType" color="blue">{{ FEEDBACK_LEAD_TYPE_LABEL[record.leadType as FeedbackLeadType] }}</a-tag>
+          <span v-else class="muted">普通留言</span>
+        </template>
         <template v-else-if="column.key === 'feedbackType'">
           {{ typeLabel(record.feedbackType) }}
         </template>
@@ -92,115 +113,49 @@
         <template v-else-if="column.key === 'action'">
           <a-space :size="4">
             <a-button type="link" size="small" @click="openDetail(record.id)">处理</a-button>
-            <a-popconfirm title="确认删除该反馈？" @confirm="onDelete(record.id)">
+            <a-popconfirm title="确定删除这条留言吗？回复记录一并删除，不可恢复" ok-type="danger" @confirm="onDelete(record.id)">
               <a-button type="link" size="small" danger>删除</a-button>
             </a-popconfirm>
           </a-space>
         </template>
       </template>
     </a-table>
-    <a-modal v-model:open="detailOpen" title="反馈处理" :width="720" :footer="null">
-      <a-descriptions v-if="current" :column="2" size="small" bordered>
-        <a-descriptions-item label="来源">
-          {{ FEEDBACK_SOURCE_LABEL[current.source] }}
-          <span v-if="current.memberNickname">（{{ current.memberNickname }}）</span>
-        </a-descriptions-item>
-        <a-descriptions-item label="分类">
-          {{ typeLabel(current.feedbackType) }}
-        </a-descriptions-item>
-        <a-descriptions-item label="姓名">{{ current.name }}</a-descriptions-item>
-        <a-descriptions-item label="联系电话">{{ current.phone || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="单位">{{ current.company || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="职位">{{ current.position || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="邮箱">{{ current.email || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="线索类型">
-          {{ current.leadType ? FEEDBACK_LEAD_TYPE_LABEL[current.leadType] : '-' }}
-        </a-descriptions-item>
-        <a-descriptions-item label="状态">
-          <a-tag :color="FEEDBACK_STATUS_COLOR[current.status]">
-            {{ FEEDBACK_STATUS_LABEL[current.status] }}
-          </a-tag>
-        </a-descriptions-item>
-        <a-descriptions-item label="提交时间">{{ formatTime(current.createdAt) }}</a-descriptions-item>
-        <a-descriptions-item label="提交 IP">{{ current.submitIp || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="反馈内容" :span="2">
-          <div class="content-text">{{ current.content }}</div>
-        </a-descriptions-item>
-      </a-descriptions>
-
-      <!-- 状态流转独立于回复：标记「处理中」或「关闭」无需填写回复内容 -->
-      <div v-if="current && statusActions.length" class="status-bar">
-        <span class="status-label">变更状态：</span>
-        <a-space :size="8">
-          <a-popconfirm
-            v-for="target in statusActions"
-            :key="target"
-            :title="`确认将状态变更为「${FEEDBACK_STATUS_LABEL[target]}」？`"
-            @confirm="onChangeStatus(target)"
-          >
-            <a-button size="small" :loading="statusUpdating">
-              {{ FEEDBACK_STATUS_LABEL[target] }}
-            </a-button>
-          </a-popconfirm>
-        </a-space>
-      </div>
-
-      <!-- 回复线程：按时间正序展示历史回复 -->
-      <div v-if="current" class="reply-thread">
-        <div class="section-title">回复记录</div>
-        <a-empty v-if="!current.replies.length" description="暂无回复" :image-style="{ height: '48px' }" />
-        <div v-for="item in current.replies" :key="item.id" class="reply-item">
-          <div class="reply-meta">
-            <span>{{ item.repliedBy || '管理员' }}</span>
-            <span>{{ formatTime(item.createdAt) }}</span>
-            <a-tag v-if="!item.visibleToMember" color="orange">仅内部</a-tag>
-          </div>
-          <div class="content-text">{{ item.content }}</div>
-        </div>
-      </div>
-      <!-- 回复表单：closed 为终态，不再允许回复 -->
-      <div v-if="current && current.status !== 'closed'" class="reply-form">
-        <div class="section-title">新增回复</div>
-        <a-textarea
-          v-model:value="replyContent"
-          :rows="4"
-          :maxlength="1000"
-          show-count
-          placeholder="填写回复内容"
-        />
-        <div class="form-foot">
-          <a-checkbox v-model:checked="visibleToMember">回复对会员可见</a-checkbox>
-          <a-button type="primary" :loading="submitting" @click="onReply">提交回复</a-button>
-        </div>
-        <div class="foot-hint">提交回复后状态自动变为「已回复」</div>
-      </div>
-
-      <!-- 无需回复时仅提供状态流转 -->
-      <div v-else-if="current" class="reply-form">
-        <div class="section-title">该反馈已关闭，不可继续回复</div>
-      </div>
-    </a-modal>
+    <FeedbackDetailModal v-model:open="detailOpen" :id="detailId" @changed="onChanged" />
+    <NotifyConfigModal v-model:open="notifyOpen" />
   </div>
 </template>
 <script setup lang="ts">
-// 意见反馈：访客咨询与会员反馈合并管理，含回复线程、状态流转、单条与批量删除
-import { computed, ref } from 'vue'
+// 留言与线索：访客咨询、预约线索与会员反馈合并管理；处理弹窗见 FeedbackDetailModal
+import { ref } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
-import { DownloadOutlined } from '@ant-design/icons-vue'
+import { BellOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import {
-  getFeedbackList, getFeedbackDetail, replyFeedback, updateFeedbackStatus,
-  deleteFeedback, batchDeleteFeedback, exportFeedback,
+  getFeedbackList, deleteFeedback, batchDeleteFeedback, exportFeedback,
   FEEDBACK_SOURCE_LABEL, FEEDBACK_TYPE_LABEL, FEEDBACK_STATUS_LABEL, FEEDBACK_LEAD_TYPE_LABEL,
-  FEEDBACK_STATUS_COLOR, FEEDBACK_STATUS_FLOW,
-  type FeedbackDetail, type FeedbackListItem,
+  FEEDBACK_STATUS_COLOR, LEAD_TYPE_NONE,
+  type FeedbackLeadType, type FeedbackListItem,
   type FeedbackSource, type FeedbackStatus, type FeedbackType,
 } from '@/api/feedback'
 import { useRoute } from 'vue-router'
 import { useServerListPage } from '@/composables/useServerListPage'
 import { readBlobError, parseFileName, saveBlob } from '@/utils/download'
-import { DELETE_SUCCESS, DELETE_FAILED, SAVE_SUCCESS, SAVE_FAILED, EXPORT_FAILED } from '@/constants/ui'
+import { DELETE_SUCCESS, DELETE_FAILED, EXPORT_FAILED } from '@/constants/ui'
+import FeedbackDetailModal from './components/feedback/FeedbackDetailModal.vue'
+import NotifyConfigModal from './components/feedback/NotifyConfigModal.vue'
+import { usePendingFeedback } from '@/composables/usePendingFeedback'
+import type { Channel } from '@/api/cms'
+
+defineProps<{ channel?: Channel }>()
 
 const route = useRoute()
+const { refresh: refreshPendingBadge } = usePendingFeedback()
+
+/** 列表有变化（处理、删除）后刷新列表并同步侧边栏角标 */
+const onChanged = async () => {
+  await fetchList()
+  void refreshPendingBadge(true)
+}
 
 /** 时间展示：空值补占位，避免表格出现空白单元格 */
 const formatTime = (value: string | null) =>
@@ -222,6 +177,7 @@ function resolveInitialStatus(): FeedbackStatus | undefined {
 }
 
 const sourceOptions = toOptions(FEEDBACK_SOURCE_LABEL)
+const leadTypeOptions = [...toOptions(FEEDBACK_LEAD_TYPE_LABEL), { value: LEAD_TYPE_NONE, label: '普通留言' }]
 const typeOptions = toOptions(FEEDBACK_TYPE_LABEL)
 const statusOptions = toOptions(FEEDBACK_STATUS_LABEL)
 const columns = [
@@ -229,6 +185,8 @@ const columns = [
   { title: '姓名', dataIndex: 'name', key: 'name', width: 110 },
   { title: '单位', dataIndex: 'company', key: 'company', width: 160, ellipsis: true },
   { title: '手机号', dataIndex: 'phoneMasked', key: 'phoneMasked', width: 130 },
+  // 线索类型排在前面：预约测算、预约演示是最该优先跟进的
+  { title: '线索类型', key: 'leadType', width: 120 },
   { title: '分类', key: 'feedbackType', width: 100 },
   { title: '内容', dataIndex: 'content', key: 'content', ellipsis: true },
   { title: '回复数', dataIndex: 'replyCount', key: 'replyCount', width: 80, align: 'center' as const },
@@ -240,17 +198,15 @@ const columns = [
 // 本页独有筛选条件，由闭包传入取数函数
 const keyword = ref('')
 const source = ref<FeedbackSource>()
+const leadType = ref<FeedbackLeadType | typeof LEAD_TYPE_NONE>()
 const feedbackType = ref<FeedbackType>()
 // 状态初值取自路由 query：数据仪表盘点「待处理反馈数」跳转时带 status=pending
 const status = ref<FeedbackStatus | undefined>(resolveInitialStatus())
 const dateRange = ref<[string, string]>()
 
 const detailOpen = ref(false)
-const current = ref<FeedbackDetail | null>(null)
-const replyContent = ref('')
-const visibleToMember = ref(true)
-const submitting = ref(false)
-const statusUpdating = ref(false)
+const detailId = ref<number | null>(null)
+const notifyOpen = ref(false)
 const exporting = ref(false)
 
 /**
@@ -260,6 +216,7 @@ const exporting = ref(false)
 const currentFilters = () => ({
   keyword: keyword.value || undefined,
   source: source.value,
+  leadType: leadType.value,
   feedbackType: feedbackType.value,
   status: status.value,
   startDate: dateRange.value?.[0],
@@ -276,6 +233,17 @@ const {
     pageSize: query.pageSize,
   }),
 )
+
+// 重置：清空全部筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  source.value = undefined
+  leadType.value = undefined
+  feedbackType.value = undefined
+  status.value = undefined
+  dateRange.value = undefined
+  search()
+}
 
 /**
  * 按当前筛选条件导出 xlsx
@@ -303,120 +271,49 @@ const onExport = async () => {
 /** 表格分页变更 */
 const onTableChange = (pag: { current?: number; pageSize?: number }) =>
   onPageChange(pag.current || 1, pag.pageSize || pageSize.value)
-/**
- * 可直接流转到的目标状态
- * 取自后端白名单，但排除 replied —— 「已回复」只能由提交回复产生，
- * 不允许在没有回复内容的情况下手动标记为已回复
- */
-const statusActions = computed<FeedbackStatus[]>(() => {
-  if (!current.value) return []
-  return FEEDBACK_STATUS_FLOW[current.value.status].filter((s) => s !== 'replied')
-})
-
-/** 单独变更状态，不附带回复；成功后刷新详情与列表 */
-const onChangeStatus = async (target: FeedbackStatus) => {
-  if (!current.value) return
-  const id = current.value.id
-  statusUpdating.value = true
-  try {
-    const res = await updateFeedbackStatus(id, target)
-    if (res.data.code !== 200) {
-      message.error(res.data.message || SAVE_FAILED)
-      return
-    }
-    message.success(SAVE_SUCCESS)
-    // 关闭后不再有可执行操作，直接收起弹窗
-    if (target === 'closed') {
-      detailOpen.value = false
-    } else {
-      // 只刷新详情数据，保留管理员可能已输入的回复草稿
-      await loadDetail(id)
-    }
-    await fetchList()
-  } catch {
-    message.error(SAVE_FAILED)
-  } finally {
-    statusUpdating.value = false
-  }
-}
-
-/**
- * 拉取详情写入 current
- * 单独抽出以便变更状态后刷新详情时不动回复表单，避免清空未提交的草稿
- * @returns 是否取到详情
- */
-const loadDetail = async (id: number): Promise<boolean> => {
-  const res = await getFeedbackDetail(id)
-  if (res.data.code !== 200 || !res.data.data) {
-    message.error(res.data.message || '获取反馈详情失败')
-    return false
-  }
-  current.value = res.data.data
-  return true
-}
-
-/** 打开处理弹窗：列表只有遮蔽手机号且不含回复线程，需另取详情 */
-const openDetail = async (id: number) => {
-  if (!(await loadDetail(id))) return
-  replyContent.value = ''
-  // 默认可见性按来源（SRS 3.5.10）：会员反馈默认对会员可见；
-  // 匿名咨询没有会员可看，默认仅内部留痕，免得管理员不留意时误以为回复已送达
-  visibleToMember.value = current.value?.source === 'member'
+/** 打开处理弹窗；详情由弹窗自己取（列表只有遮蔽手机号且不含回复线程） */
+const openDetail = (id: number) => {
+  detailId.value = id
   detailOpen.value = true
 }
 
-/** 提交回复；后端会在回复成功后自动把状态推进为「已回复」 */
-const onReply = async () => {
-  if (!current.value) return
-  const content = replyContent.value.trim()
-  if (!content) {
-    message.warning('请填写回复内容')
-    return
-  }
-  submitting.value = true
+// 看板点某条最新留言跳过来时带 ?id=，进页即打开它的处理弹窗
+const queryId = Number(route.query.id)
+if (Number.isInteger(queryId) && queryId > 0) openDetail(queryId)
+
+/** 删除单条留言（连带其回复记录）；网络异常也要给提示，不能像点了没反应 */
+const onDelete = async (id: number) => {
   try {
-    // 回复人由服务端按登录身份记录，前端不传，免得被改包冒名
-    const res = await replyFeedback(current.value.id, {
-      content,
-      visibleToMember: visibleToMember.value,
-    })
+    const res = await deleteFeedback(id)
     if (res.data.code !== 200) {
-      message.error(res.data.message || SAVE_FAILED)
+      message.error(res.data.message || DELETE_FAILED)
       return
     }
-    // 后端在回复成功后自动把状态推进为「已回复」，此处无需再调状态接口
-    message.success(SAVE_SUCCESS)
-    detailOpen.value = false
-    await fetchList()
+    message.success(DELETE_SUCCESS)
+    await refreshAfterRemove(1)
+    void refreshPendingBadge(true)
   } catch {
-    message.error(SAVE_FAILED)
-  } finally {
-    submitting.value = false
+    message.error(DELETE_FAILED)
   }
-}
-/** 删除单条反馈（连带其回复记录） */
-const onDelete = async (id: number) => {
-  const res = await deleteFeedback(id)
-  if (res.data.code !== 200) {
-    message.error(res.data.message || DELETE_FAILED)
-    return
-  }
-  message.success(DELETE_SUCCESS)
-  await refreshAfterRemove(1)
 }
 
-/** 批量删除选中反馈 */
+/** 批量删除选中留言 */
 const onBatchDelete = async () => {
   const ids = [...selectedKeys.value]
   if (!ids.length) return
-  const res = await batchDeleteFeedback(ids)
-  if (res.data.code !== 200) {
-    message.error(res.data.message || DELETE_FAILED)
-    return
+  try {
+    const res = await batchDeleteFeedback(ids)
+    if (res.data.code !== 200) {
+      message.error(res.data.message || DELETE_FAILED)
+      return
+    }
+    message.success(DELETE_SUCCESS)
+    // 用后端返回的实际删除数，并发场景下可能少于请求条数
+    await refreshAfterRemove(res.data.data?.removed ?? ids.length)
+    void refreshPendingBadge(true)
+  } catch {
+    message.error(DELETE_FAILED)
   }
-  message.success(DELETE_SUCCESS)
-  // 用后端返回的实际删除数，并发场景下可能少于请求条数
-  await refreshAfterRemove(res.data.data?.removed ?? ids.length)
 }
 </script>
 <style scoped>
@@ -436,8 +333,15 @@ const onBatchDelete = async () => {
 
 .actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.actions-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #262626;
 }
 
 .batch-bar {
@@ -451,62 +355,9 @@ const onBatchDelete = async () => {
   font-size: 13px;
 }
 
-/* 反馈正文与回复正文均可能含换行，保留原始换行并允许长串折行 */
-.content-text {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
 
-.reply-thread,
-.reply-form {
-  margin-top: 20px;
-}
-
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.status-label {
-  font-size: 13px;
-  color: rgba(0, 0, 0, 0.65);
-}
-
-.foot-hint {
-  margin-top: 8px;
-  font-size: 12px;
+/* 普通留言弱化显示，让预约线索的标签更醒目 */
+.muted {
   color: rgba(0, 0, 0, 0.45);
-  text-align: right;
-}
-
-.section-title {
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.reply-item {
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  background: var(--color-fill-alter, #fafafa);
-  border-radius: 6px;
-}
-
-.reply-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.45);
-}
-
-/* 底部操作区右对齐，与其他编辑页保持一致 */
-.form-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
 }
 </style>

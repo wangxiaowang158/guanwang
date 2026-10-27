@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   /** 后端代理目标 */
   readonly VITE_PROXY_TARGET?: string
+  /** 官网前台地址，后台「查看页面 / 预览草稿」用；留空取基本信息里的网址 */
+  readonly VITE_PORTAL_ORIGIN?: string
   /** 接口路径前缀 */
   readonly VITE_API_PREFIX?: string
   /** 地图数据源代理目标 */

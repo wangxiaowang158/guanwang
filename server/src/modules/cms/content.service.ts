@@ -1,13 +1,14 @@
 // 内容服务 —— 按栏目 key 组织的内容增删改查
 // 一张宽表存所有栏目内容，各栏目按自己的 formFields 取用字段
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository, type FindOptionsWhere } from 'typeorm'
+import { In, IsNull, LessThan, Not, Repository, type FindOptionsWhere } from 'typeorm'
 import { sanitizeRichText } from '../../common/html-sanitizer'
 import { matchExtra, normalizeExtra, serializeExtra, type ExtraFilter } from '../../common/content-extra'
 import { CONTENT_STATUS, type ContentStatus } from '../../common/enums'
 import { Channel } from './channel.entity'
 import { Content } from './content.entity'
+import { ContentRevision } from './content-revision.entity'
 import type { SaveContentDto } from './dto/content.dto'
 import { formatDateTime } from './vo/cms.vo'
 import { resolvePaging, type PageResult } from '../../common/pagination'
@@ -44,11 +45,27 @@ const PORTAL_ORDER = { isTop: 'DESC', sort: 'DESC', id: 'DESC' } as const
 /** 后台内容列表的分页结果 */
 export type ContentPage = PageResult<Content>
 
+/**
+ * 每条内容保留的历史版本数
+ * 20 版覆盖「这周改了几轮想退回上周」的常见诉求；富文本正文单份可达几十 KB，不设上限会让表无限膨胀
+ */
+export const MAX_REVISIONS_PER_CONTENT = 20
+
+/** 回收站保留天数：超期由 purgeExpiredTrash 彻底删除 */
+export const TRASH_RETENTION_DAYS = 30
+
+/** 快照里的字段：全部可写文本字段 + 扩展字段与状态类字段 */
+type ContentSnapshot = Partial<Pick<Content, (typeof TEXT_FIELDS)[number] | 'extra' | 'sort' | 'isTop' | 'status'>> & {
+  publishAt?: string | null
+}
+
 @Injectable()
 export class ContentService {
   constructor(
     @InjectRepository(Content) private readonly repo: Repository<Content>,
     @InjectRepository(Channel) private readonly channelRepo: Repository<Channel>,
+    // 可选注入：单测只关心内容取数时不必为版本表建库
+    @Optional() @InjectRepository(ContentRevision) private readonly revisionRepo?: Repository<ContentRevision>,
   ) {}
 
   /**
@@ -103,12 +120,15 @@ export class ContentService {
    * 草稿在此被挡住，后台列表走 list() 不受影响
    * @param keys 栏目 key 列表
    * @param limitPerKey 每个 key 最多取几条；不传则不限
+   * @param includeDrafts 草稿预览：连草稿一起出。只有页面接口在预览令牌校验通过后才会传 true
    */
-  async listByChannelKeys(keys: string[], limitPerKey?: number): Promise<Content[]> {
+  async listByChannelKeys(keys: string[], limitPerKey?: number, includeDrafts = false): Promise<Content[]> {
     if (!keys.length) return []
+    // 预览时不加状态条件；否则只出已发布
+    const status = includeDrafts ? {} : { status: CONTENT_STATUS.PUBLISHED }
     if (limitPerKey === undefined) {
       return this.repo.find({
-        where: { channelKey: In(keys), status: CONTENT_STATUS.PUBLISHED },
+        where: { channelKey: In(keys), ...status },
         order: PORTAL_ORDER,
       })
     }
@@ -117,7 +137,7 @@ export class ContentService {
     const groups = await Promise.all(
       keys.map(key =>
         this.repo.find({
-          where: { channelKey: key, status: CONTENT_STATUS.PUBLISHED },
+          where: { channelKey: key, ...status },
           order: PORTAL_ORDER,
           take: limitPerKey,
         }),
@@ -183,16 +203,17 @@ export class ContentService {
    * 前台用：统计各栏目的已发布条数，供区块判断是否还有更多
    * @param keys 栏目 key 列表
    */
-  async countByChannelKeys(keys: string[]): Promise<Map<string, number>> {
+  async countByChannelKeys(keys: string[], includeDrafts = false): Promise<Map<string, number>> {
     const result = new Map<string, number>()
     if (!keys.length) return result
 
-    const rows = await this.repo
+    const qb = this.repo
       .createQueryBuilder('c')
       .select('c.channelKey', 'channelKey')
       .addSelect('COUNT(1)', 'cnt')
       .where('c.channelKey IN (:...keys)', { keys })
-      .andWhere('c.status = :status', { status: CONTENT_STATUS.PUBLISHED })
+    if (!includeDrafts) qb.andWhere('c.status = :status', { status: CONTENT_STATUS.PUBLISHED })
+    const rows = await qb
       .groupBy('c.channelKey')
       .getRawMany<{ channelKey: string; cnt: string | number }>()
 
@@ -213,8 +234,11 @@ export class ContentService {
     })
   }
 
-  /** 保存：带 id 为更新，不带为新增 */
-  async save(dto: SaveContentDto): Promise<Content> {
+  /**
+   * 保存：带 id 为更新，不带为新增
+   * @param operator 操作人显示名，记入历史版本
+   */
+  async save(dto: SaveContentDto, operator = ''): Promise<Content> {
     const channel = await this.channelRepo.findOne({ where: { key: dto.channelKey } })
     if (!channel) throw new BadRequestException('栏目不存在，无法保存内容')
 
@@ -223,6 +247,8 @@ export class ContentService {
       ? await this.repo.findOne({ where: { id: dto.id, channelKey: dto.channelKey } })
       : this.repo.create({ channelKey: dto.channelKey, status: CONTENT_STATUS.PUBLISHED })
     if (!entity) throw new NotFoundException('内容不存在')
+    // 更新前把旧值快照下来：快照的是「改之前」，回滚才有东西可退
+    if (dto.id) await this.recordRevision(entity, operator)
 
     for (const field of TEXT_FIELDS) {
       const v = dto[field]
@@ -242,10 +268,189 @@ export class ContentService {
     return this.repo.save(entity)
   }
 
-  /** 批量删除，只删该栏目下的记录，避免越栏目误删 */
+  /**
+   * 复制为草稿：同类案例/产品照着改，不用从头填
+   * 副本一律是草稿、不置顶、发布时间清空，避免复制完前台立刻多出一条一模一样的
+   * @returns 新建的副本
+   */
+  async duplicate(channelKey: string, id: number): Promise<Content> {
+    const src = await this.repo.findOne({ where: { id, channelKey } })
+    if (!src) throw new NotFoundException('内容不存在')
+    const copy = this.repo.create({ channelKey, status: CONTENT_STATUS.DRAFT, isTop: false, publishAt: null })
+    for (const field of TEXT_FIELDS) copy[field] = src[field]
+    copy.extra = src.extra
+    copy.sort = src.sort
+    // 标题/名称加后缀，列表里一眼分得出哪条是副本；超长时截断，不让保存因长度失败
+    const mark = (v: string | null, max: number) => (v ? `${v}（副本）`.slice(0, max) : v)
+    copy.title = mark(src.title, 300)
+    copy.name = mark(src.name, 300)
+    return this.repo.save(copy)
+  }
+
+  /**
+   * 批量改发布状态，只改该栏目下的记录
+   * @returns 实际改动的条数（已是目标状态的不计）
+   */
+  async setStatus(channelKey: string, ids: number[], status: ContentStatus): Promise<number> {
+    const res = await this.repo.update({ channelKey, id: In(ids), status: Not(status) }, { status })
+    return res.affected ?? 0
+  }
+
+  /**
+   * 批量删除（移入回收站），只删该栏目下的记录，避免越栏目误删
+   * 软删除：前台与后台列表立即看不到，回收站里可恢复，超过保留期才真正删掉
+   */
   async remove(channelKey: string, ids: number[]): Promise<void> {
     if (!ids.length) throw new BadRequestException('请选择要删除的内容')
-    await this.repo.delete({ channelKey, id: In(ids) })
+    await this.repo.softDelete({ channelKey, id: In(ids) })
+  }
+
+  /**
+   * 回收站列表：某栏目下已删除的内容，按删除时间倒序
+   * @param channelKey 栏目标识
+   */
+  async trashList(params: { channelKey: string; page?: number; pageSize?: number }): Promise<ContentPage> {
+    const { page, pageSize, skip } = resolvePaging(params.page, params.pageSize, {
+      defaultSize: DEFAULT_PAGE_SIZE,
+      maxSize: MAX_PAGE_SIZE,
+    })
+    const [list, total] = await this.repo.findAndCount({
+      where: { channelKey: params.channelKey, deletedAt: Not(IsNull()) },
+      withDeleted: true,
+      order: { deletedAt: 'DESC', id: 'DESC' },
+      skip,
+      take: pageSize,
+    })
+    return { list, total, page, pageSize }
+  }
+
+  /**
+   * 从回收站恢复
+   * @returns 实际恢复的条数
+   */
+  async restore(channelKey: string, ids: number[]): Promise<number> {
+    if (!ids.length) throw new BadRequestException('请选择要恢复的内容')
+    const res = await this.repo.restore({ channelKey, id: In(ids), deletedAt: Not(IsNull()) })
+    return res.affected ?? 0
+  }
+
+  /**
+   * 彻底删除：只删已在回收站里的，避免绕过回收站直接把在用内容抹掉
+   * 历史版本一并清掉，内容都没了，留着版本也无处恢复
+   * @returns 实际删除的条数
+   */
+  async purge(channelKey: string, ids: number[]): Promise<number> {
+    if (!ids.length) throw new BadRequestException('请选择要彻底删除的内容')
+    const rows = await this.repo.find({
+      where: { channelKey, id: In(ids), deletedAt: Not(IsNull()) },
+      withDeleted: true,
+      select: { id: true },
+    })
+    if (!rows.length) return 0
+    const purgeIds = rows.map(r => r.id)
+    await this.repo.delete({ id: In(purgeIds) })
+    if (this.revisionRepo) await this.revisionRepo.delete({ contentId: In(purgeIds) })
+    return purgeIds.length
+  }
+
+  /**
+   * 清理超过保留期的回收站内容，由定时任务调用
+   * @returns 清掉的条数
+   */
+  async purgeExpiredTrash(now = new Date()): Promise<number> {
+    const cutoff = new Date(now.getTime() - TRASH_RETENTION_DAYS * 24 * 3600 * 1000)
+    const rows = await this.repo.find({
+      where: { deletedAt: LessThan(cutoff) },
+      withDeleted: true,
+      select: { id: true },
+    })
+    if (!rows.length) return 0
+    const ids = rows.map(r => r.id)
+    await this.repo.delete({ id: In(ids) })
+    if (this.revisionRepo) await this.revisionRepo.delete({ contentId: In(ids) })
+    return ids.length
+  }
+
+  /**
+   * 某条内容的历史版本，新的在前
+   * 只回列表元信息，快照正文在恢复时才读，列表不必拖着几十 KB 的富文本
+   */
+  async revisions(channelKey: string, contentId: number): Promise<Array<Pick<ContentRevision, 'id' | 'title' | 'operator' | 'createdAt'>>> {
+    if (!this.revisionRepo) return []
+    return this.revisionRepo.find({
+      where: { channelKey, contentId },
+      order: { id: 'DESC' },
+      select: { id: true, title: true, operator: true, createdAt: true },
+    })
+  }
+
+  /** 单个历史版本的快照内容，供后台对比预览 */
+  async revisionDetail(channelKey: string, revisionId: number): Promise<ContentSnapshot> {
+    const rev = await this.revisionRepo?.findOne({ where: { id: revisionId, channelKey } })
+    if (!rev) throw new NotFoundException('历史版本不存在')
+    return this.parseSnapshot(rev.snapshot)
+  }
+
+  /**
+   * 恢复到某个历史版本
+   * 恢复本身也是一次修改：先把当前值快照下来，恢复错了还能再退回来
+   */
+  async restoreRevision(channelKey: string, revisionId: number, operator = ''): Promise<Content> {
+    const rev = await this.revisionRepo?.findOne({ where: { id: revisionId, channelKey } })
+    if (!rev) throw new NotFoundException('历史版本不存在')
+    const entity = await this.repo.findOne({ where: { id: rev.contentId, channelKey } })
+    if (!entity) throw new NotFoundException('内容不存在或已删除，请先从回收站恢复')
+    await this.recordRevision(entity, operator)
+
+    const snap = this.parseSnapshot(rev.snapshot)
+    for (const field of TEXT_FIELDS) entity[field] = snap[field] ?? null
+    entity.extra = snap.extra ?? null
+    if (typeof snap.sort === 'number') entity.sort = snap.sort
+    if (typeof snap.isTop === 'boolean') entity.isTop = snap.isTop
+    if (snap.status) entity.status = snap.status
+    entity.publishAt = snap.publishAt ? new Date(snap.publishAt) : null
+    return this.repo.save(entity)
+  }
+
+  /** 把当前值写成一条历史版本，并裁掉超出上限的旧版本 */
+  private async recordRevision(entity: Content, operator: string): Promise<void> {
+    if (!this.revisionRepo) return
+    await this.revisionRepo.save(this.revisionRepo.create({
+      contentId: entity.id,
+      channelKey: entity.channelKey,
+      title: (entity.title ?? entity.name ?? '').slice(0, 300),
+      snapshot: JSON.stringify(this.snapshotOf(entity)),
+      operator: operator.slice(0, 64),
+    }))
+    const stale = await this.revisionRepo.find({
+      where: { contentId: entity.id },
+      order: { id: 'DESC' },
+      skip: MAX_REVISIONS_PER_CONTENT,
+      select: { id: true },
+    })
+    if (stale.length) await this.revisionRepo.delete({ id: In(stale.map(r => r.id)) })
+  }
+
+  /** 内容的可恢复字段快照 */
+  private snapshotOf(c: Content): ContentSnapshot {
+    const snap: ContentSnapshot = {}
+    for (const field of TEXT_FIELDS) snap[field] = c[field]
+    snap.extra = c.extra
+    snap.sort = c.sort
+    snap.isTop = c.isTop
+    snap.status = c.status
+    snap.publishAt = c.publishAt ? new Date(c.publishAt).toISOString() : null
+    return snap
+  }
+
+  /** 解析快照；库里被手工改坏时按空快照处理，不让恢复接口 500 */
+  private parseSnapshot(raw: string): ContentSnapshot {
+    try {
+      const v: unknown = JSON.parse(raw)
+      return v && typeof v === 'object' ? (v as ContentSnapshot) : {}
+    } catch {
+      return {}
+    }
   }
 
   /** 切换置顶 */

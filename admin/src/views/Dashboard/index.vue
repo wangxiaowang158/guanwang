@@ -89,8 +89,17 @@ const recent = ref<RecentFeedback[]>([])
 let trendSeq = 0
 
 // 跳转意见反馈（带待处理筛选）/ 新闻案例管理
-const goFeedback = (pending = false) =>
-  router.push({ path: '/cms/feedback', query: pending ? { status: 'pending' } : {} })
+/**
+ * 跳到留言与线索
+ * @param opts.pending 带上「待处理」筛选
+ * @param opts.id 进页直接打开这一条的处理弹窗
+ */
+const goFeedback = (opts: { pending?: boolean; id?: number } = {}) => {
+  const query: Record<string, string> = {}
+  if (opts.pending) query.status = 'pending'
+  if (opts.id) query.id = String(opts.id)
+  router.push({ path: '/cms/feedback', query })
+}
 const goNews = () => router.push('/cms/news-company')
 
 // 指标卡定义（待处理反馈、新闻案例可点击跳转）
@@ -99,8 +108,8 @@ const metricCards = computed(() => {
   return [
     { key: 'total', label: '累计访问量', value: m?.totalVisits ?? 0, span: 5, color: '#2f7cff' },
     { key: 'today', label: '今日访问量', value: m?.todayVisits ?? 0, span: 5, color: '#2f7cff' },
-    { key: 'feedback', label: '反馈总数', value: m?.feedbackTotal ?? 0, span: 4, color: '#262626' },
-    { key: 'pending', label: '待处理反馈数', value: m?.feedbackPending ?? 0, span: 5, color: '#fa541c', onClick: () => goFeedback(true) },
+    { key: 'feedback', label: '留言总数', value: m?.feedbackTotal ?? 0, span: 4, color: '#262626', onClick: () => goFeedback() },
+    { key: 'pending', label: '待处理留言', value: m?.feedbackPending ?? 0, span: 5, color: '#fa541c', onClick: () => goFeedback({ pending: true }) },
     { key: 'news', label: '新闻案例数', value: m?.newsCount ?? 0, span: 5, color: '#262626', onClick: goNews }
   ]
 })
@@ -111,10 +120,10 @@ const recentColumns = [
   { title: '处理状态', key: 'status', width: 120 }
 ]
 
-// 点击反馈行跳转意见反馈，待处理的带上状态筛选
+// 点击留言行：直接打开这一条的处理弹窗；待处理的同时带上状态筛选
 const recentRow = (record: RecentFeedback) => ({
   style: { cursor: 'pointer' },
-  onClick: () => goFeedback(record.status === 'pending')
+  onClick: () => goFeedback({ pending: record.status === 'pending', id: record.id })
 })
 
 // 趋势折线图配置

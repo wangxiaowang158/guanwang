@@ -25,15 +25,21 @@ const CATALOG: Record<string, OpLogMeta> = {
   'PUT /mgmt/admin/update': { module: '管理员管理', action: '修改管理员' },
   'PUT /mgmt/admin/reset-password': { module: '管理员管理', action: '重置管理员密码' },
   'DELETE /mgmt/admin/delete': { module: '管理员管理', action: '删除管理员' },
+  'POST /mgmt/admin/role/save': { module: '管理员管理', action: '保存角色' },
+  'DELETE /mgmt/admin/role/delete': { module: '管理员管理', action: '删除角色' },
 
   'PUT /mgmt/auth-config': { module: '登录安全配置', action: '修改登录安全策略' },
 
   'POST /mgmt/channel/add': { module: '栏目管理', action: '新增栏目' },
   'PUT /mgmt/channel/update': { module: '栏目管理', action: '修改栏目' },
   'DELETE /mgmt/channel/delete': { module: '栏目管理', action: '删除栏目' },
+  'POST /mgmt/channel/sort': { module: '栏目管理', action: '调整导航排序' },
 
   'POST /mgmt/content/save': { module: '内容管理', action: '保存内容' },
-  'DELETE /mgmt/content/delete': { module: '内容管理', action: '删除内容' },
+  'DELETE /mgmt/content/delete': { module: '内容管理', action: '删除内容（移入回收站）' },
+  'PUT /mgmt/content/trash/restore': { module: '内容管理', action: '从回收站恢复内容' },
+  'DELETE /mgmt/content/trash/purge': { module: '内容管理', action: '彻底删除内容' },
+  'POST /mgmt/content/revision/restore': { module: '内容管理', action: '恢复内容历史版本' },
   'PUT /mgmt/content/top': { module: '内容管理', action: '设置内容置顶' },
   'PUT /mgmt/content/sort': { module: '内容管理', action: '调整内容排序' },
 
@@ -55,8 +61,14 @@ const CATALOG: Record<string, OpLogMeta> = {
 
   'POST /mgmt/upload/image': { module: '素材上传', action: '上传图片' },
   'POST /mgmt/upload/video': { module: '素材上传', action: '上传视频' },
+  'POST /mgmt/upload/document': { module: '素材上传', action: '上传附件' },
+  'POST /mgmt/upload/ai-image': { module: '素材上传', action: 'AI 生成候选图' },
+  'POST /mgmt/upload/ai-image/save': { module: '素材上传', action: '保存 AI 生成图' },
 
   'DELETE /mgmt/media/delete': { module: '素材库', action: '删除素材' },
+
+  'POST /mgmt/redirect/save': { module: '站点工具', action: '保存跳转规则' },
+  'DELETE /mgmt/redirect/delete': { module: '站点工具', action: '删除跳转规则' },
 }
 
 /** 未收录路径的兜底模块名 */

@@ -37,13 +37,24 @@ export const Video = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: 'video' }]
+    return [
+      {
+        tag: 'video',
+        // 外部粘贴的视频常写成 <video><source src>，地址不在 video 上，回退读第一个 source
+        getAttrs: (el) => {
+          const node = el as HTMLElement
+          const src = node.getAttribute('src') || node.querySelector('source[src]')?.getAttribute('src')
+          return src ? { src, poster: node.getAttribute('poster') } : false
+        },
+      },
+    ]
   },
 
   renderHTML({ HTMLAttributes }) {
     return [
       'video',
-      mergeAttributes(HTMLAttributes, { controls: 'true', preload: 'metadata' }),
+      // playsinline：iOS 上不加会一点播放就强制全屏
+      mergeAttributes(HTMLAttributes, { controls: 'true', preload: 'metadata', playsinline: 'true' }),
     ]
   },
 

@@ -133,5 +133,27 @@ export const BLOCK_LAYOUT = {
   QUOTE: 'quote',
   /** 图集，数据取自条目 extra.gallery */
   GALLERY: 'gallery',
+  /** 图片/视频展示：每条一张大图或一段视频（信息图、架构图、产品截图），两条及以上并排 */
+  MEDIA: 'media',
+  /** 品牌介绍：品牌卡片（图 + 名称 + 口号），点开弹窗看品牌故事正文 */
+  BRAND: 'brand',
+  /** 图片磁贴：整卡背景图 + 叠加标题与说明（客户价值、应用场景） */
+  TILES: 'tiles',
+  /**
+   * 招聘职位：每条一个职位，可展开看职责与要求。
+   * 复用宽表通用列：title 职位名 / subtitle 工作地点 / brand 部门 / description 一句话亮点 /
+   * content 职责与要求（富文本，就地展开故随区块下发）/ publishAt 发布日期
+   */
+  JOBS: 'jobs',
 } as const
 export type BlockLayout = (typeof BLOCK_LAYOUT)[keyof typeof BLOCK_LAYOUT]
+
+/** 区块底色：auto 为模板默认的奇偶交替；image 用 blockBg 作背景图并叠深色遮罩 */
+export const BLOCK_TONES = ['auto', 'white', 'surface', 'dark', 'image'] as const
+export type BlockTone = (typeof BLOCK_TONES)[number]
+
+/** 区块每行列数（桌面宽度）；null 为展示形态默认 */
+export const BLOCK_COLUMNS = [2, 3, 4] as const
+
+/** 区块标题对齐 */
+export const HEADING_ALIGNS = ['center', 'left'] as const

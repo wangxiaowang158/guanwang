@@ -136,6 +136,14 @@ export const UPLOAD = {
     'video/webm': '.webm',
     'video/ogg': '.ogv',
   } as Record<string, string>,
+  /** 附件（产品手册、白皮书、资质证书）单独一档上限 */
+  docMaxMb: toInt(process.env.UPLOAD_DOC_MAX_MB, 20),
+  /**
+   * 允许的附件扩展名
+   * 按扩展名 + 文件头判定而不信 MIME：各浏览器对 Office 文件报的 MIME 五花八门（甚至报 application/octet-stream）。
+   * 不收带宏的 docm/xlsm、不收压缩包与可执行文件：官网附件是给访客下载的，不能成为分发恶意文件的口子
+   */
+  docExts: ['.pdf', '.docx', '.xlsx', '.pptx', '.doc', '.xls', '.ppt'] as const,
 }
 
 /**
@@ -150,7 +158,7 @@ export const AI_IMAGE = {
   timeoutMs: toInt(process.env.AI_IMAGE_TIMEOUT_MS, 90_000),
   /** 每次生成的候选张数，同时即费用倍数 */
   count: toInt(process.env.AI_IMAGE_COUNT, 5),
-  /** 生图尺寸，封面统一用横图 */
+  /** 横图尺寸（封面、横幅背景、正文插图）；方图场景固定 1024x1024，见 AI_IMAGE_SCENES */
   size: (process.env.AI_IMAGE_SIZE || '1536x1024').trim(),
   /** 描述文本最大长度 */
   promptMaxLen: 50,
@@ -159,6 +167,19 @@ export const AI_IMAGE = {
   /** 候选缓存总条数上限，防止反复生成撑爆内存 */
   candidateMax: 60,
 }
+
+/**
+ * AI 生图场景白名单：同一个选图弹窗被封面、背景、logo、正文插图共用，
+ * 由调用方声明场景，服务端据此决定尺寸与提示词后缀（前端只能选键，不能直传尺寸）
+ */
+export const AI_IMAGE_SCENES = {
+  cover: { size: AI_IMAGE.size, hint: '用于企业官网内容封面，构图简洁' },
+  banner: { size: AI_IMAGE.size, hint: '用于企业官网横幅背景，画面偏暗、留出文字区域，不要出现主体人物特写' },
+  square: { size: '1024x1024', hint: '用于企业官网方形图标或头像，主体居中、背景干净' },
+  illustration: { size: AI_IMAGE.size, hint: '用于企业官网正文配图，写实风格' },
+} as const
+
+export type AiImageScene = keyof typeof AI_IMAGE_SCENES
 
 /**
  * Redis 配置 —— 短信验证码与图形验证码的共享存储

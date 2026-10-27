@@ -18,6 +18,8 @@ export const TOP_MENUS: readonly FixedMenuMeta[] = [
 /** 排在栏目菜单之后的固定项 */
 export const BOTTOM_MENUS: readonly FixedMenuMeta[] = [
   { path: '/media', name: '素材库' },
+  // 跳转规则等站点运维工具；名称即权限项，须与后端 PERM.SITE_TOOLS 一致
+  { path: '/site-tools', name: '站点工具' },
   { path: '/channel-manage', name: '栏目管理' }
 ]
 

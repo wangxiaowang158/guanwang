@@ -13,11 +13,14 @@ import { onMounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useSeo } from '@/composables/useSeo'
 import { useSiteJsonLd } from '@/composables/useJsonLd'
+import { useSiteExt } from '@/composables/useSiteExt'
 
 // 页面标题与搜索引擎信息：栏目页取后台栏目配置，其余页取路由标题
 useSeo()
 // 站点级结构化数据：搜索结果里的企业信息卡靠它生成
 useSiteJsonLd()
+// 灰色模式与第三方统计（后台「统计与显示」）
+useSiteExt()
 
 const theme = useThemeStore()
 onMounted(() => { theme.loadTheme() })

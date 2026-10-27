@@ -95,6 +95,7 @@
           </label>
           <p v-if="errors.agreed" id="cs-agree-err" class="cs-err">{{ errors.agreed }}</p>
         </div>
+        <HoneypotField v-if="!memberStore.isLoggedIn" v-model="guard.honeypot.value" />
         <button type="submit" :disabled="submitting" class="cs-submit">
           <svg v-if="submitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -110,9 +111,11 @@
 
 <script setup lang="ts">
 // 联系方式展示 + 在线留言提交；已登录走会员反馈接口，未登录走匿名接口，均入后台「意见反馈」
-import { reactive, ref, computed, watch } from 'vue'
+import { reactive, ref, computed, onMounted, watch } from 'vue'
 import type { SiteInfo } from '@/api/home'
 import { submitAnonymousFeedback, submitMemberFeedback } from '@/api/feedback'
+import HoneypotField from '@/components/common/HoneypotField.vue'
+import { useFormGuard } from '@/composables/useFormGuard'
 import { useMemberStore } from '@/stores/member'
 import { useThemeStore } from '@/stores/theme'
 import { API_SUCCESS_CODE } from '@/config'
@@ -152,6 +155,10 @@ const errors = reactive({ name: '', phone: '', content: '', agreed: '' })
 
 watch(agreed, (v) => { if (v) errors.agreed = '' })
 
+// 匿名防刷：板块出现即领令牌；会员走登录态接口，不需要
+const guard = useFormGuard()
+onMounted(() => { if (!memberStore.isLoggedIn) void guard.refresh() })
+
 /** 单字段校验，提示文案取自 SRS 3.5.2 */
 function validate(field: keyof typeof form) {
   if (field === 'name') {
@@ -180,8 +187,9 @@ async function handleSubmit() {
     const content = form.content.trim()
     const res = memberStore.isLoggedIn
       ? await submitMemberFeedback({ content, phone, sourcePage: '首页-联系我们' })
-      : await submitAnonymousFeedback({ name: form.name.trim(), phone, content, sourcePage: '首页-联系我们' })
+      : await submitAnonymousFeedback({ name: form.name.trim(), phone, content, sourcePage: '首页-联系我们', ...guard.fields() })
     if (res.code === API_SUCCESS_CODE) {
+      if (!memberStore.isLoggedIn) void guard.refresh()
       form.name = ''
       form.phone = ''
       form.content = ''

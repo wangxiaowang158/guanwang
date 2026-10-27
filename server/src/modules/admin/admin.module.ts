@@ -4,6 +4,7 @@ import { Module, OnModuleInit } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule } from '@nestjs/jwt'
 import { Admin } from './admin.entity'
+import { AdminRole } from './admin-role.entity'
 import { AdminService } from './admin.service'
 import { AdminAuthService } from './admin-auth.service'
 import { MgmtAuthController } from './mgmt-auth.controller'
@@ -13,7 +14,7 @@ import { PermGuard } from '../../common/guards/perm.guard'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Admin]),
+    TypeOrmModule.forFeature([Admin, AdminRole]),
     // 密钥在签发与校验处显式传入，此处不设全局默认，避免误用会员端密钥
     JwtModule.register({}),
   ],

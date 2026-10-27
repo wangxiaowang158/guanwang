@@ -20,7 +20,7 @@ export class SiteConfig {
   @Column({ type: 'varchar', length: 1000, default: '' })
   description!: string
 
-  /** 首页主标语（前台 Hero 用，管理端暂未开放编辑） */
+  /** 首页主标语（前台 Hero 首屏大标题） */
   @Column({ type: 'varchar', length: 200, default: '' })
   slogan!: string
 
@@ -104,9 +104,45 @@ export class SiteConfig {
   @Column({ type: 'varchar', length: 20, default: '' })
   heroSecondaryText!: string
 
+  /** 首屏业绩数据条的口径说明，如「数据截至 2026.06，来源：中瑞恒能源平台」；为空不显示 */
+  @Column({ type: 'varchar', length: 60, default: '' })
+  heroStatsNote!: string
+
   /** 首页联系板块主标题；为空时前台用内置文案 */
   @Column({ type: 'varchar', length: 100, default: '' })
   contactHeading!: string
+
+  /** 公司全称：版权兜底、隐私政策主体；为空时前台用内置值 */
+  @Column({ type: 'varchar', length: 100, default: '' })
+  companyName!: string
+
+  /** 公司简称：未配置 Logo 时的文字标识；为空时前台用内置值 */
+  @Column({ type: 'varchar', length: 30, default: '' })
+  companyShort!: string
+
+  /** 公司英文名：文字标识下方的辅助字；为空时前台用内置值 */
+  @Column({ type: 'varchar', length: 50, default: '' })
+  companyEn!: string
+
+  /** 站点图标（浏览器标签页小图标）；为空时用前台内置 favicon */
+  @Column({ type: 'varchar', length: 500, default: '' })
+  favicon!: string
+
+  /** 默认分享图：页面自身没有配图时，分享卡片用这张 */
+  @Column({ type: 'varchar', length: 500, default: '' })
+  shareImage!: string
+
+  /** 首页板块顺序、显隐、标题与底色（JSON），结构见 common/site-layout；null 为默认布局 */
+  @Column({ type: 'text', nullable: true })
+  homeLayout!: string | null
+
+  /** 页脚配置：显示哪些导航分栏、友情链接、社交账号（JSON）；null 为默认 */
+  @Column({ type: 'text', nullable: true })
+  footerConfig!: string | null
+
+  /** 扩展配置：统计与站长验证、灰色模式、悬浮咨询条、图片水印（JSON），结构见 common/site-ext；null 为默认 */
+  @Column({ type: 'text', nullable: true })
+  extConfig!: string | null
 
   /** 更新时间 */
   @UpdateDateColumn({ type: 'datetime' })

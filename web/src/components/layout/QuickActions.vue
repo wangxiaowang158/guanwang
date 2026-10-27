@@ -26,13 +26,23 @@
       </svg>
     </button>
 
-    <a v-if="site.phone" :href="`tel:${site.phone}`" class="qa-btn group" :aria-label="`拨打电话 ${site.phone}`">
-      <PhoneIcon class="w-5 h-5" />
-      <span class="qa-tip tabular-nums">{{ site.phone }}</span>
-    </a>
+    <!-- 以下三项受后台「统计与显示 → 悬浮咨询条」控制；预约入口与回到页首始终保留 -->
+    <template v-if="floatBar.enabled">
+      <a v-if="kefuUrl" :href="kefuUrl" target="_blank" rel="noopener noreferrer" class="qa-btn group" aria-label="在线客服（新窗口打开）">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M18 10a6 6 0 10-12 0v4a2 2 0 002 2h1v-6H6m12 0h-3v6h1a2 2 0 002-2v-4zm-3 6v1a3 3 0 01-3 3h-1" />
+        </svg>
+        <span class="qa-tip">在线客服</span>
+      </a>
+
+      <a v-if="floatBar.showPhone && site.phone" :href="`tel:${site.phone}`" class="qa-btn group" :aria-label="`拨打电话 ${site.phone}`">
+        <PhoneIcon class="w-5 h-5" />
+        <span class="qa-tip tabular-nums">{{ site.phone }}</span>
+      </a>
+    </template>
 
     <!-- 用 button 而非 div：键盘可聚焦，聚焦时同样展开二维码 -->
-    <button v-if="site.wechatQr" type="button" class="qa-btn group" aria-label="微信咨询，显示二维码">
+    <button v-if="floatBar.enabled && floatBar.showWechat && site.wechatQr" type="button" class="qa-btn group" aria-label="微信咨询，显示二维码">
       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-3.898-6.348-7.596-6.348z" />
       </svg>
@@ -60,6 +70,7 @@ import { useLeadModal } from '@/composables/useLeadModal'
 import { useSiteStore } from '@/stores/site'
 import { useThemeStore } from '@/stores/theme'
 import { useWindowScroll, scrollToTop } from '@/composables/useWindowScroll'
+import { safeExternalUrl } from '@/utils/sanitize'
 import PhoneIcon from './PhoneIcon.vue'
 
 /** 入口顺序：咨询 → 测算 → 演示 → 招商 */
@@ -68,6 +79,10 @@ const LEAD_ENTRIES: LeadType[] = ['consult', 'energyAssess', 'productDemo', 'cha
 const siteStore = useSiteStore()
 const theme = useThemeStore()
 const site = computed(() => siteStore.site)
+/** 悬浮条配置；后端未下发（旧接口）时按全部显示，与升级前一致 */
+const floatBar = computed(() => site.value.ext?.floatBar ?? { enabled: true, showPhone: true, showWechat: true })
+/** 客服链接再校验一道协议，挡掉 javascript: 之类 */
+const kefuUrl = computed(() => safeExternalUrl(floatBar.value.kefuUrl))
 const { scrollY } = useWindowScroll()
 const { openLead } = useLeadModal()
 

@@ -70,6 +70,13 @@ export class CreateAdminDto {
   @IsString({ each: true })
   perms?: string[]
 
+  /** 所属角色 id，不传或 null 表示不套角色 */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  roleId?: number | null
+
   @IsOptional()
   @IsBoolean()
   wechatBound?: boolean
@@ -100,9 +107,39 @@ export class UpdateAdminDto extends AdminIdDto {
   @IsString({ each: true })
   perms?: string[]
 
+  /** 所属角色 id；传 null 表示取消角色 */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  roleId?: number | null
+
   @IsOptional()
   @IsBoolean()
   wechatBound?: boolean
+}
+
+/** 新增 / 修改角色 */
+export class SaveRoleDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  id?: number
+
+  @IsString()
+  @Length(1, 50, { message: '角色名长度需为 1-50 位' })
+  name!: string
+
+  @IsArray()
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  perms!: string[]
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200, { message: '说明不能超过 200 个字' })
+  remark?: string
 }
 
 /** 管理员重置某账号密码（由其他管理员操作） */

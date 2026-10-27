@@ -22,13 +22,13 @@
           button-style="solid"
           @change="search"
         />
-        <a-input-search
+        <a-input
           v-model:value="keyword"
           placeholder="按文件名搜索"
           style="width: 220px"
           allow-clear
           :maxlength="100"
-          @search="search"
+          @press-enter="search"
         />
         <a-select
           v-model:value="sort"
@@ -37,10 +37,12 @@
           @change="search"
         />
         <a-checkbox v-model:checked="unusedOnly" @change="search">只看未引用</a-checkbox>
+        <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
       </a-space>
     </div>
     <!-- 功能操作行：刷新不与查询条件挤在同一行 -->
     <div class="actions">
+      <MediaUploadButton @uploaded="onUploaded" />
       <a-button :loading="loading" @click="fetchList">刷新</a-button>
     </div>
 
@@ -71,7 +73,14 @@
       />
     </div>
 
-    <a-modal v-model:open="previewOpen" :title="previewItem?.name" :footer="null" width="720px">
+    <!-- destroy-on-close：关闭即销毁 video，停掉后台继续下载与播放 -->
+    <a-modal
+      v-model:open="previewOpen"
+      :title="previewItem?.name"
+      :footer="null"
+      width="720px"
+      destroy-on-close
+    >
       <img
         v-if="previewItem?.type === 'image'"
         :src="previewItem.url"
@@ -82,6 +91,7 @@
         v-else-if="previewItem?.type === 'video'"
         :src="previewItem.url"
         controls
+        preload="metadata"
         class="preview-media"
       />
       <a-empty v-else description="该类型素材不支持在线预览，可复制地址后在新窗口打开" />
@@ -93,11 +103,13 @@
 // 素材库：浏览上传目录已有文件，删除无人引用的素材释放磁盘
 // 数据源是磁盘而非数据库，故列表项没有 id，一律以站内地址为标识
 import { computed, ref } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import { deleteMedia, getMediaList, type MediaItem, type MediaStat } from '@/api/media'
 import { useServerListPage } from '@/composables/useServerListPage'
 import { DELETE_FAILED, DELETE_SUCCESS } from '@/constants/ui'
 import MediaGrid from './components/MediaGrid.vue'
+import MediaUploadButton from './components/MediaUploadButton.vue'
 import { formatSize, SORT_OPTIONS, TYPE_OPTIONS } from './format'
 
 defineOptions({ name: 'MediaLibraryPage' })
@@ -143,12 +155,27 @@ const { loading, rows, page, pageSize, total, fetchList, search, onPageChange, r
     { pageSize: 24 }
   )
 
+// 重置：清空全部筛选条件后回到首页重查
+const onResetFilters = () => {
+  type.value = 'all'
+  keyword.value = ''
+  sort.value = 'mtime-desc'
+  unusedOnly.value = false
+  search()
+}
+
 /** 空状态文案随筛选条件变化，避免「有素材但筛不出」被误读为素材全丢了 */
 const emptyText = computed(() => {
   if (unusedOnly.value) return '没有未引用的素材，磁盘上的文件都在使用中'
   if (keyword.value || type.value !== 'all') return '没有符合条件的素材'
-  return '暂无素材，可在内容编辑页上传图片或视频'
+  return '暂无素材，点击左上「上传图片」「上传视频」添加'
 })
+
+/** 上传成功：按「最新上传」回到第一页，刚传的文件就在最前面 */
+const onUploaded = () => {
+  sort.value = 'mtime-desc'
+  search()
+}
 
 /** 打开预览 */
 const onPreview = (item: MediaItem) => {
@@ -203,9 +230,11 @@ const onRemove = async (item: MediaItem) => {
   border-radius: 6px;
 }
 
+/* 上传在左（主操作），刷新在右 */
 .actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 12px;
 }
 

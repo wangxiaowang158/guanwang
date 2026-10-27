@@ -30,32 +30,52 @@ export function channelPath(ch: Channel) {
   return `/cms/${ch.key}`
 }
 
-/** 扁平数组 → antd 菜单 items（递归） */
-function toMenuItems(list: Channel[], parentId: number | null): ItemType[] {
-  return list
-    .filter(c => c.parentId === parentId)
-    .sort((a, b) => a.sort - b.sort)
-    .map(c => {
-      const children = toMenuItems(list, c.id)
-      const isGroup = c.type === 'group' || children.length > 0
-      return {
-        key: isGroup ? `group-${c.id}` : channelPath(c),
-        label: c.name,
-        title: c.name,
-        icon: renderIcon(c.icon),
-        children: isGroup ? children : undefined
-      }
+/** 一级栏目挂靠的目标（官网导航里它出现在谁的下拉中）；目标不存在或不是一级栏目时视为未挂靠 */
+function dockTargetOf(list: Channel[], c: Channel): Channel | undefined {
+  if (c.parentId !== null || !c.menuParent) return undefined
+  return list.find(t => t.key === c.menuParent && t.parentId === null && t.key !== c.key)
+}
+
+/**
+ * 扁平数组 → antd 菜单 items（递归）
+ * 侧边栏与官网导航同构：挂靠页（如各子智能体页）归到所挂一级栏目下，排在其自身子栏目之后，
+ * 不然二十多个页面平铺成一级菜单无从查找。没有任何可点子项的分组（如纯外链栏目）不渲染
+ */
+function toMenuItems(list: Channel[], parentId: number | null, parent?: Channel): ItemType[] {
+  const own = list.filter(c => c.parentId === parentId && (parentId !== null || !dockTargetOf(list, c)))
+  const docked = parent ? list.filter(c => dockTargetOf(list, c)?.id === parent.id) : []
+  const items: ItemType[] = []
+  for (const c of [...own.sort((a, b) => a.sort - b.sort), ...docked.sort((a, b) => a.sort - b.sort)]) {
+    const children = toMenuItems(list, c.id, c)
+    // 叶子页面被别的页面挂靠后成了分组，自身的内容入口补在子项首位，否则只能展开不能点进去管理
+    if (c.type !== 'group' && children.length && !list.some(x => x.parentId === c.id)) {
+      children.unshift({ key: channelPath(c), label: c.name, title: c.name })
+    }
+    const isGroup = c.type === 'group' || children.length > 0
+    if (isGroup && !children.length) continue
+    items.push({
+      key: isGroup ? `group-${c.id}` : channelPath(c),
+      label: c.name,
+      title: c.name,
+      icon: renderIcon(c.icon),
+      children: isGroup ? children : undefined
     })
+  }
+  return items
 }
 
 export function useChannels() {
   const { isSuper, hasPerm } = useUserStore()
 
-  /** 某顶级栏目对当前管理员是否可见 */
+  /**
+   * 某顶级栏目对当前管理员是否可见
+   * 挂靠页随所挂栏目授权（与后端 resolvePermNames 同口径）：有所挂栏目或页面自身的权限即可见
+   */
   const isRootVisible = (root: Channel): boolean => {
     if (LOGIN_ONLY_TYPES.includes(root.type)) return true
     if (SUPER_ONLY_TYPES.includes(root.type)) return isSuper.value
-    return hasPerm(root.name)
+    const dock = dockTargetOf(channels.value, root)
+    return hasPerm(root.name) || (!!dock && hasPerm(dock.name))
   }
 
   /** 上溯到顶级祖先的 id；断链或成环时返回 null */
@@ -121,6 +141,10 @@ export function useChannels() {
       chain.unshift(cur)
       cur = cur.parentId ? channels.value.find(c => c.id === cur!.parentId) : undefined
     }
+    // 挂靠页在侧边栏里位于所挂栏目之下：链首补上该栏目，面包屑与菜单展开才对得上
+    // 与侧边栏同口径取可见栏目：挂靠目标被隐藏或无权限时，侧边栏把挂靠页放在一级，这里也不补
+    const dock = chain[0] ? dockTargetOf(visibleChannels.value, chain[0]) : undefined
+    if (dock) chain.unshift(dock)
     return chain
   }
 

@@ -3,7 +3,7 @@
 // 也让「保存」接口无法被拿来上传任意内容
 import { randomUUID } from 'node:crypto'
 import { BadGatewayException, BadRequestException, Injectable, Logger } from '@nestjs/common'
-import { AI_IMAGE, UPLOAD } from '../../config/app.config'
+import { AI_IMAGE, AI_IMAGE_SCENES, UPLOAD, type AiImageScene } from '../../config/app.config'
 import { UploadService } from './upload.service'
 
 /** 候选图的前端展示项：id 用于保存，previewUrl 为 data URL 仅供预览 */
@@ -39,13 +39,14 @@ export class AiImageService {
   /**
    * 按描述生成一批候选图
    * @param prompt 已通过 DTO 校验的描述文本
+   * @param scene 使用场景，决定尺寸与提示词后缀
    * @returns 候选图列表（预览用 data URL）
    */
-  async generate(prompt: string): Promise<AiImageCandidate[]> {
+  async generate(prompt: string, scene: AiImageScene = 'cover'): Promise<AiImageCandidate[]> {
     if (!this.isEnabled()) {
       throw new BadRequestException('未配置 AI 生图服务，请联系管理员在服务端设置 AI_IMAGE_API_KEY')
     }
-    const items = await this.callUpstream(prompt)
+    const items = await this.callUpstream(prompt, scene)
     this.evictExpired()
     const result: AiImageCandidate[] = []
     for (const b64 of items) {
@@ -83,7 +84,8 @@ export class AiImageService {
   }
 
   /** 调用上游，返回 base64 图片数组；上游报错只记日志，不把原文透给前端 */
-  private async callUpstream(prompt: string): Promise<string[]> {
+  private async callUpstream(prompt: string, scene: AiImageScene): Promise<string[]> {
+    const preset = AI_IMAGE_SCENES[scene]
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), AI_IMAGE.timeoutMs)
     try {
@@ -96,9 +98,9 @@ export class AiImageService {
         },
         body: JSON.stringify({
           model: AI_IMAGE.model,
-          prompt: buildPrompt(prompt),
+          prompt: `${prompt}。${preset.hint}，不要出现文字和水印。`,
           n: AI_IMAGE.count,
-          size: AI_IMAGE.size,
+          size: preset.size,
         }),
       })
       if (!res.ok) {
@@ -131,11 +133,6 @@ export class AiImageService {
       this.cache.delete(first)
     }
   }
-}
-
-/** 给描述加上封面场景约束：不要文字水印，保证后台封面可直接使用 */
-function buildPrompt(prompt: string): string {
-  return `${prompt}。用于企业官网内容封面，构图简洁，不要出现文字和水印。`
 }
 
 /** 按文件头识别图片 MIME，只放行上传白名单内的格式，不信任上游声明 */

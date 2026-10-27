@@ -13,14 +13,28 @@
       <span class="sep" />
       <button type="button" class="tb-btn" @click="imagePickerOpen = true">图片</button>
       <button type="button" class="tb-btn" :disabled="videoUploading" @click="addVideo">
-        {{ videoUploading ? `上传中 ${videoProgress}%` : '视频' }}
+        {{ videoUploading ? (videoProcessing ? '处理中…' : `上传中 ${videoProgress}%`) : '视频' }}
       </button>
+      <button
+        v-if="videoUploading && !videoProcessing"
+        type="button"
+        class="tb-btn"
+        @click="cancelVideo"
+      >
+        取消上传
+      </button>
+      <button v-else-if="videoFailed" type="button" class="tb-btn" @click="retryVideo">重试上传</button>
       <button type="button" class="tb-btn" @click="editor.chain().focus().undo().run()">撤销</button>
       <button type="button" class="tb-btn" @click="editor.chain().focus().redo().run()">重做</button>
     </div>
     <editor-content :editor="editor" class="editor-body" />
     <!-- 插图：素材库 / 本地上传 / AI 生成 -->
-    <CoverPickerModal v-model:open="imagePickerOpen" title="插入图片" @confirm="onImagePicked" />
+    <CoverPickerModal
+      v-model:open="imagePickerOpen"
+      title="插入图片"
+      ai-scene="illustration"
+      @confirm="onImagePicked"
+    />
     <input ref="videoRef" type="file" :accept="UPLOAD_VIDEO_ACCEPT" style="display: none" @change="onVideo" />
   </div>
 </template>
@@ -71,8 +85,17 @@ const onImagePicked = (url: string) => {
 const {
   uploading: videoUploading,
   progress: videoProgress,
+  processing: videoProcessing,
+  failedFile: videoFailed,
   pickAndUpload: pickAndUploadVideo,
+  retry: retryVideoUpload,
+  cancel: cancelVideo,
 } = useVideoUpload()
+
+const retryVideo = async () => {
+  const url = await retryVideoUpload()
+  if (url) editor.value?.chain().focus().setVideo({ src: url }).run()
+}
 
 const addVideo = () => {
   if (videoUploading.value) return

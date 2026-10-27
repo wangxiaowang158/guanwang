@@ -56,12 +56,11 @@
         @update:model-value="(v) => (model[key] = v)"
         :tip="defOf(key).tip"
       />
-      <!-- 文件 -->
-      <!-- 系统暂无文件上传通道：填写已有文件的访问地址，不放一个点了没反应的上传按钮 -->
-      <a-input
+      <!-- 附件：上传 PDF / Office 文档，写回站内地址；前台显示为下载按钮 -->
+      <FileUpload
         v-else-if="defOf(key).widget === 'file'"
-        v-model:value="model[key]"
-        placeholder="请输入文件访问地址"
+        :model-value="textOf(key)"
+        @update:model-value="(v) => (model[key] = v)"
       />
       <!-- 日期时间：由系统在保存时自动记录，只读展示，避免看似可改实则不生效 -->
       <a-input
@@ -114,13 +113,12 @@
       <a-input v-else v-model:value="model[key]" />
     </a-form-item>
 
-    <!-- 发布状态：固定字段，不随栏目 formFields 配置，每个栏目都需要暂存能力 -->
-    <a-form-item label="发布状态" name="status">
-      <a-radio-group v-model:value="model.status">
-        <a-radio value="published">已发布</a-radio>
-        <a-radio value="draft">草稿</a-radio>
-      </a-radio-group>
-      <div class="field-tip">草稿仅在后台可见，不会出现在官网前台</div>
+    <!-- 当前状态只展示；改状态走底部按钮，「发布」是明确的动作，不会顺手点保存就上线 -->
+    <a-form-item label="当前状态">
+      <a-tag :color="isPublished ? 'green' : 'default'">{{ isPublished ? '已发布' : '草稿' }}</a-tag>
+      <span class="field-tip status-tip">
+        {{ isPublished ? '官网可见，修改保存后即更新' : '仅后台可见，官网不显示；点「发布到官网」后上线' }}
+      </span>
     </a-form-item>
 
     <!-- 发布时间：与发布状态同为固定字段；只有列表类栏目有「发布日期」可展示，单条富文本栏目不传 showPublishAt -->
@@ -132,13 +130,21 @@
         placeholder="请选择发布时间"
         allow-clear
       />
-      <div class="field-tip">前台展示的发布日期，未填写时取创建日期</div>
+      <div class="field-tip">官网显示的日期，留空取创建日期；不是定时发布，填未来时间也会立即上线</div>
     </a-form-item>
 
     <a-form-item :wrapper-col="{ offset: 0 }" class="form-actions">
       <a-space>
-        <a-button type="primary" :loading="saving" @click="onSave">保存</a-button>
         <a-button v-if="showBack" @click="$emit('back')">返回列表</a-button>
+        <!-- 草稿：存草稿 / 发布；已发布：撤回 / 保存修改（保持已发布） -->
+        <template v-if="isPublished">
+          <a-button :disabled="saving" @click="onSave('draft')">撤回为草稿</a-button>
+          <a-button type="primary" :loading="saving" @click="onSave('published')">保存修改</a-button>
+        </template>
+        <template v-else>
+          <a-button :disabled="saving" @click="onSave('draft')">保存草稿</a-button>
+          <a-button type="primary" :loading="saving" @click="onSave('published')">发布到官网</a-button>
+        </template>
       </a-space>
     </a-form-item>
   </a-form>
@@ -146,7 +152,7 @@
 
 <script setup lang="ts">
 // 通用内容表单：按栏目 formFields 渲染字段，保存前做必填校验
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Rule } from 'ant-design-vue/es/form'
 import type { ContentFormModel } from '@/api/cms'
 import { BUSINESS_LINE_OPTIONS } from '@/api/cms'
@@ -155,6 +161,7 @@ import RichEditor from './components/RichEditor.vue'
 import ImageUpload from './components/ImageUpload.vue'
 import CoverUpload from './components/CoverUpload.vue'
 import VideoUpload from './components/VideoUpload.vue'
+import FileUpload from './components/FileUpload.vue'
 import ExtraTagsInput from './components/extra/ExtraTagsInput.vue'
 import ExtraListEditor from './components/extra/ExtraListEditor.vue'
 import ExtraQuoteInput from './components/extra/ExtraQuoteInput.vue'
@@ -171,7 +178,8 @@ const props = defineProps<{
   /** 下拉字段的选项，按字段 key 归档；由父级查好传入 */
   fieldOptions?: Record<string, { label: string; value: string }[]>
 }>()
-const emit = defineEmits<{ save: []; back: [] }>()
+/** save 携带本次要保存成的状态，父级据此提交并给出对应提示 */
+const emit = defineEmits<{ save: [status: 'published' | 'draft']; back: [] }>()
 
 /** 表单模型由父级持有，经 v-model:model 双向绑定，字段在此就地编辑 */
 const model = defineModel<ContentFormModel>('model', { required: true })
@@ -234,13 +242,19 @@ const ruleOf = (key: string): Rule[] => {
   return def.required ? [{ required: true, message: `请填写${def.label}`, trigger: 'blur' }] : []
 }
 
-const onSave = async () => {
-  try {
-    await formRef.value?.validate()
-  } catch {
-    return
+/** 已保存的状态；按钮组按它切换（未保存的新内容视为草稿） */
+const isPublished = computed(() => model.value.status === 'published')
+
+const onSave = async (status: 'published' | 'draft') => {
+  // 存草稿不卡必填：半成品也要能先存下来，发布时才校验完整
+  if (status === 'published') {
+    try {
+      await formRef.value?.validate()
+    } catch {
+      return
+    }
   }
-  emit('save')
+  emit('save', status)
 }
 </script>
 
@@ -255,6 +269,10 @@ const onSave = async () => {
   font-size: 12px;
   line-height: 1.5;
   color: #8c8c8c;
+}
+
+.status-tip {
+  margin-left: 4px;
 }
 
 /* 操作按钮靠右对齐到表单右边缘 */

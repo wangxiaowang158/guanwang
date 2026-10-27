@@ -35,7 +35,13 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api')
 
   // 上传文件按原始路径直出，不走 /api 前缀；生产环境可由网关接管此前缀
-  app.useStaticAssets(app.get(UploadService).getRootDir(), { prefix: UPLOAD.urlPrefix })
+  // 文件名随机生成、从不覆盖写，同一地址内容永不变化，可长缓存免去每次回源确认；
+  // 视频拖动进度靠 Range（206），express static 默认支持
+  app.useStaticAssets(app.get(UploadService).getRootDir(), {
+    prefix: UPLOAD.urlPrefix,
+    maxAge: '30d',
+    immutable: true,
+  })
 
   app.useGlobalPipes(
     new ValidationPipe({

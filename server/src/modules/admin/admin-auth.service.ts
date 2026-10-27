@@ -78,7 +78,7 @@ export class AdminAuthService {
     return {
       token: await this.sign(admin),
       username: admin.account,
-      profile: toAdminProfileVo(admin),
+      profile: toAdminProfileVo(admin, await this.adminService.effectivePerms(admin)),
     }
   }
 

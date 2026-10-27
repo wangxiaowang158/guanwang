@@ -7,6 +7,7 @@ import type { JwtService } from '@nestjs/jwt'
 import { AdminGuard, type RequestWithAdmin } from '../src/common/guards/admin.guard'
 import type { AdminService } from '../src/modules/admin/admin.service'
 import type { Admin } from '../src/modules/admin/admin.entity'
+import { parsePerms } from '../src/modules/admin/vo/admin.vo'
 import type { TokenRevocationService } from '../src/modules/kv/token-revocation.service'
 
 /** 未吊销的令牌黑名单桩 */
@@ -45,6 +46,8 @@ function buildGuard(payload: unknown, admin: Admin | null) {
   } as unknown as JwtService
   const adminService = {
     findByAccount: jest.fn().mockResolvedValue(admin),
+    // 不套角色时最终权限即账号自身权限；用真实的 parsePerms，保住「非法 JSON 降级为空」这条
+    effectivePerms: jest.fn((a: Admin) => Promise.resolve(parsePerms(a.perms))),
   } as unknown as AdminService
   return { guard: new AdminGuard(jwt, adminService, notRevoked()), jwt, adminService }
 }

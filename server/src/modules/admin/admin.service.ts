@@ -7,8 +7,11 @@ import { compare, hash } from 'bcryptjs'
 import { ADMIN_SEED } from '../../config/app.config'
 import { resolvePaging, type PageResult } from '../../common/pagination'
 import { Admin } from './admin.entity'
+import { AdminRole } from './admin-role.entity'
+import { parsePerms } from './vo/admin.vo'
 import type {
   CreateAdminDto,
+  SaveRoleDto,
   UpdateAdminDto,
 } from './dto/admin.dto'
 
@@ -41,7 +44,61 @@ export class AdminService {
   constructor(
     @InjectRepository(Admin)
     private readonly repo: Repository<Admin>,
+    @InjectRepository(AdminRole)
+    private readonly roleRepo: Repository<AdminRole>,
   ) {}
+
+  /**
+   * 账号的最终权限：所属角色的权限 ∪ 账号单独勾选的权限
+   * 守卫每次请求都会调：角色表很小、按主键查，不做缓存——缓存就意味着「改了角色要等一会儿才生效」
+   */
+  async effectivePerms(admin: Pick<Admin, 'perms' | 'roleId'>): Promise<string[]> {
+    const own = parsePerms(admin.perms)
+    if (!admin.roleId) return own
+    const role = await this.roleRepo.findOne({ where: { id: admin.roleId } })
+    return role ? [...new Set([...parsePerms(role.perms), ...own])] : own
+  }
+
+  /** 角色列表，附每个角色下的账号数 */
+  async listRoles(): Promise<Array<AdminRole & { adminCount: number }>> {
+    const roles = await this.roleRepo.find({ order: { id: 'ASC' } })
+    const counts = await this.repo
+      .createQueryBuilder('a')
+      .select('a.roleId', 'roleId')
+      .addSelect('COUNT(1)', 'cnt')
+      .where('a.roleId IS NOT NULL')
+      .groupBy('a.roleId')
+      .getRawMany<{ roleId: number; cnt: string | number }>()
+    const byId = new Map(counts.map(c => [Number(c.roleId), Number(c.cnt)]))
+    return roles.map(r => Object.assign(r, { adminCount: byId.get(r.id) ?? 0 }))
+  }
+
+  /** 新增或修改角色 */
+  async saveRole(dto: SaveRoleDto): Promise<AdminRole> {
+    const name = dto.name.trim()
+    const dup = await this.roleRepo.findOne({ where: { name } })
+    if (dup && dup.id !== dto.id) throw new BadRequestException('角色名已存在')
+    const role = dto.id ? await this.roleRepo.findOne({ where: { id: dto.id } }) : this.roleRepo.create()
+    if (!role) throw new NotFoundException('角色不存在')
+    role.name = name
+    role.perms = JSON.stringify([...new Set(dto.perms)])
+    role.remark = (dto.remark ?? '').trim()
+    return this.roleRepo.save(role)
+  }
+
+  /** 删除角色：仍有账号在用时拒绝，免得这些账号的权限悄悄少一大块 */
+  async removeRole(id: number): Promise<void> {
+    const used = await this.repo.count({ where: { roleId: id } })
+    if (used) throw new BadRequestException(`仍有 ${used} 个账号使用该角色，请先为它们更换角色`)
+    const res = await this.roleRepo.delete(id)
+    if (!res.affected) throw new NotFoundException('角色不存在')
+  }
+
+  /** 角色须存在；null 表示不套角色 */
+  private async assertRole(roleId: number | null | undefined): Promise<void> {
+    if (!roleId) return
+    if (!(await this.roleRepo.exists({ where: { id: roleId } }))) throw new BadRequestException('所选角色不存在')
+  }
 
   /**
    * 确保存在首个超级管理员
@@ -118,6 +175,7 @@ export class AdminService {
   async create(dto: CreateAdminDto): Promise<Admin> {
     const exists = await this.repo.findOne({ where: { account: dto.account } })
     if (exists) throw new BadRequestException('该账号已存在')
+    await this.assertRole(dto.roleId)
 
     return this.repo.save(
       this.repo.create({
@@ -125,6 +183,7 @@ export class AdminService {
         name: dto.name,
         passwordHash: await hash(dto.password, BCRYPT_ROUNDS),
         perms: JSON.stringify(dto.perms ?? []),
+        roleId: dto.roleId ?? null,
         isSuper: false,
         wechatBound: dto.wechatBound ?? false,
       }),
@@ -138,6 +197,10 @@ export class AdminService {
     if (dto.wechatBound !== undefined) admin.wechatBound = dto.wechatBound
     if (dto.perms !== undefined && !admin.isSuper) {
       admin.perms = JSON.stringify(dto.perms)
+    }
+    if (dto.roleId !== undefined && !admin.isSuper) {
+      await this.assertRole(dto.roleId)
+      admin.roleId = dto.roleId ?? null
     }
     return this.repo.save(admin)
   }

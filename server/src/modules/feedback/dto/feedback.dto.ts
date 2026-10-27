@@ -1,13 +1,17 @@
 // 反馈请求 DTO —— 内容按纯文本处理，长度上限防超长输入
 import { Transform, Type } from 'class-transformer'
 import {
-  IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength, MinLength,
+  IsBoolean, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength, MinLength,
 } from 'class-validator'
 import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE, LEAD_TYPE } from '../../../common/enums'
 import type { FeedbackSource, FeedbackStatus, FeedbackType, LeadType } from '../../../common/enums'
+import { WEBHOOK_TYPES } from '../notify-webhook'
 
 /** 手机号格式：中国大陆 11 位 */
 const PHONE_PATTERN = /^1[3-9]\d{9}$/
+
+/** 线索类型筛选的「普通留言」取值：库里 leadType 为空的那些 */
+export const LEAD_TYPE_NONE = 'none'
 
 /**
  * 字符串去首尾空白；选填项空串视为未填
@@ -77,6 +81,21 @@ export class SubmitAnonymousFeedbackDto {
   @IsString({ message: '来源页面格式不正确' })
   @MaxLength(200, { message: '来源页面不能超过 200 个字' })
   sourcePage?: string
+
+  /**
+   * 蜜罐字段：前台渲染成真人看不见的输入框，正常提交恒为空串
+   * 字段名取常见的 website，脚本按名字填表时最容易踩中；不做格式校验，任何值都交给 form-guard 判定
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  website?: string
+
+  /** 表单令牌，打开表单时由 GET /portal/feedback/form-token 领取 */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  formToken?: string
 }
 
 /** 会员提交反馈；身份取自令牌，故不含 memberId 等身份字段 */
@@ -141,6 +160,11 @@ export class FeedbackQueryDto {
   @IsEnum(FEEDBACK_TYPE, { message: '反馈类型不合法' })
   feedbackType?: FeedbackType
 
+  /** 按线索类型筛选；none 表示「普通留言」（未带线索类型的提交） */
+  @IsOptional()
+  @IsIn([...Object.values(LEAD_TYPE), LEAD_TYPE_NONE], { message: '线索类型不合法' })
+  leadType?: LeadType | typeof LEAD_TYPE_NONE
+
   /** 起始日期，格式 YYYY-MM-DD */
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: '起始日期格式应为 YYYY-MM-DD' })
@@ -180,4 +204,15 @@ export class UpdateFeedbackStatusDto {
   /** 目标状态，须符合 FEEDBACK_STATUS_FLOW 允许的流转 */
   @IsEnum(FEEDBACK_STATUS, { message: '状态不合法' })
   status!: FeedbackStatus
+}
+
+/** 新留言推送配置；webhookUrl 不传表示保留原地址只改类型，传空串表示清除 */
+export class SaveNotifyConfigDto {
+  @IsIn(WEBHOOK_TYPES, { message: '机器人类型不正确' })
+  type!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: '推送地址过长' })
+  webhookUrl?: string
 }

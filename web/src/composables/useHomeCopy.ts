@@ -11,14 +11,16 @@ const DEFAULT_HEADINGS: Record<string, { eyebrow: string; title: string }> = {
   service: { eyebrow: '技术支持及服务', title: '全周期的专业能源技术服务' },
   philosophy: { eyebrow: '经营理念', title: '' },
   achievement: { eyebrow: '公司业绩', title: '用数据说话的专业积累' },
-  partner: { eyebrow: '合作伙伴', title: '与主流品牌携手共建能源生态' },
+  partner: { eyebrow: '战略合作', title: '产业伙伴 · 科创伙伴 · 合作伙伴' },
+  advantage: { eyebrow: '核心优势', title: '从方案到交付的全程保障' },
   view: { eyebrow: '我眼中的中瑞恒', title: '媒体与行业的关注和认可' },
   social: { eyebrow: '社会贡献', title: '践行绿色低碳发展使命' },
 }
 
 const DEFAULT_CONTACT = { eyebrow: '联系我们', title: '留下需求，我们尽快与您联系' }
-const DEFAULT_HERO_PRIMARY = '了解业务'
-const DEFAULT_HERO_SECONDARY = '联系我们'
+/** 主按钮打开预约弹窗（预选节能测算），次按钮滚到第一个板块 */
+const DEFAULT_HERO_PRIMARY = '免费节能测算'
+const DEFAULT_HERO_SECONDARY = '了解业务'
 
 /**
  * 首页文案

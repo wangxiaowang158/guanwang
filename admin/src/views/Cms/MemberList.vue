@@ -18,14 +18,15 @@
           :options="statusOptions"
           @change="search"
         />
-        <a-input-search
+        <a-input
           v-model:value="keyword"
           placeholder="手机号 / 昵称 / 邮箱"
           style="width: 240px"
           allow-clear
           :maxlength="50"
-          @search="search"
+          @press-enter="search"
         />
+        <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
       </a-space>
     </div>
 
@@ -126,6 +127,7 @@
 <script setup lang="ts">
 // 会员管理：筛选 / 详情 / 启用禁用 / 解锁 / 重置密码 / 删除（会员由前台注册产生，后台不新增）
 import { computed, ref } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import {
   getMemberList, getMemberDetail, updateMemberStatus, unlockMember, resetMemberPassword, deleteMember,
@@ -188,6 +190,14 @@ const {
     pageSize: query.pageSize,
   }),
 )
+
+// 重置：清空全部筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  status.value = undefined
+  dateRange.value = undefined
+  search()
+}
 
 const pagination = computed(() => ({
   current: page.value,

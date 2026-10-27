@@ -14,7 +14,7 @@
         <p class="mt-3 text-sm text-ink-500">最近更新：{{ UPDATED_AT }}</p>
       </header>
 
-      <div class="privacy-body mt-8 space-y-8 text-[15px] md:text-base leading-loose text-ink-700">
+      <div class="privacy-body mt-8 space-y-8 text-fs-body leading-loose text-ink-700">
         <section>
           <p>
             {{ companyName }}（以下称"我们"）尊重并保护访问者的个人信息。本政策说明我们在本网站收集哪些个人信息、
@@ -110,10 +110,10 @@
 </template>
 
 <script setup lang="ts">
-// 隐私政策页：正文为系统内置条款，主体名称固定，联系方式取自基本信息管理（未填写的项不展示）
+// 隐私政策页：正文为系统内置条款，主体名称取后台「公司全称」（未填用内置值），联系方式取自基本信息管理（未填写的项不展示）
 import { computed, onMounted } from 'vue'
 import { useSiteStore } from '@/stores/site'
-import { COMPANY_NAME } from '@/config/brand'
+import { useBrand } from '@/composables/useBrand'
 
 defineOptions({ name: 'PrivacyPage' })
 
@@ -122,8 +122,9 @@ const UPDATED_AT = '2026 年 10 月 2 日'
 
 const siteStore = useSiteStore()
 const site = computed(() => siteStore.site)
-// 主体名称固定（SRS 3.5.1）：原先从版权字段里截取，版权里带地址与备案号时会整段变成「公司名」
-const companyName = COMPANY_NAME
+// 主体名称取后台「公司全称」，未填用内置值（SRS 3.5.1）：
+// 不从版权字段里截取，版权里带地址与备案号时会整段变成「公司名」
+const { companyName } = useBrand()
 
 onMounted(() => {
   // store 内部已做去重，重复调用不会产生额外请求

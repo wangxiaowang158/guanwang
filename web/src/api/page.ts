@@ -8,6 +8,8 @@ export interface PageHero {
   desc: string
   /** 背景图地址（来自后台 Banner 配置），为空时用默认浅色样式 */
   bg?: string
+  /** 背景视频地址，静音循环播放 */
+  video?: string
 }
 
 /** 业务线取值，对应三大业务主线（与后端 content-extra.ts 一致） */
@@ -76,7 +78,9 @@ export interface PageItem {
   desc?: string
   tag?: string
   image?: string
-  /** 视频地址，video 板块的播放源；image 同时作为播放前首帧 */
+  /** 副标题，品牌口号等 */
+  subtitle?: string
+  /** 视频地址：video / media 板块的播放源，卡片、磁贴、品牌等图片位配了视频时静音循环播放；image 同时作为首帧 */
   video?: string
   /** 富文本正文（后端已过白名单净化），rich 板块优先用它渲染 */
   html?: string
@@ -88,6 +92,17 @@ export interface PageItem {
   link?: string
   /** 结构化扩展数据（指标、痛点、流程、证言等），未录入时缺省 */
   extra?: ContentExtra
+  /** 附件下载（后端已校验为站内 /uploads/ 或 http(s)） */
+  file?: Attachment
+  /** 品牌；招聘职位里是所属部门 */
+  brand?: string
+}
+
+/** 附件 */
+export interface Attachment {
+  url: string
+  /** 扩展名大写，如 PDF */
+  ext: string
 }
 
 /** 栏目页内容块 */
@@ -98,12 +113,20 @@ export interface PageBlock {
   /**
    * 展示形态：cards 卡片 / list 列表 / tags 标签云 / steps 流程 / rich 富文本段落 / video 视频；
    * 结构化形态数据取自条目 extra：pains 痛点方案 / flow 全链条流程 / metrics 指标看板 /
-   * modes 合作模式 / quote 客户证言 / gallery 图集
+   * modes 合作模式 / quote 客户证言 / gallery 图集；
+   * 第三版新增：media 图片/视频展示 / brand 品牌介绍（故事弹窗） / tiles 图片磁贴
    */
   layout: 'cards' | 'list' | 'tags' | 'steps' | 'rich' | 'video'
     | 'pains' | 'flow' | 'metrics' | 'modes' | 'quote' | 'gallery'
-  /** 板块背景图地址（来自后台配置），为空时用默认浅色/白底 */
+    | 'media' | 'brand' | 'tiles' | 'jobs'
+  /** 板块背景图地址（后台「区块外观」选了背景图），前台叠深色遮罩、文字反白 */
   bg?: string
+  /** 板块底色；缺省为白 / 浅色交替 */
+  tone?: 'white' | 'surface' | 'dark'
+  /** 电脑端每行列数（卡片、磁贴、图集、品牌）；缺省为展示形态默认 */
+  columns?: number
+  /** 区块标题对齐；缺省为模板默认（样式一居中、样式二左对齐） */
+  align?: 'center' | 'left'
   items: PageItem[]
   /** 所属子栏目 key，续取本区块条目时回传 */
   channelKey: string
@@ -125,16 +148,28 @@ export interface BlockItemsResult {
 /** 单个栏目页完整内容 */
 export interface PageContent {
   key: string
+  /** 页面名（导航上的名字） */
+  name?: string
   hero: PageHero
   blocks: PageBlock[]
+  /** 分组页自身无区块时，其下第一个页面的地址，前台直接跳过去 */
+  redirect?: string
+  /** 草稿预览模式：含未发布内容；前台显示预览条、禁止收录、不出分页 */
+  preview?: boolean
 }
 
 /**
- * 获取指定栏目页内容
- * @param key 一级栏目标识（home/business/business-energy/business-building/business-living/products/solutions/case/news/alliance/about）
+ * 获取指定栏目页内容 —— GET /api/portal/page
+ * @param target 二选一：key 为一级栏目标识（固定路由的栏目页）；path 为前台地址（通用路由，后台新建的页面）
  */
-export const getPageContent = (key: string) =>
-  get<PageContent>(`/api/portal/page?key=${encodeURIComponent(key)}`)
+export const getPageContent = (target: { key?: string; path?: string }, previewToken?: string) => {
+  const query = target.key
+    ? `key=${encodeURIComponent(target.key)}`
+    : `path=${encodeURIComponent(target.path ?? '')}`
+  // 后台「预览」带来的令牌：页面接口据此连草稿一起返回
+  const preview = previewToken ? `&preview=${encodeURIComponent(previewToken)}` : ''
+  return get<PageContent>(`/api/portal/page?${query}${preview}`)
+}
 
 /**
  * 取栏目页某个区块指定页的条目（页码翻页、分类筛选、一次性区块补全量）

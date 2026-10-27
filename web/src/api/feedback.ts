@@ -1,5 +1,5 @@
 // 前台意见反馈接口层 —— /api/portal/feedback
-import { authRequest, post, type ApiResult } from './request'
+import { authRequest, get, post, type ApiResult } from './request'
 
 export type FeedbackType = 'suggestion' | 'complaint' | 'cooperation' | 'other'
 export type FeedbackStatus = 'pending' | 'processing' | 'replied' | 'closed'
@@ -63,7 +63,14 @@ export interface AnonymousFeedbackPayload {
   position?: string
   content: string
   sourcePage?: string
+  /** 防刷：表单令牌，见 useFormGuard */
+  formToken?: string
+  /** 防刷：蜜罐字段，正常恒为空串 */
+  website?: string
 }
+
+/** 领取匿名表单令牌（防刷用，提交时带回） */
+export const getFormToken = () => get<{ token: string }>('/api/portal/feedback/form-token')
 
 /** 会员提交入参：身份取自令牌，无需填姓名 */
 export interface MemberFeedbackPayload {

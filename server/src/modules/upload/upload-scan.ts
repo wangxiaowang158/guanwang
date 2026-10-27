@@ -27,7 +27,13 @@ export interface DiskFile {
 const CONTENT_URL_COLUMNS = ['cover', 'video', 'whiteCover', 'file', 'link'] as const
 
 /** site_config 表中直接存放文件地址的列 */
-const SITE_URL_COLUMNS = ['logo', 'footerLogo', 'wechatQr', 'heroImage', 'heroVideo'] as const
+// footerConfig 是 JSON 文本，社交账号二维码存在里面
+const SITE_URL_COLUMNS = [
+  'logo', 'footerLogo', 'wechatQr', 'heroImage', 'heroVideo', 'favicon', 'shareImage', 'footerConfig',
+] as const
+
+/** channel 表中存放文件地址的列（页面头图、区块背景图） */
+const CHANNEL_URL_COLUMNS = ['heroBg', 'heroVideo', 'blockBg'] as const
 
 /**
  * 递归列出上传根目录下的全部文件
@@ -77,14 +83,18 @@ export async function collectCorpus(ds: DataSource): Promise<string> {
     if (v) chunks.push(v)
   }
 
-  // content：直接字段 + 富文本正文内嵌地址
-  const contentCols = [...CONTENT_URL_COLUMNS, 'content', 'intro', 'description']
+  // content：直接字段 + 富文本正文内嵌地址 + 扩展字段（图集里的图片与视频地址存在 extra JSON 里）
+  const contentCols = [...CONTENT_URL_COLUMNS, 'content', 'intro', 'description', 'extra']
   const contents: Array<Record<string, string | null>> = await ds.query(
     `SELECT ${contentCols.join(', ')} FROM content`,
   )
   for (const row of contents) {
     for (const col of contentCols) add(row[col])
   }
+  // 回收站里的内容已含在上面（原生 SQL 不排除软删除行）：恢复后图要还在。
+  // 历史版本同理，快照里的旧图被删掉，回滚就会裂图
+  const revisions: Array<{ snapshot: string | null }> = await ds.query('SELECT snapshot FROM content_revision')
+  for (const row of revisions) add(row.snapshot)
 
   // site_config：单例表，逐列取
   const siteRows: Array<Record<string, string | null>> = await ds.query(
@@ -92,6 +102,14 @@ export async function collectCorpus(ds: DataSource): Promise<string> {
   )
   for (const row of siteRows) {
     for (const col of SITE_URL_COLUMNS) add(row[col])
+  }
+
+  // 栏目页面头图背景图与背景视频
+  const channelRows: Array<Record<string, string | null>> = await ds.query(
+    `SELECT ${CHANNEL_URL_COLUMNS.join(', ')} FROM channel`,
+  )
+  for (const row of channelRows) {
+    for (const col of CHANNEL_URL_COLUMNS) add(row[col])
   }
 
   // 会员头像也可能指向上传目录，漏掉会误判为孤儿

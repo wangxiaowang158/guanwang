@@ -84,8 +84,8 @@ export class Channel {
 
   /**
    * 菜单挂靠：该顶级页面在导航里归到哪个顶级栏目（填其 key）之下，自身路径不变
-   * 用于「主营业务」下挂三个独立业务页、「关于我们」下挂新闻资讯这类一页一栏目的情形；
-   * 由种子维护，不经接口开放（与 portalPath 同理）
+   * 用于「主营业务」下挂三个业务页、「智慧能源解决方案」下挂各子智能体页这类一页一栏目的情形；
+   * 后台可改，服务层校验目标须为未挂靠的顶级页面（导航只有两层）
    */
   @Column({ type: 'varchar', length: 64, nullable: true })
   menuParent!: string | null
@@ -109,6 +109,37 @@ export class Channel {
   /** 页面 Hero 描述 */
   @Column({ type: 'varchar', length: 1000, nullable: true })
   heroDesc!: string | null
+
+  /** 页面 Hero 背景图（顶级节点使用）；为空时回落 `banner-<key>` 栏目的封面 */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  heroBg!: string | null
+
+  /** 页面 Hero 背景视频（静音循环播放，heroBg 作首帧）；为空则只显示背景图 */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  heroVideo!: string | null
+
+  /**
+   * 外链地址（仅 http/https）。有值时该栏目在导航里是一个外部链接，新窗口打开，
+   * 不对应站内页面（如「小鹿爱家技术服务」）；与 portalPath 二选一
+   */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  externalUrl!: string | null
+
+  /** 区块底色（区块子栏目使用），取值见 BLOCK_TONES；null 同 auto */
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  blockTone!: string | null
+
+  /** 区块背景图，blockTone 为 image 时生效 */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  blockBg!: string | null
+
+  /** 区块每行列数（2/3/4）；null 为展示形态默认 */
+  @Column({ type: 'tinyint', nullable: true })
+  blockColumns!: number | null
+
+  /** 区块标题对齐（center / left）；null 为模板默认 */
+  @Column({ type: 'varchar', length: 8, nullable: true })
+  headingAlign!: string | null
 
   /** 更新时间 */
   @UpdateDateColumn({ type: 'datetime' })

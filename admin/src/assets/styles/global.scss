@@ -46,10 +46,8 @@
   }
 }
 
-// 禁用所有元素的橡皮条效果
-* {
-  overscroll-behavior: none;
-}
+// 橡皮条效果只在 html/body 上禁用（见 reset.scss）。
+// 不要对 * 设 overscroll-behavior: none：Chrome 下滚轮落在菜单项等子元素上时不会再传给外层滚动容器，侧栏因此滚不动
 
 // 页面容器
 .page-container {

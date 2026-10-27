@@ -8,7 +8,7 @@
         <a-range-picker
           v-model:value="dateRange"
           value-format="YYYY-MM-DD"
-          :placeholder="['创建日期', '']"
+          :placeholder="['创建开始日期', '结束日期']"
           @change="onFilterChange"
         />
         <a-select
@@ -19,24 +19,28 @@
           :options="STATUS_OPTIONS"
           @change="onFilterChange"
         />
-        <a-input-search
+        <a-input
           v-model:value="keyword"
-          placeholder="输入关键字"
+          placeholder="搜索标题/名称"
           style="width: 240px"
           allow-clear
           :maxlength="100"
-          @search="onFilterChange"
+          @press-enter="onFilterChange"
         />
+        <SearchActions :loading="loading" @search="onFilterChange" @reset="onResetFilters" />
       </a-space>
     </div>
     <div class="actions">
+      <!-- 跟随栏目名，就地改名后同步更新 -->
+      <span class="actions-title">{{ channel.name }}数据</span>
       <a-space :size="12">
         <a-button type="primary" @click="goEdit()">
           <template #icon><PlusOutlined /></template>
           新增
         </a-button>
         <a-popconfirm
-          title="确认删除选中的数据？"
+          :title="`确定删除选中的 ${selectedKeys.length} 条吗？删除后移入回收站，30 天内可恢复`"
+          ok-type="danger"
           ok-text="确定"
           cancel-text="取消"
           :disabled="!selectedKeys.length"
@@ -44,8 +48,26 @@
         >
           <a-button :disabled="!selectedKeys.length">批量删除</a-button>
         </a-popconfirm>
+        <!-- 批量发布 / 下线：改版、换季时一次处理一批 -->
+        <a-dropdown :disabled="!selectedKeys.length || batchBusy">
+          <a-button :loading="batchBusy">
+            批量发布/下线 <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu @click="({ key }: { key: string }) => onBatchStatus(key as ContentStatus)">
+              <a-menu-item key="published">发布到官网</a-menu-item>
+              <a-menu-item key="draft">下线为草稿</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <PreviewPageButton v-if="previewable" :channel-key="channel.key" />
+        <a-button @click="trashOpen = true">
+          <template #icon><DeleteOutlined /></template>
+          回收站
+        </a-button>
       </a-space>
     </div>
+    <TrashDrawer v-model:open="trashOpen" :channel-key="channel.key" @restored="fetchList" />
 
     <!-- 列表 -->
     <a-table
@@ -65,22 +87,19 @@
         <!-- 标题/名称：文字后跟拖拽手柄，按住上下拖动调整顺序 -->
         <template v-else-if="column.key === 'title'">
           <span class="name-cell">
-            <span class="name-text">{{ record.title || record.name || '-' }}</span>
-            <a-tooltip title="按住拖动调整排序">
+            <a class="name-text name-link" role="button" tabindex="0" @click="goEdit(record.id)" @keydown.enter="goEdit(record.id)">{{ record.title || record.name || '-' }}</a>
+            <a-tooltip :title="SORT_TIP">
               <ControlOutlined class="sort-drag-handle" />
             </a-tooltip>
           </span>
         </template>
         <template v-else-if="column.key === 'name'">
           <span class="name-cell">
-            <span class="name-text">{{ record.name || record.title || '-' }}</span>
-            <a-tooltip title="按住拖动调整排序">
+            <a class="name-text name-link" role="button" tabindex="0" @click="goEdit(record.id)" @keydown.enter="goEdit(record.id)">{{ record.name || record.title || '-' }}</a>
+            <a-tooltip :title="SORT_TIP">
               <ControlOutlined class="sort-drag-handle" />
             </a-tooltip>
           </span>
-        </template>
-        <template v-else-if="column.key === 'brand'">
-          <a-button type="link" size="small" disabled>品牌管理</a-button>
         </template>
         <!-- 发布状态：草稿不在前台展示，需明确区分 -->
         <template v-else-if="column.key === 'status'">
@@ -97,16 +116,28 @@
             />
           </a-tooltip>
         </template>
-        <!-- 修改 -->
-        <template v-else-if="column.key === 'edit'">
-          <SettingOutlined class="op-icon" @click="goEdit(record.id)" />
+        <!-- 操作：文字按钮，不让运营去猜图标含义 -->
+        <template v-else-if="column.key === 'ops'">
+          <a-space :size="4">
+            <a-button type="link" size="small" @click="goEdit(record.id)">编辑</a-button>
+            <a-button type="link" size="small" :loading="duplicatingId === record.id" @click="onDuplicate(record.id)">复制</a-button>
+            <a-popconfirm title="确定删除这条内容吗？删除后移入回收站，30 天内可恢复" ok-text="删除" ok-type="danger" cancel-text="取消" @confirm="onDelete(record.id)">
+              <a-button type="link" size="small" danger>删除</a-button>
+            </a-popconfirm>
+          </a-space>
         </template>
-        <!-- 删除 -->
-        <template v-else-if="column.key === 'delete'">
-          <a-popconfirm title="确认删除该条数据？" ok-text="确定" cancel-text="取消" @confirm="onDelete(record.id)">
-            <DeleteOutlined class="op-icon danger" />
-          </a-popconfirm>
-        </template>
+      </template>
+      <!-- 空状态：区分「加载失败」「筛选无结果」「还没有内容」，各给下一步 -->
+      <template #emptyText>
+        <a-result v-if="loadFailed" status="warning" title="列表加载失败" class="list-empty">
+          <template #extra><a-button type="primary" @click="fetchList">重新加载</a-button></template>
+        </a-result>
+        <a-empty v-else-if="hasFilter" description="没有符合条件的内容" class="list-empty">
+          <a-button @click="onResetFilters">重置筛选</a-button>
+        </a-empty>
+        <a-empty v-else :description="`还没有${channel.name}内容`" class="list-empty">
+          <a-button type="primary" @click="goEdit()">新增第一条</a-button>
+        </a-empty>
       </template>
     </a-table>
 
@@ -129,20 +160,25 @@
 
 <script setup lang="ts">
 // 通用内容列表页：筛选 / 排序 / 置顶 / 修改 / 删除 / 全选 / 批量删除 / 新增
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import Sortable from 'sortablejs'
+import { PlusOutlined, ArrowUpOutlined, ControlOutlined, DownOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import {
-  PlusOutlined, SettingOutlined, DeleteOutlined, ArrowUpOutlined,
-  ControlOutlined
-} from '@ant-design/icons-vue'
-import {
-  getContentList, deleteContent, toggleContentTop, updateContentSort,
+  getContentList, deleteContent, toggleContentTop, duplicateContent, batchContentStatus,
   type Channel, type Content, type ContentStatus
 } from '@/api/cms'
 import { COLUMN_LABELS } from './fieldDefs'
 import ChannelTitle from './components/ChannelTitle.vue'
+import PreviewPageButton from './components/PreviewPageButton.vue'
+import TrashDrawer from './components/TrashDrawer.vue'
+import SearchActions from '@/components/SearchActions/index.vue'
+import { useChannels } from '@/composables/useChannels'
+import { useListQuery } from '@/composables/useListQuery'
+import { useContentDragSort } from './composables/useContentDragSort'
+
+/** 拖拽排序只在当前页内生效，提示里说清楚，免得运营以为跨页拖不动是故障 */
+const SORT_TIP = '按住拖动调整顺序（只调整本页；要跨页调整，可把每页条数调大）'
 
 /** 发布状态筛选项 */
 const STATUS_OPTIONS = [
@@ -151,25 +187,49 @@ const STATUS_OPTIONS = [
 ]
 
 const props = defineProps<{ channel: Channel }>()
+
+// 只有官网页面上的栏目才有页面可预览（首页板块走聚合接口，不支持草稿预览）；后端同口径再校验一次
+// 沿 parentId 上溯到顶级页面；ancestors 链首可能补了挂靠目标，那不是本栏目的页面，取最后一个顶级节点
+const { ancestors } = useChannels()
+const previewable = computed(() => {
+  const page = ancestors(props.channel.key).filter(c => c.parentId === null).pop()
+  return !!page?.portalPath && page.portalPath !== '/'
+})
 const router = useRouter()
 
+// 页码与筛选从地址栏恢复：编辑完返回、刷新都停在原来那一页
+const listQuery = useListQuery(() => props.channel.key)
+const STATUS_VALUES: ContentStatus[] = ['published', 'draft']
+const statusFromQuery = () => {
+  const s = listQuery.strOf('status') as ContentStatus | undefined
+  return s && STATUS_VALUES.includes(s) ? s : undefined
+}
+
 const loading = ref(false)
+/** 最近一次加载是否失败：失败时表格显示「重新加载」而不是「暂无数据」 */
+const loadFailed = ref(false)
 const rows = ref<Content[]>([])
-const keyword = ref('')
-const dateRange = ref<[string, string]>()
-const status = ref<ContentStatus>()
+const keyword = ref(listQuery.strOf('keyword') ?? '')
+const dateRange = ref<[string, string] | undefined>(listQuery.rangeOf('dateFrom', 'dateTo'))
+const status = ref<ContentStatus | undefined>(statusFromQuery())
 const selectedKeys = ref<number[]>([])
 const tableWrap = ref<HTMLElement>()
+/** 回收站抽屉 */
+const trashOpen = ref(false)
 
 // 分页（服务端分页，rows 即当前页数据）
-const page = ref(1)
-const pageSize = ref(10)
+const page = ref(listQuery.initialPage())
+const pageSize = ref(listQuery.initialPageSize())
 const total = ref(0)
+
+/** 是否带了筛选条件：决定空状态文案是「新增第一条」还是「试试重置」 */
+const hasFilter = computed(() => !!(keyword.value || dateRange.value || status.value))
 
 // 动态列：按栏目 listColumns + 固定操作列（sort 不再单列，拖拽手柄并入标题/名称列）
 const columns = computed(() => {
+  // brand 列原是一个永远点不了的「品牌管理」占位按钮，功能未上线，不再展示
   const cols = props.channel.listColumns
-    .filter((key) => key !== 'sort')
+    .filter((key) => key !== 'sort' && key !== 'brand')
     .map((key) => {
       if (key === 'index') return { title: '序号', key: 'index', width: 80, align: 'center' as const }
       if (key === 'isTop') return { title: '置顶', key: 'isTop', width: 80, align: 'center' as const }
@@ -178,13 +238,18 @@ const columns = computed(() => {
     })
   // 状态列不进 listColumns 配置：每个栏目都需要区分草稿与已发布，无须逐栏目开关
   cols.push({ title: '状态', key: 'status', width: 90, align: 'center' as const })
-  cols.push({ title: '修改', key: 'edit', width: 70, align: 'center' as const })
-  cols.push({ title: '删除', key: 'delete', width: 70, align: 'center' as const })
+  cols.push({ title: '操作', key: 'ops', width: 170, align: 'center' as const })
   return cols
 })
 
 const fetchList = async () => {
   loading.value = true
+  loadFailed.value = false
+  listQuery.sync({
+    page: page.value,
+    pageSize: pageSize.value,
+    filters: { keyword: keyword.value || undefined, status: status.value, date: dateRange.value },
+  })
   try {
     const res = await getContentList({
       channelKey: props.channel.key,
@@ -204,8 +269,12 @@ const fetchList = async () => {
         page.value -= 1
         await fetchList()
       }
+    } else {
+      loadFailed.value = true
+      message.error(res.data.message || '获取列表失败')
     }
   } catch {
+    loadFailed.value = true
     message.error('获取列表失败')
   } finally {
     loading.value = false
@@ -218,8 +287,17 @@ const onFilterChange = () => {
   fetchList()
 }
 
-// 每页条数变化：条数变了原页码可能越界，一并回到首页
-const onPageSizeChange = () => {
+// 重置：清空全部筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  dateRange.value = undefined
+  status.value = undefined
+  onFilterChange()
+}
+
+// 每页条数变化：条数变了原页码可能越界，一并回到首页；记住选择，下次进来沿用
+const onPageSizeChange = (_current: number, size: number) => {
+  listQuery.rememberPageSize(size)
   page.value = 1
   fetchList()
 }
@@ -228,111 +306,104 @@ const onSelectChange = (keys: (string | number)[]) => {
   selectedKeys.value = keys as number[]
 }
 
-// 跳转编辑/新增全页表单
+// 跳转编辑/新增全页表单：带上当前列表地址，编辑页返回时回到同一页同一筛选
 const goEdit = (id?: number) => {
-  router.push(id ? `/cms/${props.channel.key}/edit/${id}` : `/cms/${props.channel.key}/edit`)
+  router.push({
+    path: id ? `/cms/${props.channel.key}/edit/${id}` : `/cms/${props.channel.key}/edit`,
+    query: { from: listQuery.currentFullPath() },
+  })
 }
 
 const onToggleTop = async (record: Content) => {
   try {
-    await toggleContentTop(props.channel.key, record.id)
-    record.isTop = !record.isTop
-    message.success('操作成功')
+    const res = await toggleContentTop(props.channel.key, record.id)
+    if (res.data.code !== 200) {
+      message.error(res.data.message || '操作失败')
+      return
+    }
+    // 置顶影响排序（置顶优先），重取一次让行位置与前台一致
+    message.success(record.isTop ? '已取消置顶' : '已置顶')
+    fetchList()
   } catch {
     message.error('操作失败')
   }
 }
 
-// 拖拽结束：以 DOM 的 data-row-key 顺序为准重排当前页，并把排序值降序回写
-// 用 key 定位而非位置索引，规避 a-table tbody 中的 measure-row 造成的索引错位
-const onDragReorder = async (tbody: HTMLElement) => {
-  // 服务端分页后 rows 就是当前页，不再需要按页码切片
-  const oldPageRows = [...rows.value]
+// 拖拽排序：见 useContentDragSort
+const { initSortable } = useContentDragSort({
+  channelKey: () => props.channel.key,
+  rows,
+  tableWrap,
+  reload: () => { fetchList() },
+})
 
-  // 读取拖拽后真实数据行的 id 顺序（仅 tr[data-row-key]，排除测量行）
-  const keyOrder = Array.from(tbody.querySelectorAll('tr[data-row-key]'))
-    .map((tr) => Number((tr as HTMLElement).dataset.rowKey))
-  const byId = new Map(oldPageRows.map((r) => [r.id, r]))
-  const newPageRows = keyOrder.map((id) => byId.get(id)).filter(Boolean) as Content[]
-  if (newPageRows.length !== oldPageRows.length) { fetchList(); return }
-
-  // 顺序未变则不处理
-  if (newPageRows.every((r, i) => r.id === oldPageRows[i].id)) return
-
-  // 禁止跨置顶边界拖动（前置条件：服务端按 isTop 优先返回，置顶行聚集在页首 topCount 位）
-  const topCount = oldPageRows.filter((r) => r.isTop).length
-  const crossed = newPageRows.some((r, i) => r.isTop !== (i < topCount))
-  if (crossed) {
-    message.warning('置顶与非置顶内容不能互换位置')
-    fetchList() // 重载以还原被拖动的 DOM
-    return
-  }
-
-  // 把新顺序写回当前页数据
-  rows.value = newPageRows
-
-  // 取当前页排序值池，按降序重新分配给新顺序（保持数值池不变）
-  const sortPool = newPageRows.map((r) => r.sort ?? 0).sort((a, b) => b - a)
-  const changed: Content[] = []
-  newPageRows.forEach((r, i) => {
-    if (r.sort !== sortPool[i]) {
-      r.sort = sortPool[i]
-      changed.push(r)
+// 后端异常恒回 HTTP 200，须按业务码判断，否则被拒绝也会提示成功
+const removeIds = async (ids: number[]) => {
+  try {
+    const res = await deleteContent(props.channel.key, ids)
+    if (res.data.code !== 200) {
+      message.error(res.data.message || '删除失败')
+      return
     }
-  })
-
-  try {
-    await Promise.all(
-      changed.map((r) => updateContentSort(props.channel.key, r.id, r.sort ?? 0))
-    )
-    message.success('排序已更新')
-  } catch {
-    message.error('排序更新失败')
+    // 后端提示「已移入回收站，N 天内可恢复」，原样展示
+    message.success(res.data.message || '已移入回收站')
     fetchList()
+  } catch {
+    message.error('删除失败，请稍后重试')
   }
 }
 
-let sortable: Sortable | null = null
-// 在表格 tbody 上初始化拖拽，仅排序手柄可触发
-const initSortable = async () => {
-  await nextTick()
-  sortable?.destroy()
-  const tbody = tableWrap.value?.querySelector('.ant-table-tbody') as HTMLElement | null
-  if (!tbody) return
-  sortable = Sortable.create(tbody, {
-    handle: '.sort-drag-handle',
-    animation: 150,
-    onEnd: () => onDragReorder(tbody)
-  })
-}
+const onDelete = (id: number) => removeIds([id])
+const onBatchDelete = () => removeIds(selectedKeys.value)
 
-const onDelete = async (id: number) => {
+/** 复制为草稿：成功后直接打开副本编辑，运营照着改即可 */
+const duplicatingId = ref<number | null>(null)
+const onDuplicate = async (id: number) => {
+  if (duplicatingId.value) return
+  duplicatingId.value = id
   try {
-    await deleteContent(props.channel.key, [id])
-    message.success('删除成功')
-    fetchList()
+    const res = await duplicateContent(props.channel.key, id)
+    if (res.data.code !== 200 || !res.data.data?.id) {
+      message.error(res.data.message || '复制失败')
+      return
+    }
+    message.success('已复制为草稿，正在打开副本')
+    goEdit(res.data.data.id)
   } catch {
-    message.error('删除失败')
+    message.error('复制失败，请稍后重试')
+  } finally {
+    duplicatingId.value = null
   }
 }
 
-const onBatchDelete = async () => {
+/** 批量发布 / 下线 */
+const batchBusy = ref(false)
+const onBatchStatus = async (target: ContentStatus) => {
+  if (!selectedKeys.value.length || batchBusy.value) return
+  batchBusy.value = true
   try {
-    await deleteContent(props.channel.key, selectedKeys.value)
-    message.success('删除成功')
+    const res = await batchContentStatus(props.channel.key, selectedKeys.value, target)
+    if (res.data.code !== 200) {
+      message.error(res.data.message || '操作失败')
+      return
+    }
+    message.success(res.data.message || '操作成功')
     fetchList()
   } catch {
-    message.error('删除失败')
+    message.error('操作失败，请稍后重试')
+  } finally {
+    batchBusy.value = false
   }
 }
 
 onMounted(fetchList)
-// 切换栏目时重置并重新加载
+// 切换栏目时重置并重新加载（CmsView 按栏目 key 重建本组件，这里是兜底）
 watch(() => props.channel.key, () => {
   keyword.value = ''
   dateRange.value = undefined
   status.value = undefined
   page.value = 1
+  pageSize.value = listQuery.initialPageSize()
   fetchList()
 })
 // 行集合变化（翻页/页容量/重载）后重建拖拽实例；纯排序拖动不触发，避免打断动画
@@ -340,7 +411,6 @@ watch(
   () => [props.channel.key, page.value, pageSize.value, rows.value.length].join('|'),
   () => { initSortable() }
 )
-onBeforeUnmount(() => { sortable?.destroy() })
 </script>
 
 <style scoped>
@@ -360,8 +430,15 @@ onBeforeUnmount(() => { sortable?.destroy() })
 
 .actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.actions-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #262626;
 }
 
 .name-cell {
@@ -398,18 +475,18 @@ onBeforeUnmount(() => { sortable?.destroy() })
   color: #faad14;
 }
 
-.op-icon {
+/* 标题即编辑入口：悬停变色提示可点 */
+.name-link {
+  color: #262626;
   cursor: pointer;
-  color: #8c8c8c;
-  font-size: 16px;
 }
 
-.op-icon:hover {
+.name-link:hover {
   color: #2f7cff;
 }
 
-.op-icon.danger:hover {
-  color: #ff4d4f;
+.list-empty {
+  padding: 24px 0;
 }
 
 .footer-bar {

@@ -26,14 +26,15 @@
           :options="resultOptions"
           @change="search"
         />
-        <a-input-search
+        <a-input
           v-model:value="keyword"
           placeholder="账号 / 姓名 / 操作 / IP"
           style="width: 220px"
           allow-clear
           :maxlength="50"
-          @search="search"
+          @press-enter="search"
         />
+        <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
         <a-button danger @click="clearOpen = true">清理历史日志</a-button>
       </a-space>
     </div>
@@ -165,6 +166,7 @@
 <script setup lang="ts">
 // 操作日志：只读列表 + 按日期清理；日志由后端拦截器在每次写操作后自动写入
 import { computed, onMounted, ref } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import {
   getOpLogList, getOpLogModules, clearOpLog,
@@ -270,6 +272,15 @@ const {
     pageSize: query.pageSize,
   }),
 )
+
+// 重置：清空全部筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  moduleName.value = undefined
+  result.value = undefined
+  dateRange.value = undefined
+  search()
+}
 
 const pagination = computed(() => ({
   current: page.value,

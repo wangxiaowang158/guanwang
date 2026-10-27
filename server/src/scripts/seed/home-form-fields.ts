@@ -1,19 +1,20 @@
 // 首页板块栏目的表单字段 —— 与 home-section.service.ts 的取数口径逐一对齐
 // 原先这些栏目沿用通用表单，前台要读的列（业绩单位、伙伴 Logo/链接、简介正文）后台填不了，
 // 后台能填的列（关键字、封面、作者）前台又不读。这里只列前台真正消费的字段。
-// 已上线的库由迁移 1790000007000-AlignHomeFormFields 同步，该迁移内保留一份冻结副本
+// 已上线的库由迁移 1790000007000-AlignHomeFormFields 同步，该迁移内保留一份冻结副本；
+// 图片位追加视频由 1790000016000-AddVideoToImageSlots 同步
 
 /** 栏目 key → 表单字段（顺序即后台表单顺序） */
 export const HOME_FORM_FIELDS: Record<string, string[]> = {
   'home-intro': ['title', 'subtitle', 'content'],
   'home-philosophy': ['title', 'content'],
   'home-business': ['icon', 'title', 'description', 'isTop'],
-  'home-product': ['name', 'subtitle', 'content', 'cover', 'isTop'],
+  'home-product': ['name', 'subtitle', 'content', 'cover', 'video', 'isTop'],
   'home-service': ['icon', 'title', 'description', 'isTop'],
   'home-customer': ['title', 'whiteCover', 'link', 'isTop'],
   'home-achievement': ['title', 'subtitle', 'description', 'isTop'],
-  'home-social': ['title', 'description', 'cover', 'isTop'],
-  'home-view': ['title', 'description', 'cover', 'link', 'isTop'],
+  'home-social': ['title', 'description', 'cover', 'video', 'isTop'],
+  'home-view': ['title', 'description', 'cover', 'video', 'link', 'isTop'],
 }
 
 /**

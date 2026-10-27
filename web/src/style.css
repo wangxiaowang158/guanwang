@@ -43,15 +43,17 @@
   --color-line:    #e2e8f0;
   --color-surface: #f5f7fa;
 
-  /* 字号阶梯：标题行高 1.25，正文 1.75 */
-  --text-fs-display: clamp(40px, 5vw, 64px);
+  /* 字号阶梯：标题行高 1.2-1.3，正文 1.75
+     正文 16px 起：中文笔画密，15px 在高分屏上偏小；参考站点正文多在 16-17px */
+  --text-fs-display: clamp(36px, 5.2vw, 64px);
   --text-fs-h1: clamp(32px, 3.6vw, 48px);
-  --text-fs-h2: clamp(26px, 2.6vw, 36px);
+  --text-fs-h2: clamp(28px, 3vw, 40px);
   --text-fs-h3: 20px;
   --text-fs-h4: 18px;
-  --text-fs-body-lg: 17px;
-  --text-fs-body: 15px;
+  --text-fs-body-lg: 18px;
+  --text-fs-body: 16px;
   --text-fs-sm: 14px;
+  --text-fs-caption: 13px;
   --text-fs-xs: 12px;
 
   /* 圆角：B2B 官网取 8-12px，偏克制 */
@@ -75,8 +77,8 @@
   --gutter: clamp(20px, 4vw, 40px);
   --nav-h: 72px;
   --section-py: clamp(64px, 8vw, 112px);
-  /* 区块标题到内容的统一间距 */
-  --head-gap: 48px;
+  /* 区块标题到内容的统一间距：随屏宽缩放，手机上不至于空出一大截 */
+  --head-gap: clamp(32px, 4vw, 56px);
 
   --dur-fast: 150ms;
   --dur-base: 250ms;
@@ -154,9 +156,10 @@
   --rs-text-light-sub: #b8b8b8;
   --rs-border:         #e6e2db;
   --rs-border-dark:    #333333;
-  --rs-section-py:     96px;
-  --rs-content-max:    1280px;
-  --rs-content-px:     32px;
+  /* 纵向留白与页边距跟随全站尺度：随屏宽缩放，且与顶栏左右边距对齐（原固定 96px / 32px） */
+  --rs-section-py:     var(--section-py);
+  --rs-content-max:    var(--container);
+  --rs-content-px:     var(--gutter);
   --rs-text-hero:      clamp(40px, 6vw, 72px);
   --rs-text-h1:        clamp(30px, 4vw, 52px);
   --rs-text-h2:        clamp(22px, 3vw, 34px);
@@ -169,7 +172,8 @@ html {
   font-size: 16px;
   line-height: 1.6;
   /* 整页滚动交给原生窗口：锚点偏移由此统一补偿固定导航高度 */
-  scroll-padding-top: calc(var(--nav-h) + 16px);
+  /* 有页内目录条时（ChannelSubNav 设置 --subnav-h）一并让出 */
+  scroll-padding-top: calc(var(--nav-h) + var(--subnav-h, 0px) + 16px);
   scroll-behavior: smooth;
 }
 
@@ -219,12 +223,14 @@ body {
    ============================================================ */
 .fade-up {
   opacity: 0;
-  transform: translateY(28px);
+  /* 位移克制：16px 足以感知方向，再大会显得飘 */
+  transform: translateY(16px);
   transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
 }
 .fade-up.visible {
   opacity: 1;
-  transform: translateY(0);
+  /* 用 none 而非 translateY(0)：任何 transform 都会让内部 position: fixed 的弹层以本元素为定位基准 */
+  transform: none;
 }
 
 /* 延迟梯队 */
@@ -316,4 +322,9 @@ body {
     transition-duration: 0.001ms !important;
   }
   .fade-up { opacity: 1; transform: none; }
+}
+
+/* 打印：未滚到的区块仍是入场前的透明态，打印时一律显现，否则首屏以下整页空白 */
+@media print {
+  .fade-up { opacity: 1; transform: none; transition: none; }
 }

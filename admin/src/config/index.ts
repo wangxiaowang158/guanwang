@@ -40,6 +40,9 @@ function toPositiveNumber(value: string | undefined, fallback: number): number {
   return Number.isFinite(num) && num > 0 ? num : fallback
 }
 
+/** 官网前台地址（不带尾斜杠）；空串表示未配置，回落到后端下发的「基本信息 → 网址」 */
+export const PORTAL_ORIGIN = trimTrailingSlash((import.meta.env.VITE_PORTAL_ORIGIN || '').trim())
+
 /** 图片上传大小上限（MB） */
 export const UPLOAD_MAX_MB = toPositiveNumber(import.meta.env.VITE_UPLOAD_MAX_MB, 2)
 
@@ -75,3 +78,21 @@ export const UPLOAD_VIDEO_ACCEPT = UPLOAD_VIDEO_MIMES.join(',')
 
 /** 视频白名单对应的友好格式名，用于错误提示 */
 export const UPLOAD_VIDEO_LABEL = 'MP4 / WebM / Ogg'
+
+/** 附件上传大小上限（MB），与后端 UPLOAD_DOC_MAX_MB 默认值一致 */
+export const UPLOAD_DOC_MAX_MB = 20
+
+/** 附件上传大小上限（字节） */
+export const UPLOAD_DOC_MAX_BYTES = UPLOAD_DOC_MAX_MB * 1024 * 1024
+
+/**
+ * 允许上传的附件扩展名，与后端 UPLOAD.docExts 一致
+ * 按扩展名而非 MIME 校验：各浏览器对 Office 文件报的 MIME 不统一
+ */
+export const UPLOAD_DOC_EXTS = ['.pdf', '.docx', '.xlsx', '.pptx', '.doc', '.xls', '.ppt'] as const
+
+/** 附件选择框的 accept 属性值 */
+export const UPLOAD_DOC_ACCEPT = UPLOAD_DOC_EXTS.join(',')
+
+/** 附件白名单对应的友好格式名 */
+export const UPLOAD_DOC_LABEL = 'PDF / Word / Excel / PPT'

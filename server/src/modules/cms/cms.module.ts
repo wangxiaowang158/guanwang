@@ -6,8 +6,11 @@ import { AdminModule } from '../admin/admin.module'
 import { Channel } from './channel.entity'
 import { ChannelService } from './channel.service'
 import { Content } from './content.entity'
+import { ContentRevision } from './content-revision.entity'
 import { ContentService } from './content.service'
 import { ChannelPermGuard } from './guards/channel-perm.guard'
+import { TrashSweeper } from './trash-sweeper'
+import { SearchService } from './search.service'
 import { HomeSectionService } from './home-section.service'
 import { MgmtChannelController } from './mgmt-channel.controller'
 import { MgmtContentController } from './mgmt-content.controller'
@@ -21,7 +24,7 @@ import { SiteConfigService } from './site-config.service'
 
 @Module({
   // AdminModule 提供后台接口所需的 AdminGuard / PermGuard
-  imports: [TypeOrmModule.forFeature([Channel, Content, SiteConfig]), AdminModule],
+  imports: [TypeOrmModule.forFeature([Channel, Content, ContentRevision, SiteConfig]), AdminModule],
   controllers: [
     MgmtChannelController,
     MgmtContentController,
@@ -39,6 +42,10 @@ import { SiteConfigService } from './site-config.service'
     PrerenderHeadBuilder,
     // 内容接口的栏目级权限校验，依赖 ChannelService
     ChannelPermGuard,
+    // 回收站超期内容的定时清理
+    TrashSweeper,
+    // 前台站内搜索
+    SearchService,
   ],
   exports: [ChannelService, ContentService, SiteConfigService],
 })

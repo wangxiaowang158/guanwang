@@ -27,6 +27,13 @@
             <span v-if="article.author">作者：{{ article.author }}</span>
             <span v-if="article.source">来源：{{ article.source }}</span>
           </div>
+          <!-- 关键成效先行：取量化收益的前 4 项；下方完整的「量化收益」区块照常保留 -->
+          <ArticleHighlights
+            v-if="highlights.length"
+            :items="highlights"
+            :style2="theme.isStyle2"
+            :style="{ '--ah-cols': highlights.length }"
+          />
         </header>
 
         <!-- 不传 title：标题已在上方 h1，传进去会在视频下方再渲染一遍 -->
@@ -58,9 +65,13 @@
         <p v-else-if="article.desc" class="article-body">{{ article.desc }}</p>
 
         <!-- 案例结构化区块：量化收益 → 现场图集 → 客户评价 -->
-        <component :is="parts.metric" v-if="metrics.length" class="article-sec" :items="metrics" heading="改造后量化收益" />
+        <component :is="parts.metric" v-if="showMetricBoard" class="article-sec" :items="metrics" heading="改造后量化收益" />
         <component :is="parts.gallery" v-if="gallery.length" class="article-sec" :images="gallery" heading="现场实拍与系统截图" :alt-prefix="`${article.title} 现场 `" />
         <component :is="parts.quote" v-if="quote?.text" class="article-sec" :quote="quote" heading="客户评价" />
+
+        <div v-if="article.file" class="article-sec">
+          <AttachmentLink :file="article.file" :name="article.title" label="下载附件" />
+        </div>
 
         <!-- 案例页尾转化入口：仅结构化案例展示，普通新闻不打扰 -->
         <div v-if="hasStructured" class="article-cta">
@@ -80,6 +91,14 @@
             <span class="article-around-title">{{ article.next.title }}</span>
           </RouterLink>
         </nav>
+
+        <!-- 相关推荐：案例叫「相关案例」，普通文章叫「相关阅读」 -->
+        <ArticleRelated
+          v-if="article.related?.length"
+          :items="article.related"
+          :heading="hasStructured ? '相关案例' : '相关阅读'"
+          :style2="theme.isStyle2"
+        />
 
         <RouterLink :to="article.parentPath" class="article-back">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -116,6 +135,7 @@ import { clearPageSeo, setPageSeo } from '@/composables/useSeo'
 import { useArticleJsonLd } from '@/composables/useJsonLd'
 import { sanitizeRichText } from '@/utils/sanitize'
 import EmptyState from '@/components/sections/EmptyState.vue'
+import AttachmentLink from '@/components/common/AttachmentLink.vue'
 import VideoPlayer from '@/components/sections/VideoPlayer.vue'
 import FactTable from '@/components/sections/FactTable.vue'
 import PainPointList from '@/components/sections/PainPointList.vue'
@@ -131,8 +151,13 @@ import Style2TestimonialQuote from '@/components/sections/Style2TestimonialQuote
 import Style2SectionHead from '@/components/sections/Style2SectionHead.vue'
 import { useLeadModal } from '@/composables/useLeadModal'
 import { useBrokenImages } from '@/composables/useBrokenImages'
+import ArticleHighlights from './components/ArticleHighlights.vue'
+import ArticleRelated from './components/ArticleRelated.vue'
 
 defineOptions({ name: 'ArticlePage' })
+
+/** 关键指标条最多几项：一行放得下 */
+const HIGHLIGHT_MAX = 4
 
 /** 文章封面失效登记 */
 const imgs = useBrokenImages()
@@ -159,6 +184,15 @@ const { openLead } = useLeadModal()
 const facts = computed(() => article.value?.extra?.facts ?? [])
 const pains = computed(() => article.value?.extra?.pains ?? [])
 const metrics = computed(() => article.value?.extra?.metrics ?? [])
+/** 标题下的关键指标条：只取有数值的前几项 */
+const highlights = computed(() => metrics.value.filter(m => m.label && m.value).slice(0, HIGHLIGHT_MAX))
+/**
+ * 下方「量化收益」区块是否还要出：顶部指标条已把全部指标展示完、且都没有备注时，
+ * 再出一遍就是同样几个数字重复两次；指标更多或带备注说明时才保留
+ */
+const showMetricBoard = computed(() =>
+  metrics.value.length > highlights.value.length || metrics.value.some(m => m.note?.trim()),
+)
 const gallery = computed(() => (article.value?.extra?.gallery ?? []).filter(Boolean))
 const quote = computed(() => article.value?.extra?.quote)
 /** 至少有一项结构化数据，才按案例详情结构展示 */

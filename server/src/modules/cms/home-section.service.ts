@@ -25,6 +25,8 @@ export const HOME_SECTION_KEYS = {
   VISION: 'home-vision',
   TESTIMONY: 'home-testimony',
   HONOR: 'home-honor',
+  /** 第三版：核心优势（方案定制 / 前卫设计 / 精工品质 / 完美配套） */
+  ADVANTAGE: 'home-advantage',
 } as const
 
 /** 板块标题：小标题取栏目名，主标题取栏目的区块副标题；前台为空时用内置文案 */
@@ -71,6 +73,7 @@ export class HomeSectionService {
       partner: HOME_SECTION_KEYS.PARTNER,
       view: HOME_SECTION_KEYS.VIEW,
       social: HOME_SECTION_KEYS.SOCIAL,
+      advantage: HOME_SECTION_KEYS.ADVANTAGE,
     }
     const channels = await this.channelRepo.find({ where: { key: In(Object.values(map)) } })
     const byKey = new Map(channels.map(c => [c.key, c]))
@@ -107,6 +110,8 @@ export class HomeSectionService {
       vision: pick(HOME_SECTION_KEYS.VISION).map(c => this.toVision(c)),
       testimonies: pick(HOME_SECTION_KEYS.TESTIMONY).flatMap(c => this.toTestimony(c)),
       honors: pick(HOME_SECTION_KEYS.HONOR).map(c => this.toHonor(c)),
+      // 核心优势与「技术服务」同形状（图标 + 标题 + 说明），复用同一映射
+      advantages: pick(HOME_SECTION_KEYS.ADVANTAGE).map((c, i) => this.toService(c, i)),
       headings: await this.headings(),
       // 板块背景图：目前仅首屏 Hero 有配置项，取自「首页 Banner」栏目
       backgrounds: heroBg ? { hero: heroBg } : {},
@@ -147,6 +152,7 @@ export class HomeSectionService {
       summary: c.subtitle ?? c.description ?? '',
       features: this.splitLines(c.content),
       image: c.cover ?? '',
+      video: c.video ?? undefined,
       sort: this.displaySort(index),
     }
   }
@@ -162,13 +168,14 @@ export class HomeSectionService {
     }
   }
 
-  /** 合作伙伴项：Logo 取白底图，回退封面图 */
+  /** 合作伙伴项：Logo 取白底图，回退封面图；分类（产业伙伴 / 科创伙伴 / 合作伙伴）取 category */
   private toPartner(c: Content, index: number) {
     return {
       id: c.id,
       name: c.title ?? c.name ?? '',
       logo: c.whiteCover ?? c.cover ?? '',
       link: c.link ?? '',
+      category: c.category ?? '',
       sort: this.displaySort(index),
     }
   }
@@ -191,6 +198,7 @@ export class HomeSectionService {
       title: c.title ?? '',
       desc: c.description ?? '',
       image: c.cover ?? '',
+      video: c.video ?? undefined,
       link: safeLink(c.link) ?? '',
       sort: this.displaySort(index),
     }
@@ -223,6 +231,7 @@ export class HomeSectionService {
       title: c.title ?? '',
       desc: c.description ?? '',
       image: c.cover ?? '',
+      video: c.video ?? undefined,
       sort: this.displaySort(index),
     }
   }

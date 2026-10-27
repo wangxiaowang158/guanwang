@@ -2,7 +2,6 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- 移动端浏览器地址栏配色，取品牌主色 -->
     <meta name="theme-color" content="#0b57d0" />
@@ -12,6 +11,8 @@
          不执行 JS 的抓取方拿到的就是该页自己的标题与描述，而不是全站同一套。
          取数失败（后端异常）或无网关（本地 npm run dev）时，用下面 block 里的站点默认值兜底 -->
     <!--# block name="default_head" -->
+    <!-- 站点图标放在替换区内：后台可配，由后端 head 按配置给出；此处为取数失败时的内置图标 -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>中瑞恒——让建筑更节能 让环境更舒适</title>
     <meta name="keywords" content="暖通空调系统集成,EMC合同能源管理,综合能源节能服务,能源托管运营,智慧能源管理" />
     <meta name="description" content="国家高新技术企业、国家专精特新小巨人企业，立足智慧能源领域，以数字化方式重构能源系统。" />

@@ -18,14 +18,15 @@
           :options="resultOptions"
           @change="search"
         />
-        <a-input-search
+        <a-input
           v-model:value="keyword"
           placeholder="昵称 / 登录账号 / IP"
           style="width: 220px"
           allow-clear
           :maxlength="50"
-          @search="search"
+          @press-enter="search"
         />
+        <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
         <!-- 登录日志属审计数据，仅超管可清理（后端同口径拦截） -->
         <a-button v-if="isSuper" danger @click="clearOpen = true">清理历史日志</a-button>
       </a-space>
@@ -88,6 +89,7 @@
 <script setup lang="ts">
 // 登录日志：只读列表 + 按日期清理；失败原因仅后台可见（前台统一提示，防账号枚举）
 import { computed, ref } from 'vue'
+import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import {
   getLoginLogList, clearLoginLog,
@@ -147,6 +149,14 @@ const {
     pageSize: query.pageSize,
   }),
 )
+
+// 重置：清空全部筛选条件后回到首页重查
+const onResetFilters = () => {
+  keyword.value = ''
+  result.value = undefined
+  dateRange.value = undefined
+  search()
+}
 
 const pagination = computed(() => ({
   current: page.value,

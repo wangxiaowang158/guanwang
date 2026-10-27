@@ -74,6 +74,7 @@
                 </label>
                 <p v-if="errors.agreed" id="lead-agree-err" class="lead-err">{{ errors.agreed }}</p>
               </div>
+              <HoneypotField v-model="guard.honeypot.value" />
               <p v-if="submitError" class="lead-err lead-err--block" role="alert">{{ submitError }}</p>
               <button type="submit" class="lead-submit" :disabled="submitting">{{ submitting ? '提交中…' : '提交' }}</button>
             </form>
@@ -92,13 +93,16 @@ import { LEAD_TYPE_LABEL, submitAnonymousFeedback } from '@/api/feedback'
 import type { LeadType } from '@/api/feedback'
 import { API_SUCCESS_CODE } from '@/config'
 import { useFocusTrap } from '@/composables/useFocusTrap'
+import { useFormGuard } from '@/composables/useFormGuard'
 import { useLeadModal } from '@/composables/useLeadModal'
+import HoneypotField from './HoneypotField.vue'
 import { useThemeStore } from '@/stores/theme'
 import { PHONE_PATTERN, checkOptionalEmail } from '@/utils/validators'
 
 const theme = useThemeStore()
 const route = useRoute()
 const { visible, leadType, sourceHint, closeLead } = useLeadModal()
+const guard = useFormGuard()
 
 /** 留言内容上限，与后端 DTO 一致 */
 const CONTENT_MAX = 500
@@ -124,6 +128,8 @@ useFocusTrap(visible, dialogRef, closeLead, '#lead-name')
 // 每次打开：带入预选类型，保留上次未提交的输入，但成功态与错误提示要清掉
 watch(visible, (on) => {
   if (!on) return
+  // 打开时确保有防刷令牌，后端据此计算填写用时；已有未过期的就沿用，成功提交后才重领
+  void guard.ensure()
   form.leadType = leadType.value
   done.value = false
   submitError.value = ''
@@ -167,9 +173,11 @@ async function handleSubmit(): Promise<void> {
       position: form.position.trim() || undefined,
       content: form.content.trim(),
       sourcePage: sourcePage(),
+      ...guard.fields(),
     })
     if (res.code === API_SUCCESS_CODE) {
       done.value = true
+      void guard.refresh()
       // 成功后清空业务字段，下次再开是干净的表单
       Object.assign(form, { name: '', company: '', phone: '', email: '', position: '', content: '' })
       agreed.value = false

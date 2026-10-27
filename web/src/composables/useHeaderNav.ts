@@ -56,8 +56,12 @@ export function useHeaderNav() {
   const expandedKey = ref('')   // 移动端当前展开的子菜单
   let closeTimer: ReturnType<typeof setTimeout> | undefined
 
-  /** 一级栏目是否为当前页 */
-  const isActive = (item: MenuNode) => route.path === item.path
+  /**
+   * 一级栏目是否为当前页：自身地址，或当前页是它下拉里的某个页面
+   * （如在「节能咨询子智能体」页时，「智慧能源解决方案」应高亮）
+   */
+  const isActive = (item: MenuNode) =>
+    route.path === item.path || !!item.children?.some(c => !c.anchor && c.path && route.path === c.path)
   /** 子项跳转地址：同页锚点用 hash，否则直接 path */
   const childTo = (child: MenuNode) => (child.anchor ? `${child.path}#${child.anchor}` : child.path)
 

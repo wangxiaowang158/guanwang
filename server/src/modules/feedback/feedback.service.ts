@@ -14,6 +14,7 @@ import {
   toFeedbackDetailVo, toFeedbackListItemVo, toMemberFeedbackVo,
 } from './vo/feedback.vo'
 import type { FeedbackDetailVo, FeedbackListItemVo, MemberFeedbackVo } from './vo/feedback.vo'
+import { LEAD_TYPE_NONE } from './dto/feedback.dto'
 import type {
   FeedbackQueryDto, ReplyFeedbackDto, SubmitAnonymousFeedbackDto,
   SubmitMemberFeedbackDto, UpdateFeedbackStatusDto,
@@ -164,6 +165,9 @@ export class FeedbackService {
     if (query.source) qb.andWhere('f.source = :source', { source: query.source })
     if (query.status) qb.andWhere('f.status = :status', { status: query.status })
     if (query.feedbackType) qb.andWhere('f.feedbackType = :feedbackType', { feedbackType: query.feedbackType })
+    // 线索类型：none 筛「普通留言」（未带线索类型），其余按值精确匹配
+    if (query.leadType === LEAD_TYPE_NONE) qb.andWhere('f.leadType IS NULL')
+    else if (query.leadType) qb.andWhere('f.leadType = :leadType', { leadType: query.leadType })
 
     if (query.keyword) {
       const kw = `%${query.keyword}%`

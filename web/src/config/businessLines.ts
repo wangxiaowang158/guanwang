@@ -4,8 +4,8 @@ import type { BusinessLine } from '@/api/page'
 /** 业务线选项：value 为接口取值，label 为前台展示名 */
 export const BUSINESS_LINE_OPTIONS: { label: string; value: BusinessLine }[] = [
   { label: '智慧能源', value: 'energy' },
-  { label: '智慧楼宇', value: 'building' },
-  { label: '智慧生活', value: 'living' },
+  { label: '智慧建筑', value: 'building' },
+  { label: '未来人居', value: 'living' },
 ]
 
 /**

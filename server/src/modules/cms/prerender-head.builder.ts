@@ -17,6 +17,7 @@ import { PortalCmsService } from './portal-cms.service'
 import type { SiteConfig } from './site-config.entity'
 import { SiteConfigService } from './site-config.service'
 import { normalizeOrigin } from './site-origin'
+import { isGrayActive, normalizeSiteExt, VERIFY_META_NAMES, type SiteExtConfig } from '../../common/site-ext'
 
 /** 隐私政策页的固定标题，与前台该路由的 meta.title 一致 */
 const PRIVACY_TITLE = '隐私政策 - 中瑞恒'
@@ -125,6 +126,11 @@ export class PrerenderHeadBuilder {
     const origin = normalizeOrigin(site.website)
     const title = meta.title || DEFAULT_TITLE
     const parts: string[] = [
+      // 站点图标在 index.html 的 SSI 替换区内，这里须每次给出：后台配了用后台的，否则内置 svg。
+      // 入库时已按 assetUrl 校验（站内 / 或 http(s)），仍过 esc()
+      site.favicon
+        ? `<link rel="icon" href="${esc(site.favicon)}">`
+        : '<link rel="icon" type="image/svg+xml" href="/favicon.svg">',
       `<title>${esc(title)}</title>`,
       `<meta name="description" content="${esc(meta.description)}">`,
       `<meta name="keywords" content="${esc(meta.keywords)}">`,
@@ -141,13 +147,35 @@ export class PrerenderHeadBuilder {
     if (url) parts.push(`<meta property="og:url" content="${esc(url)}">`)
     // index.html 的默认 og:type 在 SSI block 里，后端 head 整体替换它，故每类页面都要自己给
     parts.push(`<meta property="og:type" content="${meta.article ? 'article' : 'website'}">`)
-    if (meta.article) {
-      const image = toAbsoluteImage(meta.article.image, origin)
-      if (image) parts.push(`<meta property="og:image" content="${esc(image)}">`)
-    }
+    // 文章有封面用封面；没有封面的文章与其余页面用后台配置的默认分享图
+    const image = toAbsoluteImage(meta.article?.image || site.shareImage, origin)
+    if (image) parts.push(`<meta property="og:image" content="${esc(image)}">`)
+    parts.push(...renderExtHead(normalizeSiteExt(site.extConfig)))
     return parts.join('')
   }
 }
+
+/**
+ * 扩展配置带来的 head 片段：站长验证 meta 与灰色模式样式
+ * 验证 meta 必须在服务端输出：各家站长平台抓取验证时不执行 JS。
+ * 灰色样式也在此输出而非等 JS：否则首屏会先彩色一瞬再变灰
+ */
+export function renderExtHead(ext: SiteExtConfig, now = new Date()): string[] {
+  const parts: string[] = []
+  for (const [key, name] of Object.entries(VERIFY_META_NAMES) as Array<[keyof SiteExtConfig['verify'], string]>) {
+    const code = ext.verify[key]
+    // 验证码入库时已限定为 [A-Za-z0-9_.-]，仍过 esc() 兜底
+    if (code) parts.push(`<meta name="${name}" content="${esc(code)}">`)
+  }
+  if (isGrayActive(ext.grayMode, now)) parts.push(`<style id="gray-mode">${GRAY_MODE_CSS}</style>`)
+  return parts
+}
+
+/**
+ * 灰色模式样式，与 web 端 useGrayMode 注入的同一份
+ * 加在 html 上而非 body：body 上的 filter 会让 position: fixed 的悬浮条、弹窗改为相对 body 定位而错位
+ */
+export const GRAY_MODE_CSS = 'html{filter:grayscale(100%);-webkit-filter:grayscale(100%)}'
 
 /**
  * 封面补成绝对地址，og:image 要求绝对 URL

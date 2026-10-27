@@ -78,6 +78,8 @@ async function main(): Promise<void> {
   const { ADMIN_SEED } = await import('../config/app.config')
   const { SmsCodeService, smsCodeKey } = await import('../modules/member/sms-code.service')
   const { KV_STORE } = await import('../modules/kv/kv-store.interface')
+  // form-guard 读 JWT_ADMIN 派生密钥，须在环境变量就位后动态加载
+  const { issueFormToken } = await import('../modules/feedback/form-guard')
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false })
   app.setGlobalPrefix('api')
@@ -128,11 +130,35 @@ async function main(): Promise<void> {
   }
 
   console.info('\n【匿名提交路径】')
+  // 表单令牌须「领取满 3 秒」才放行，冒烟脚本直接签一枚 5 秒前的，免得每条用例都 sleep
+  const formToken = issueFormToken(Date.now() - 5_000)
+  const tokenRes = await call('GET', '/portal/feedback/form-token')
+  check('可领取表单令牌', tokenRes.code === 200 && typeof tokenRes.data?.token === 'string', tokenRes)
   const anon = await call('POST', '/portal/feedback/anonymous', {
     company: '测试单位', name: '张三', phone: '13800001111',
-    feedbackType: 'cooperation', content: '咨询综合能源服务方案', sourcePage: '联系我们',
+    feedbackType: 'cooperation', content: '咨询综合能源服务方案', sourcePage: '联系我们', formToken,
   })
-  check('匿名提交成功（免登录）', anon.code === 200 && typeof anon.data?.id === 'number', anon)
+  check('匿名提交成功（免登录）', anon.code === 200 && typeof anon.data?.id === 'number' && anon.data.id > 0, anon)
+
+  const noFormToken = await call('POST', '/portal/feedback/anonymous', {
+    name: '王五', phone: '13800003333', content: '没带表单令牌',
+  })
+  check('缺表单令牌被拒并提示刷新', noFormToken.code === 400 && String(noFormToken.message).includes('刷新'), noFormToken)
+
+  const honeypot = await call('POST', '/portal/feedback/anonymous', {
+    name: '机器人', phone: '13800004444', content: '踩中蜜罐', website: 'http://spam.example', formToken,
+  })
+  check('踩中蜜罐：回成功但不入库', honeypot.code === 200 && honeypot.data?.id === 0, honeypot)
+
+  const tooFast = await call('POST', '/portal/feedback/anonymous', {
+    name: '机器人', phone: '13800004444', content: '秒填', formToken: issueFormToken(),
+  })
+  check('领令牌后秒提交：回成功但不入库', tooFast.code === 200 && tooFast.data?.id === 0, tooFast)
+
+  const linky = await call('POST', '/portal/feedback/anonymous', {
+    name: '赵六', phone: '13800005555', content: 'http://a.cn http://b.cn http://c.cn', formToken,
+  })
+  check('链接过多被拒并提示', linky.code === 400, linky)
 
   const badPhone = await call('POST', '/portal/feedback/anonymous', {
     name: '李四', phone: '123', content: '手机号格式非法',

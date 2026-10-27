@@ -47,6 +47,20 @@ export function clearPageSeo(): void {
 }
 
 /**
+ * 当前栏目页的栏目 key
+ * 后台新建的页面走通用路由，路由 name 不再等于栏目 key，由栏目页加载后告知
+ */
+const channelKey = ref<string | null>(null)
+
+/**
+ * 告知当前栏目页对应的栏目 key，SEO 配置按它取；离开时传 null
+ * @param key 栏目 key
+ */
+export function setChannelSeoKey(key: string | null): void {
+  channelKey.value = key
+}
+
+/**
  * 写入或更新 meta 标签内容
  * 页面首次输出时标签可能不存在（index.html 未预置该项），此时补建
  * @param name meta 的 name 属性
@@ -119,6 +133,24 @@ function setCanonical(href: string): void {
   el.setAttribute('href', href)
 }
 
+/** index.html 内置的站点图标，后台未配置时保持它 */
+const DEFAULT_FAVICON = '/favicon.svg'
+
+/**
+ * 替换浏览器标签页图标
+ * 只改 href 不增删节点；type 随地址清掉，让浏览器按内容识别（后台可能上传 png/jpg）
+ * @param href 后台配置的图标地址，为空时恢复内置图标
+ */
+function setFavicon(href: string): void {
+  const el = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!el) return
+  const next = href || DEFAULT_FAVICON
+  if (el.getAttribute('href') === next) return
+  el.setAttribute('href', next)
+  if (href) el.removeAttribute('type')
+  else el.setAttribute('type', 'image/svg+xml')
+}
+
 /**
  * 规整后台配置的站点网址为 origin，规则与后端 site-origin.ts 的 normalizeOrigin 一致：
  * 预渲染 head 与这里输出的 canonical 必须同一个域名，否则搜索引擎看到两份口径
@@ -167,9 +199,11 @@ export function useSeo(): void {
 
   // 配置均为异步到达，故连同路由与页面级覆盖一起监听，任一变化都重新输出
   watch(
-    [() => route.name, () => route.meta.title, () => route.fullPath, seo, site, override],
-    ([name, metaTitle, fullPath]) => {
-      const channelSeo = name ? seo.value[String(name)] : undefined
+    [() => route.name, () => route.meta.title, () => route.fullPath, seo, site, override, channelKey],
+    ([name, metaTitle, fullPath, , , , key]) => {
+      // 栏目页告知的栏目 key 优先；固定路由的栏目页 name 即栏目 key，作回落
+      const seoKey = key || (name ? String(name) : '')
+      const channelSeo = seoKey ? seo.value[seoKey] : undefined
       const page = override.value
       const title = page?.title || channelSeo?.title || metaTitle || site.value.webTitle
       const description = page?.description || channelSeo?.description || site.value.description || ''
@@ -184,10 +218,14 @@ export function useSeo(): void {
       // 不存在的页面（noindex 覆盖）不算 article
       setProperty('og:type', page && !page.noindex ? 'article' : 'website')
       setProperty('og:site_name', site.value.webTitle || '')
+      // 站内地址或 http(s) 才采用，挡掉伪协议；后端入库时已按同一规则校验，这里兜一道
+      const favicon = site.value.favicon?.trim() || ''
+      setFavicon(/^(\/(?!\/)|https?:\/\/)/i.test(favicon) ? favicon : '')
       setProperty('og:title', title || '')
       setProperty('og:description', description)
-      const image = page?.image ? toAbsolute(page.image, site.value.website) : ''
-      setProperty('og:image', image)
+      // 页面自身有配图用配图；没有的用后台「默认分享图」，与预渲染 head 同口径
+      const imageSrc = page?.image || site.value.shareImage || ''
+      setProperty('og:image', imageSrc ? toAbsolute(imageSrc, site.value.website) : '')
 
       // canonical 取当前路径但剔掉查询串与哈希：
       // 同一篇内容从不同渠道进来常带 utm 参数，不剔的话搜索引擎会当成多个地址

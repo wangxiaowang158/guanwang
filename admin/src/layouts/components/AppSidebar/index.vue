@@ -27,9 +27,13 @@ import {
   SettingOutlined,
   DashboardOutlined,
   BarChartOutlined,
-  PictureOutlined
+  PictureOutlined,
+  ToolOutlined
 } from '@ant-design/icons-vue'
+import { Badge } from 'ant-design-vue'
+import type { ItemType } from 'ant-design-vue'
 import { useChannels, channelPath } from '@/composables/useChannels'
+import { usePendingFeedback } from '@/composables/usePendingFeedback'
 import { TOP_MENUS, BOTTOM_MENUS, FIXED_MENU_PATHS } from '@/constants/menu'
 import { useUserStore } from '@/store'
 
@@ -37,7 +41,7 @@ defineOptions({ name: 'AppSidebar' })
 
 const route = useRoute()
 const router = useRouter()
-const { load, buildMenu, findByKey, ancestors } = useChannels()
+const { load, buildMenu, findByKey, ancestors, visibleChannels } = useChannels()
 const { hasPerm } = useUserStore()
 
 const collapsed = defineModel<boolean>('collapsed', { default: false })
@@ -49,6 +53,7 @@ const FIXED_ICONS: Record<string, () => ReturnType<typeof h>> = {
   '/dashboard': () => h(DashboardOutlined),
   '/visit-stats': () => h(BarChartOutlined),
   '/media': () => h(PictureOutlined),
+  '/site-tools': () => h(ToolOutlined),
   '/channel-manage': () => h(SettingOutlined)
 }
 
@@ -58,12 +63,38 @@ const toMenuItems = (metas: readonly { path: string; name: string }[]) =>
     .filter(m => hasPerm(m.name))
     .map(m => ({ key: m.path, label: m.name, title: m.name, icon: FIXED_ICONS[m.path] }))
 
+// 留言栏目的菜单 key：按栏目类型找，栏目改名、改 key 都不影响
+const feedbackMenuKey = computed(() => {
+  const ch = visibleChannels.value.find(c => c.type === 'feedback')
+  return ch ? channelPath(ch) : ''
+})
+const { pending, refresh: refreshPending } = usePendingFeedback()
+
+/** 给留言菜单项挂上待处理角标（递归找，留言可能挂在分组下） */
+const withBadge = (items: ItemType[]): ItemType[] =>
+  items.map((it) => {
+    if (!it || typeof it !== 'object') return it
+    const node = it as ItemType & { key?: string; label?: unknown; children?: ItemType[] }
+    if (node.children) return { ...node, children: withBadge(node.children) } as ItemType
+    if (node.key !== feedbackMenuKey.value || !pending.value) return it
+    return {
+      ...node,
+      label: h('span', { class: 'menu-badge-label' }, [
+        String(node.label),
+        h(Badge, { count: pending.value, overflowCount: 99, size: 'small', title: `${pending.value} 条待处理` }),
+      ]),
+    } as ItemType
+  })
+
 // 菜单项随栏目数据与权限响应式重算：栏目管理里增删改后 load(true) 即刷新此处
-const menuItems = computed(() => [
+const menuItems = computed(() => withBadge([
   ...toMenuItems(TOP_MENUS),
   ...buildMenu(),
   ...toMenuItems(BOTTOM_MENUS)
-])
+]))
+
+// 有留言菜单（即有权限）才取数；路由切换时顺带刷新（内部节流 30 秒）
+const syncPending = () => { if (feedbackMenuKey.value) void refreshPending() }
 
 // 根据当前路由同步高亮项与展开的父菜单
 const syncActive = () => {
@@ -82,9 +113,13 @@ const syncActive = () => {
 onMounted(async () => {
   await load()
   syncActive()
+  syncPending()
 })
 
-watch(() => route.fullPath, syncActive)
+watch(() => route.fullPath, () => {
+  syncActive()
+  syncPending()
+})
 
 const handleMenuClick = ({ key }: { key: string }) => {
   if (FIXED_MENU_PATHS.includes(key)) {
@@ -124,5 +159,14 @@ const handleMenuClick = ({ key }: { key: string }) => {
 
 :deep(.ant-layout-sider-trigger) {
   background: #1f2a44;
+}
+
+/* 菜单文字与角标同行，角标靠右 */
+:deep(.menu-badge-label) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
 }
 </style>
