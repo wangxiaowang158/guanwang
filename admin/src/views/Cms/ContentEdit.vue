@@ -7,7 +7,7 @@
           <!-- 预览已保存的版本（含草稿）；本页未保存的改动要先保存才看得到 -->
           <PreviewPageButton v-if="channel && contentId" :channel-key="channel.key" />
           <!-- 历史版本只对已存在的内容有意义；新增时还没有任何版本 -->
-          <a-button v-if="contentId" @click="revisionOpen = true">
+          <a-button v-if="contentId && !lockedBy" @click="revisionOpen = true">
             <template #icon><HistoryOutlined /></template>
             历史版本
           </a-button>
@@ -25,9 +25,12 @@
         <a-breadcrumb-item v-for="n in crumbNames" :key="n">{{ n }}</a-breadcrumb-item>
       </a-breadcrumb>
 
+      <a-alert v-if="lockedBy" type="warning" show-icon class="lock-tip" :message="lockedTip(lockedBy)" />
+
       <div class="form-card">
         <ContentForm
           v-if="channel"
+          :readonly="!!lockedBy"
           :fields="channel.formFields"
           :channel-key="channel.key"
           v-model:model="model"
@@ -52,6 +55,7 @@ import { message } from 'ant-design-vue'
 import PageContainer from '@/components/PageContainer/index.vue'
 import { useChannels } from '@/composables/useChannels'
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard'
+import { lockedTip, useEditLock } from '@/composables/useEditLock'
 import { HistoryOutlined } from '@ant-design/icons-vue'
 import PreviewPageButton from './components/PreviewPageButton.vue'
 import RevisionDrawer from './components/RevisionDrawer.vue'
@@ -127,7 +131,7 @@ const goBack = () => {
 }
 
 // 离开拦截的比对口径：表单顶层字段 + 扩展字段草稿；model 为空表示还没载入完
-const { markSaved } = useUnsavedGuard(() =>
+const { markSaved, isDirty } = useUnsavedGuard(() =>
   loadState.value === 'ready' ? { model: model.value, extra: extraDraft.value } : null
 )
 
@@ -146,7 +150,13 @@ onMounted(async () => {
   // 等子组件把初值规整完（富文本会回写一次 HTML）再记基准，否则一进来就算「有改动」
   await nextTick()
   markSaved()
+  // 载入成功才加锁：加载失败本就不许保存，没必要占着锁挡别人
+  if (loadState.value === 'ready') await editLock.start(channelKey, contentId)
 })
+
+// 编辑锁：被他人占用时只读；对方离开后重新载入最新内容（对方期间可能已保存）再放开编辑
+const editLock = useEditLock(() => onRevisionRestored(), () => isDirty())
+const { lockedBy } = editLock
 
 /**
  * 取详情并合并进表单初值；失败时置 failed，阻止保存
@@ -244,6 +254,10 @@ const onSave = async (status: 'published' | 'draft') => {
 
 .crumb {
   margin: 8px 0 16px;
+}
+
+.lock-tip {
+  margin-bottom: 16px;
 }
 
 .form-card {

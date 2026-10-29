@@ -4,7 +4,7 @@
 # ---------- 阶段 1：安装依赖 ----------
 # 用 bookworm-slim 而非 alpine：better-sqlite3 是原生模块，需要 python3/g++ 编译，
 # glibc 环境下有官方预编译包可直接落地，失败率远低于 alpine(musl)
-FROM node:22-bookworm-slim AS deps
+FROM node:24-bookworm-slim AS deps
 WORKDIR /app
 
 # 原生模块编译工具链；预编译包命中时用不上，但缺了就会构建失败
@@ -23,12 +23,13 @@ COPY server/ ./
 RUN npm run build
 
 # ---------- 阶段 3：运行时 ----------
-FROM node:22-bookworm-slim AS runtime
+FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 # 固定进程时区：发布时间按「本地时间」解析并回显，库里存 UTC（timezone: 'Z'）。
 # 容器默认 UTC，与本机开发（东八区）不一致时同一条内容会差 8 小时、跨零点就差一天。
-# 已实测：node:22-bookworm-slim 自带 zoneinfo，无需另装 tzdata
+# node:22-bookworm-slim 实测自带 zoneinfo；node:24 同为 bookworm-slim 底座，升级后未单独实测，
+# 若容器内时间仍是 UTC，在下方 apt-get 一行补装 tzdata
 ENV TZ=Asia/Shanghai
 
 # 中文字体：图片水印（sharp 渲染 SVG 文字）要用，slim 镜像不带任何 CJK 字体，

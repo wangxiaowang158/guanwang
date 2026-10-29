@@ -28,6 +28,7 @@
   gap: 16px;
 }
 .cs-info-item {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 16px;
@@ -60,6 +61,15 @@
   word-break: break-all;
 }
 .cs-info-value--link:hover { color: var(--cs-accent); text-decoration: underline; }
+/* 整张卡片都可点：文字本身只有 18px 高，手机上很难点中。
+   用伪元素把链接的点击区铺满卡片（卡片已 position: relative），不改 DOM 与读屏语义 */
+.cs-info-value--link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.cs-info-item:has(.cs-info-value--link):hover { border-color: var(--cs-accent); }
 
 .cs-form-card {
   padding: 32px;

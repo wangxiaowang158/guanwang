@@ -109,13 +109,8 @@
       <EmptyState text="预览链接已过期或无效，请回后台重新点「预览」" />
     </div>
 
-    <div v-else-if="notFound" class="site-container py-32">
-      <EmptyState text="该页面不存在或已下线">
-        <RouterLink to="/" class="mt-4 inline-flex items-center px-5 h-10 text-sm rounded-md border border-line text-ink-700 hover:border-brand-600 hover:text-brand-600">
-          返回首页
-        </RouterLink>
-      </EmptyState>
-    </div>
+    <!-- 与未匹配路由用同一个 404 视图：带 h1 与栏目入口，两条路径表现一致 -->
+    <NotFound v-else-if="notFound" />
 
     <div v-else class="site-container py-32">
       <EmptyState text="内容加载失败，请稍后重试">
@@ -151,6 +146,7 @@ import { useBlockTones } from '@/composables/useBlockTones'
 import { useMultiFilterOptions } from '@/composables/useMultiFilterOptions'
 import type { MenuNode } from '@/api/menu'
 import SkeletonRows from '@/components/common/SkeletonRows.vue'
+import NotFound from '@/views/error/NotFound.vue'
 import MultiFilterBar from './MultiFilterBar.vue'
 import { blockHasContent, isExtraLayout } from './blockExtra'
 import PageHero from './PageHero.vue'
@@ -405,7 +401,7 @@ async function load(t: { key?: string; path?: string }) {
       }
       // 栏目不存在或在后台被下线：不该被搜索引擎当作有效页面收录
       notFound.value = true
-      setPageSeo({ title: '页面不存在', noindex: true })
+      setPageSeo({ title: '页面不存在 - 中瑞恒', noindex: true })
     }
   } catch {
     if (seq === loadSeq) content.value = null

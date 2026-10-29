@@ -7,12 +7,14 @@
     </div>
     <div class="form-card">
       <a-spin :spinning="loadState === 'loading'">
+        <a-alert v-if="lockedBy" type="warning" show-icon class="lock-tip" :message="lockedTip(lockedBy)" />
         <ContentForm
           :fields="channel.formFields"
           :channel-key="channel.key"
           v-model:model="model"
           v-model:extra="extraDraft"
           :saving="saving"
+          :readonly="!!lockedBy"
           @save="onSave"
         />
       </a-spin>
@@ -25,6 +27,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard'
+import { lockedTip, useEditLock } from '@/composables/useEditLock'
 import {
   getContentDetail, saveContent,
   type Channel, type Content, type ContentExtra, type ContentFormModel,
@@ -55,6 +58,17 @@ const recordId = ref<number>()
 const loadState = ref<'loading' | 'ready' | 'failed'>('loading')
 
 onMounted(async () => {
+  await loadDetail()
+  // 载入成功才加锁；尚无记录（recordId 为空）时不加，首次保存建出记录后再加
+  if (loadState.value === 'ready') await editLock.start(props.channel.key, recordId.value)
+})
+
+// 编辑锁：被他人占用时只读；对方离开后重新载入最新内容再放开编辑
+const editLock = useEditLock(() => loadDetail(), () => isDirty())
+const { lockedBy } = editLock
+
+/** 载入该栏目的单条内容并记基准；失败置 failed，阻止保存 */
+async function loadDetail(): Promise<void> {
   // single 栏目只有一条内容：detail 不传 id 时后端直接返回该栏目首条（无则新建）
   // 不走列表接口，免得为取一条记录拉一整页
   try {
@@ -80,10 +94,10 @@ onMounted(async () => {
     loadState.value = 'failed'
     message.error('内容加载失败，请刷新重试')
   }
-})
+}
 
 // 离开拦截：载入完成前不拦
-const { markSaved } = useUnsavedGuard(() =>
+const { markSaved, isDirty } = useUnsavedGuard(() =>
   loadState.value === 'ready' ? { model: model.value, extra: extraDraft.value } : null
 )
 
@@ -105,7 +119,10 @@ const onSave = async (status: 'published' | 'draft') => {
     const res = await saveContent(payload)
     if (res.data.code === 200) {
       // 回填新建记录的 id：否则同一会话再点保存会再新增一条，前台按区块渲染全部行会出现重复
+      const isNew = !recordId.value
       if (res.data.data?.id) recordId.value = res.data.data.id
+      // 新建的记录此刻才有 id，补上编辑锁
+      if (isNew && recordId.value) void editLock.start(props.channel.key, recordId.value)
       model.value.status = status
       markSaved()
       message.success(status === 'published'
@@ -131,6 +148,10 @@ const onSave = async (status: 'published' | 'draft') => {
 
 .form-card {
   padding-top: 8px;
+}
+
+.lock-tip {
+  margin-bottom: 16px;
 }
 
 .single-head {

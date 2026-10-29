@@ -12,12 +12,11 @@ const channels = ref<Channel[]>([])
 const loaded = ref(false)
 
 /**
- * 不参与权限分配的系统级栏目类型（SRS 3.4 脚注）
- * siteconfig 后端仅要求登录，admins 后端要求超管，前端按同一口径放行
+ * 不参与权限分配、仅超管可见的系统级栏目类型（SRS 3.4 脚注），与后端同口径：
+ * siteconfig 改的是全站公司信息、首页布局、统计代码与水印，影响面是整个官网；
+ * admins 管账号；oplog 含全部管理员的操作行踪
  */
-const LOGIN_ONLY_TYPES: readonly string[] = ['siteconfig']
-// oplog 含全部管理员的操作行踪，后端同样要求超管
-const SUPER_ONLY_TYPES: readonly string[] = ['admins', 'oplog']
+const SUPER_ONLY_TYPES: readonly string[] = ['siteconfig', 'admins', 'oplog']
 
 /** 渲染图标：按名称从 antd icons 取，取不到用默认 */
 function renderIcon(name?: string) {
@@ -72,7 +71,6 @@ export function useChannels() {
    * 挂靠页随所挂栏目授权（与后端 resolvePermNames 同口径）：有所挂栏目或页面自身的权限即可见
    */
   const isRootVisible = (root: Channel): boolean => {
-    if (LOGIN_ONLY_TYPES.includes(root.type)) return true
     if (SUPER_ONLY_TYPES.includes(root.type)) return isSuper.value
     const dock = dockTargetOf(channels.value, root)
     return hasPerm(root.name) || (!!dock && hasPerm(dock.name))

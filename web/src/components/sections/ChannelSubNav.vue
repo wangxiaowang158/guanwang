@@ -1,7 +1,7 @@
 <template>
   <!-- 页内锚点条：长页面吸顶在顶栏下方，滚动时高亮当前段落；点击平滑定位 -->
   <nav class="csn" :class="{ 'csn--s2': style2 }" aria-label="本页目录">
-    <div class="csn-inner" :class="style2 ? 'rs-channel-container' : 'site-container'">
+    <div ref="innerRef" class="csn-inner" :class="style2 ? 'rs-channel-container' : 'site-container'">
       <a
         v-for="item in items"
         :key="item.anchor"
@@ -32,7 +32,20 @@ const SUBNAV_H = 48
 
 const router = useRouter()
 const active = ref(props.items[0]?.anchor ?? '')
+const innerRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+
+// 手机端锚点条横向滚动且隐藏了滚动条：高亮项换到屏外时把它横向带进可视区，
+// 否则用户往下读，高亮却停在看不见的位置。只动这条自身的 scrollLeft，不影响页面滚动
+watch(active, (anchor) => {
+  const box = innerRef.value
+  const link = box?.querySelector<HTMLElement>(`[href="#${CSS.escape(anchor)}"]`)
+  if (!box || !link || box.scrollWidth <= box.clientWidth) return
+  // 按两者视口坐标差算，不依赖 offsetParent（外层 sticky 会成为 offsetParent）
+  const offset = link.getBoundingClientRect().left - box.getBoundingClientRect().left
+  const left = box.scrollLeft + offset - (box.clientWidth - link.offsetWidth) / 2
+  box.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+})
 
 /** 样式二顶栏固定 76px（Style2Header 的 h-[76px]），比全局 --nav-h 高 4px */
 const STYLE2_NAV_H = 76

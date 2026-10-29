@@ -4,7 +4,7 @@
 # 两个前端的静态资源与 /api 反代都由本容器处理，故浏览器侧始终同源，无需 CORS
 
 # ---------- 阶段 1：构建 admin ----------
-FROM node:22-bookworm-slim AS build-admin
+FROM node:24-bookworm-slim AS build-admin
 WORKDIR /app
 COPY admin/package.json admin/package-lock.json ./
 RUN npm ci
@@ -20,7 +20,7 @@ ENV VITE_ENABLE_ANNOTATION_SAVE=false
 RUN npm run build
 
 # ---------- 阶段 2：构建 web ----------
-FROM node:22-bookworm-slim AS build-web
+FROM node:24-bookworm-slim AS build-web
 WORKDIR /app
 COPY web/package.json web/package-lock.json ./
 RUN npm ci

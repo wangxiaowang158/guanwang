@@ -399,6 +399,28 @@ export const getRevisions = (channelKey: string, id: number) =>
 export const getRevision = (channelKey: string, revisionId: number) =>
   axios.get<ApiResult<RevisionSnapshot>>('/api/mgmt/content/revision', { params: { channelKey, revisionId } })
 
+/** 编辑锁持有人 */
+export interface EditLockHolder {
+  adminId: number
+  name: string
+  /** 开始编辑的时间（毫秒时间戳） */
+  since: number
+}
+
+/** 加锁结果：acquired=false 表示正被 holder 编辑 */
+export interface EditLockResult {
+  acquired: boolean
+  holder: EditLockHolder | null
+}
+
+/** 加锁或续约：进入编辑页时调用，之后定时续约 */
+export const lockContent = (channelKey: string, id: number) =>
+  axios.post<ApiResult<EditLockResult>>('/api/mgmt/content/lock', { channelKey, id })
+
+/** 解锁：只释放本人持有的锁 */
+export const unlockContent = (channelKey: string, id: number) =>
+  axios.post<ApiResult<null>>('/api/mgmt/content/unlock', { channelKey, id })
+
 /** 恢复到某历史版本（当前值会先记成一个新版本） */
 export const restoreRevision = (channelKey: string, revisionId: number) =>
   axios.post<ApiResult<Content>>('/api/mgmt/content/revision/restore', { channelKey, revisionId })

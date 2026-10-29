@@ -1,5 +1,7 @@
 <template>
   <a-form ref="formRef" :model="model" :label-col="{ style: { width: '90px' } }" class="content-form">
+    <!-- inert：只读时整块字段区不可点击、不可聚焦，富文本、上传等自定义控件一并生效，不必逐个传 disabled -->
+    <div :inert="readonly || undefined" :class="{ 'is-readonly': readonly }">
     <a-form-item
       v-for="key in fields"
       :key="key"
@@ -132,12 +134,14 @@
       />
       <div class="field-tip">官网显示的日期，留空取创建日期；不是定时发布，填未来时间也会立即上线</div>
     </a-form-item>
+    </div>
 
     <a-form-item :wrapper-col="{ offset: 0 }" class="form-actions">
       <a-space>
         <a-button v-if="showBack" @click="$emit('back')">返回列表</a-button>
-        <!-- 草稿：存草稿 / 发布；已发布：撤回 / 保存修改（保持已发布） -->
-        <template v-if="isPublished">
+        <!-- 草稿：存草稿 / 发布；已发布：撤回 / 保存修改（保持已发布）；只读时不出保存按钮 -->
+        <template v-if="readonly" />
+        <template v-else-if="isPublished">
           <a-button :disabled="saving" @click="onSave('draft')">撤回为草稿</a-button>
           <a-button type="primary" :loading="saving" @click="onSave('published')">保存修改</a-button>
         </template>
@@ -172,6 +176,8 @@ const props = defineProps<{
   /** 所属栏目 key，用于按栏目覆盖字段标签（见 fieldDefs.ts） */
   channelKey?: string
   saving?: boolean
+  /** 只读：内容正被他人编辑时开启，字段不可操作、不出保存按钮 */
+  readonly?: boolean
   showBack?: boolean
   /** 是否显示「发布时间」，列表类栏目开启 */
   showPublishAt?: boolean
@@ -273,6 +279,11 @@ const onSave = async (status: 'published' | 'draft') => {
 
 .status-tip {
   margin-left: 4px;
+}
+
+/* 只读：降低不透明度，让人一眼看出「现在改不了」，而不是以为页面卡住 */
+.is-readonly {
+  opacity: 0.6;
 }
 
 /* 操作按钮靠右对齐到表单右边缘 */

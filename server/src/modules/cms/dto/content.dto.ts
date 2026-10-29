@@ -289,6 +289,18 @@ export class RevisionListQueryDto {
   id!: number
 }
 
+/** 编辑锁：加锁续约 / 解锁 */
+export class EditLockDto {
+  @IsString()
+  @Length(1, 64)
+  channelKey!: string
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  id!: number
+}
+
 /** 历史版本详情 / 恢复 */
 export class RevisionRefDto {
   @IsString()

@@ -25,7 +25,6 @@
     "smoke:prerender": "ts-node src/scripts/smoke-prerender.ts",
     "seed:feedback": "ts-node src/scripts/seed-feedback.ts",
     "seed:cms": "ts-node src/scripts/seed-cms.ts",
-    "verify:cms": "ts-node src/scripts/verify-cms-parity.ts",
     "verify:migration": "ts-node src/scripts/verify-migration-parity.ts",
     "clean:uploads": "ts-node src/scripts/clean-orphan-uploads.ts"
   },
@@ -39,7 +38,7 @@
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "12.11.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "17.4.1",

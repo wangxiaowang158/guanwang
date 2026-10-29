@@ -12,8 +12,9 @@ import { ContentService, TRASH_RETENTION_DAYS } from './content.service'
 import { issuePreviewToken } from './preview-token'
 import { SiteConfigService } from './site-config.service'
 import { normalizeOrigin } from './site-origin'
+import { EditLockService } from './edit-lock.service'
 import {
-  BatchStatusDto, ContentDetailQueryDto, ContentListQueryDto, DuplicateContentDto,
+  BatchStatusDto, ContentDetailQueryDto, ContentListQueryDto, DuplicateContentDto, EditLockDto,
   RevisionListQueryDto, RevisionRefDto, SaveContentDto, ToggleTopDto, TrashBatchDto,
   TrashListQueryDto, UpdateSortDto,
 } from './dto/content.dto'
@@ -27,6 +28,7 @@ export class MgmtContentController {
     private readonly service: ContentService,
     private readonly channels: ChannelService,
     private readonly siteConfig: SiteConfigService,
+    private readonly locks: EditLockService,
   ) {}
 
   /**
@@ -57,9 +59,27 @@ export class MgmtContentController {
     return found ? toContentVo(found) : null
   }
 
+  /**
+   * 编辑锁：进入编辑页时加锁，之后定时续约
+   * 被他人占用时不报错，回 acquired=false 与占用人，前端据此转只读并提示
+   */
+  @Post('lock')
+  async lock(@Body() dto: EditLockDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    return this.locks.acquire(dto.channelKey, dto.id, admin)
+  }
+
+  /** 解锁：离开编辑页或保存成功后调用；只释放本人的锁 */
+  @Post('unlock')
+  async unlock(@Body() dto: EditLockDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    await this.locks.release(dto.channelKey, dto.id, admin)
+    return null
+  }
+
   /** 保存内容：带 id 为更新，不带为新增；更新前的旧值记入历史版本 */
   @Post('save')
   async save(@Body() dto: SaveContentDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    // 正被他人编辑时拒绝，否则两人各改各的，后保存的会覆盖先保存的
+    if (dto.id) await this.locks.assertWritable(dto.channelKey, dto.id, admin)
     const saved = await this.service.save(dto, admin.name || admin.account)
     return raw(toContentVo(saved), '保存成功')
   }
@@ -107,19 +127,31 @@ export class MgmtContentController {
   /** 恢复到某个历史版本（当前值会先记成一个新版本） */
   @Post('revision/restore')
   async restoreRevision(@Body() dto: RevisionRefDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    // 恢复也是改内容：他人正在编辑时同样拒绝
+    const contentId = await this.service.revisionContentId(dto.channelKey, dto.revisionId)
+    await this.locks.assertWritable(dto.channelKey, contentId, admin)
     const saved = await this.service.restoreRevision(dto.channelKey, dto.revisionId, admin.name || admin.account)
     return raw(toContentVo(saved), '已恢复到该版本')
   }
 
   /** 删除内容（移入回收站），ids 为逗号分隔的 id 串 */
   @Delete('delete')
-  async remove(@Query('channelKey') channelKey: string, @Query('ids') ids: string) {
+  async remove(
+    @Query('channelKey') channelKey: string,
+    @Query('ids') ids: string,
+    @CurrentAdmin() admin: CurrentAdminInfo,
+  ) {
     // 外部输入需校验：过滤非法值，避免把 NaN 传入查询
     const parsed = String(ids || '')
       .split(',')
       .map(s => Number(s.trim()))
       .filter(n => Number.isInteger(n) && n > 0)
-    await this.service.remove(String(channelKey || ''), parsed)
+    // 与批量上下线 DTO 同一上限；编辑锁校验逐条读 KV，不设上限一次请求就能打出几千次往返
+    if (parsed.length > 200) throw new BadRequestException('一次最多操作 200 条')
+    const key = String(channelKey || '')
+    // 删掉他人正在编辑的内容，对方保存时只会收到「内容不存在」，填的全白费
+    await this.locks.assertManyWritable(key, parsed, admin)
+    await this.service.remove(key, parsed)
     return raw(null, `已移入回收站，${TRASH_RETENTION_DAYS} 天内可恢复`)
   }
 
@@ -132,7 +164,9 @@ export class MgmtContentController {
 
   /** 批量发布 / 下线 */
   @Put('status')
-  async batchStatus(@Body() dto: BatchStatusDto) {
+  async batchStatus(@Body() dto: BatchStatusDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    // 他人编辑中的内容不许在列表改状态：对方保存时会按表单里的旧状态覆盖回去
+    await this.locks.assertManyWritable(dto.channelKey, dto.ids, admin)
     const changed = await this.service.setStatus(dto.channelKey, dto.ids, dto.status)
     const verb = dto.status === CONTENT_STATUS.PUBLISHED ? '发布' : '下线'
     return raw({ changed }, changed ? `已${verb} ${changed} 条` : `所选内容已全部是${verb}状态`)
@@ -140,14 +174,16 @@ export class MgmtContentController {
 
   /** 切换置顶 */
   @Put('top')
-  async toggleTop(@Body() dto: ToggleTopDto) {
+  async toggleTop(@Body() dto: ToggleTopDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    await this.locks.assertWritable(dto.channelKey, dto.id, admin)
     const isTop = await this.service.toggleTop(dto.channelKey, dto.id)
     return raw(null, isTop ? '已置顶' : '已取消置顶')
   }
 
   /** 修改排序值 */
   @Put('sort')
-  async updateSort(@Body() dto: UpdateSortDto) {
+  async updateSort(@Body() dto: UpdateSortDto, @CurrentAdmin() admin: CurrentAdminInfo) {
+    await this.locks.assertWritable(dto.channelKey, dto.id, admin)
     await this.service.updateSort(dto.channelKey, dto.id, dto.sort)
     return raw(null, '排序已更新')
   }

@@ -8,6 +8,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSiteStore } from '@/stores/site'
+import type { MenuNode } from '@/api/menu'
 
 /** 页面级 SEO 覆盖项，由详情页这类标题运行时才确定的页面填写 */
 export interface PageSeoOverride {
@@ -58,6 +59,22 @@ const channelKey = ref<string | null>(null)
  */
 export function setChannelSeoKey(key: string | null): void {
   channelKey.value = key
+}
+
+/** 栏目未录入 SEO 标题时拼「栏目名 - 品牌」的品牌后缀，与路由 meta.title 的写法一致 */
+const BRAND = '中瑞恒'
+
+/**
+ * 在菜单树里按 key 找栏目名
+ * 栏目未录 SEO 标题时用它拼默认标题，避免多个栏目页都回落成同一个站点标题
+ */
+function findMenuLabel(nodes: MenuNode[], key: string): string {
+  for (const n of nodes) {
+    if (n.key === key) return n.label
+    const hit = findMenuLabel(n.children ?? [], key)
+    if (hit) return hit
+  }
+  return ''
 }
 
 /**
@@ -192,20 +209,26 @@ function toAbsolute(path: string, website?: string): string {
 export function useSeo(): void {
   const route = useRoute()
   const siteStore = useSiteStore()
-  const { seo, site } = storeToRefs(siteStore)
+  const { seo, site, menu } = storeToRefs(siteStore)
 
   void siteStore.fetchSeo()
   void siteStore.fetchSite()
+  void siteStore.fetchMenu()
 
   // 配置均为异步到达，故连同路由与页面级覆盖一起监听，任一变化都重新输出
   watch(
-    [() => route.name, () => route.meta.title, () => route.fullPath, seo, site, override, channelKey],
-    ([name, metaTitle, fullPath, , , , key]) => {
+    [() => route.name, () => route.meta.title, () => route.fullPath, seo, site, menu, override, channelKey],
+    ([name, metaTitle, fullPath, , , , , key]) => {
       // 栏目页告知的栏目 key 优先；固定路由的栏目页 name 即栏目 key，作回落
       const seoKey = key || (name ? String(name) : '')
       const channelSeo = seoKey ? seo.value[seoKey] : undefined
       const page = override.value
-      const title = page?.title || channelSeo?.title || metaTitle || site.value.webTitle
+      // 栏目页（有 SEO 配置项）但后台没填标题：用「栏目名 - 品牌」，
+      // 否则这些页面全部回落成同一个站点标题，搜索结果与浏览器标签页都分不清
+      // 首页栏目名就叫「首页」，不拼，仍回落站点标题（与预渲染 head 一致）
+      const label = channelSeo && !channelSeo.title && seoKey !== 'home' ? findMenuLabel(menu.value, seoKey) : ''
+      const channelTitle = channelSeo?.title || (label ? `${label} - ${BRAND}` : '')
+      const title = page?.title || channelTitle || metaTitle || site.value.webTitle
       const description = page?.description || channelSeo?.description || site.value.description || ''
       if (title) document.title = title
       setMeta('keywords', page?.keywords || channelSeo?.keywords || site.value.keywords || '')

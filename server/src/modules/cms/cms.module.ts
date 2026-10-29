@@ -11,6 +11,7 @@ import { ContentService } from './content.service'
 import { ChannelPermGuard } from './guards/channel-perm.guard'
 import { TrashSweeper } from './trash-sweeper'
 import { SearchService } from './search.service'
+import { EditLockService } from './edit-lock.service'
 import { HomeSectionService } from './home-section.service'
 import { MgmtChannelController } from './mgmt-channel.controller'
 import { MgmtContentController } from './mgmt-content.controller'
@@ -46,6 +47,7 @@ import { SiteConfigService } from './site-config.service'
     TrashSweeper,
     // 前台站内搜索
     SearchService,
+    EditLockService,
   ],
   exports: [ChannelService, ContentService, SiteConfigService],
 })

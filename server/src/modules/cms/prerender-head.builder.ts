@@ -22,6 +22,9 @@ import { isGrayActive, normalizeSiteExt, VERIFY_META_NAMES, type SiteExtConfig }
 /** 隐私政策页的固定标题，与前台该路由的 meta.title 一致 */
 const PRIVACY_TITLE = '隐私政策 - 中瑞恒'
 
+/** 栏目未录 SEO 标题时默认标题的品牌后缀，与前台 useSeo 的 BRAND 一致 */
+const BRAND = '中瑞恒'
+
 /**
  * 站点标题也没配时的最后兜底，与 index.html 的默认 <title> 一致
  * head 片段替换掉了 index.html 的默认值，这里不兜底的话页面会没有标题
@@ -83,8 +86,11 @@ export class PrerenderHeadBuilder {
     // 栏目页：只认配了该 portalPath 的顶级栏目，口径与 buildChannel 一致
     const top = await this.channelRepo.findOne({ where: { portalPath: path } })
     if (!top || top.parentId !== null || top.hidden) return null
+    // 未录 SEO 标题时用「栏目名 - 品牌」，与前台 useSeo 同口径；
+    // 回落成站点标题会让多个栏目页标题完全相同。首页栏目名就叫「首页」，仍回落站点标题
+    const named = top.portalPath !== '/' && top.name ? `${top.name} - ${BRAND}` : ''
     return {
-      title: top.seoTitle || site.webTitle,
+      title: top.seoTitle || named || site.webTitle,
       description: top.seoDescription || site.description,
       keywords: top.seoKeywords || site.keywords,
       path,

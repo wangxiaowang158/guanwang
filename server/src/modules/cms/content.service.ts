@@ -391,6 +391,13 @@ export class ContentService {
     return this.parseSnapshot(rev.snapshot)
   }
 
+  /** 历史版本所属的内容 id；恢复前用它校验编辑锁 */
+  async revisionContentId(channelKey: string, revisionId: number): Promise<number> {
+    const rev = await this.revisionRepo?.findOne({ select: ['id', 'contentId'], where: { id: revisionId, channelKey } })
+    if (!rev) throw new NotFoundException('历史版本不存在')
+    return rev.contentId
+  }
+
   /**
    * 恢复到某个历史版本
    * 恢复本身也是一次修改：先把当前值快照下来，恢复错了还能再退回来
