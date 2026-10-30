@@ -51,7 +51,6 @@
             :total="pageCount"
             label="搜索结果"
             :loading="loading"
-            :style2="theme.isStyle2"
             @change="go"
           />
         </template>
@@ -66,7 +65,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { searchSite, SEARCH_KEYWORD_MAX, type SearchHit } from '@/api/search'
 import { API_SUCCESS_CODE } from '@/config'
-import { useThemeStore } from '@/stores/theme'
 import ChannelPagination from '@/components/sections/ChannelPagination.vue'
 import EmptyState from '@/components/sections/EmptyState.vue'
 
@@ -77,7 +75,6 @@ const THROTTLED_CODE = 429
 
 const route = useRoute()
 const router = useRouter()
-const theme = useThemeStore()
 
 const inputRef = ref<HTMLInputElement>()
 const draft = ref('')

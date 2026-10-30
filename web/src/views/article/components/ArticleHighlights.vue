@@ -1,6 +1,6 @@
 <template>
   <!-- 案例关键指标条：标题下方先给结论（节能率、年节省、回收期…），读者不必翻到页尾才知道效果 -->
-  <dl class="ah" :class="{ 'ah--s2': style2 }" aria-label="项目关键成效">
+  <dl class="ah" aria-label="项目关键成效">
     <div v-for="m in items" :key="m.label" class="ah-item">
       <dt class="ah-label">{{ m.label }}</dt>
       <dd class="ah-value">
@@ -14,7 +14,7 @@
 // 只取前 4 个量化指标：一行放得下，多了就和下方的「量化收益」区块重复
 import type { ExtraMetric } from '@/api/page'
 
-defineProps<{ items: ExtraMetric[]; style2?: boolean }>()
+defineProps<{ items: ExtraMetric[] }>()
 </script>
 
 <style scoped>

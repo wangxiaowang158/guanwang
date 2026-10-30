@@ -1,6 +1,6 @@
 <template>
   <!-- 相关推荐：同栏目里业务线/行业相近的几条，读完一个案例顺手看同类 -->
-  <section class="ar" :class="{ 'ar--s2': style2 }" aria-labelledby="article-related-title">
+  <section class="ar" aria-labelledby="article-related-title">
     <h2 id="article-related-title" class="ar-title">{{ heading }}</h2>
     <ul class="ar-grid">
       <li v-for="item in items" :key="item.id">
@@ -23,7 +23,7 @@
 import type { ArticleRelated } from '@/api/article'
 import SafeImage from '@/components/common/SafeImage.vue'
 
-withDefaults(defineProps<{ items: ArticleRelated[]; heading?: string; style2?: boolean }>(), {
+withDefaults(defineProps<{ items: ArticleRelated[]; heading?: string }>(), {
   heading: '相关推荐',
 })
 </script>

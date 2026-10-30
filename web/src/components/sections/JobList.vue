@@ -1,6 +1,6 @@
 <template>
   <!-- 招聘职位：每条可展开看职责与要求；用原生 details，键盘与读屏开箱即用，不必自己维护展开态 -->
-  <div class="jobs" :class="{ 'jobs--style2': style2, 'jobs--dark': onDark }">
+  <div class="jobs" :class="{ 'jobs--dark': onDark }">
     <details v-for="job in items" :key="job.id" class="job">
       <summary class="job-head">
         <span class="job-title">{{ job.title }}</span>
@@ -35,7 +35,7 @@ import { useLeadModal } from '@/composables/useLeadModal'
 import { useSiteStore } from '@/stores/site'
 import { sanitizeRichText } from '@/utils/sanitize'
 
-withDefaults(defineProps<{ items: PageItem[]; style2?: boolean; onDark?: boolean }>(), { style2: false, onDark: false })
+withDefaults(defineProps<{ items: PageItem[]; onDark?: boolean }>(), { onDark: false })
 
 const siteStore = useSiteStore()
 const { openLead } = useLeadModal()

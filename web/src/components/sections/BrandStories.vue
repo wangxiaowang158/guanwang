@@ -2,7 +2,7 @@
   <!-- 品牌介绍：每个品牌一张卡（图 + 名称 + 口号 + 简介），有品牌故事正文时卡上出「品牌故事」按钮，点开弹窗阅读 -->
   <div
     class="bs"
-    :class="{ 'bs--s2': style2, 'bs--one': items.length === 1 && !cols, 'bs--fixed': cols }"
+    :class="{ 'bs--one': items.length === 1 && !cols, 'bs--fixed': cols }"
     :style="cols ? { '--cols': cols } : undefined"
   >
     <article v-for="item in items" :key="item.id" class="bs-card">
@@ -22,7 +22,7 @@
 
     <Teleport to="body">
       <Transition name="bs-fade">
-        <div v-if="active" class="bs-mask" :class="{ 'bs--s2': style2 }" @mousedown.self="close">
+        <div v-if="active" class="bs-mask" @mousedown.self="close">
           <div ref="dialogRef" class="bs-dialog" role="dialog" aria-modal="true" :aria-labelledby="titleId" tabindex="-1">
             <button type="button" class="bs-close" aria-label="关闭品牌故事" @click="close">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -52,7 +52,6 @@ import VideoPlayer from './VideoPlayer.vue'
 
 defineProps<{
   items: PageItem[]
-  style2?: boolean
   /** 电脑端每行列数，后台「区块外观」配置；缺省一行两张，只有一个品牌时横排大卡 */
   cols?: number
 }>()

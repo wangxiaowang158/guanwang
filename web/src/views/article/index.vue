@@ -1,6 +1,6 @@
 <template>
   <!-- 内容详情页：新闻/案例等有正文的条目从栏目页点进来看全文 -->
-  <div class="article-page" :class="{ 'article-page--style2': theme.isStyle2 }">
+  <div class="article-page">
     <div class="article-wrap">
       <div v-if="loading" class="space-y-4" aria-busy="true" aria-label="加载中">
         <div class="h-4 w-48 bg-surface rounded animate-pulse"></div>
@@ -31,7 +31,6 @@
           <ArticleHighlights
             v-if="highlights.length"
             :items="highlights"
-            :style2="theme.isStyle2"
             :style="{ '--ah-cols': highlights.length }"
           />
         </header>
@@ -97,7 +96,6 @@
           v-if="article.related?.length"
           :items="article.related"
           :heading="hasStructured ? '相关案例' : '相关阅读'"
-          :style2="theme.isStyle2"
         />
 
         <RouterLink :to="article.parentPath" class="article-back">

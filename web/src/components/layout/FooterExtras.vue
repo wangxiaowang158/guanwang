@@ -1,7 +1,7 @@
 <template>
   <!-- 页脚附加信息：社交账号图标 + 友情链接，后台「基本信息 → 页脚设置」维护；都没配时整块不渲染。
        文字颜色继承页脚，两套样式通用 -->
-  <div v-if="socials.length || links.length" class="fx" :class="{ 'fx--s2': style2 }">
+  <div v-if="socials.length || links.length" class="fx">
     <ul v-if="socials.length" class="fx-socials" aria-label="关注我们">
       <li v-for="(s, i) in socials" :key="`${s.type}-${i}`" class="fx-social">
         <!-- 有主页链接：图标即链接；只有二维码：图标为按钮，点按或聚焦弹出二维码（触屏也能看） -->
@@ -46,7 +46,7 @@ import { computed, ref } from 'vue'
 import type { FooterConfig, SocialType } from '@/api/home'
 import { safeExternalUrl } from '@/utils/sanitize'
 
-const props = defineProps<{ config?: FooterConfig; style2?: boolean }>()
+const props = defineProps<{ config?: FooterConfig }>()
 
 const LABELS: Record<SocialType, string> = {
   wechat: '微信公众号', weibo: '微博', douyin: '抖音', channels: '视频号', bilibili: '哔哩哔哩', linkedin: '领英',

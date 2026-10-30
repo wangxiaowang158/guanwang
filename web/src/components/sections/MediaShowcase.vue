@@ -1,7 +1,7 @@
 <template>
   <!-- 图片/视频展示：信息图、架构图、产品截图按原比例完整展示，可点开看原图；有视频的条目播放视频；
        没传图也没传视频的条目以文字卡片呈现 -->
-  <div class="ms" :class="{ 'ms--s2': style2, 'ms--dark': onDark }">
+  <div class="ms" :class="{ 'ms--dark': onDark }">
     <div v-if="visuals.length" class="ms-grid" :class="{ 'ms-grid--two': visuals.length > 1 }">
       <figure v-for="item in visuals" :key="item.id" class="ms-figure">
         <VideoPlayer
@@ -45,7 +45,6 @@ const props = defineProps<{
   /** 区块标题，图片未填标题时作替代文本 */
   heading: string
   onDark?: boolean
-  style2?: boolean
 }>()
 
 /**

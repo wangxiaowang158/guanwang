@@ -2,7 +2,6 @@
   <!-- 轻量轮播：自动播放（可暂停）、圆点、左右键、键盘方向键、触摸滑动；减少动态效果偏好下不自动播 -->
   <section
     class="cr"
-    :class="{ 'cr--style2': style2 }"
     role="region"
     aria-roledescription="轮播"
     :aria-label="label"
@@ -76,7 +75,6 @@ const props = withDefaults(defineProps<{
   autoplay?: boolean
   /** 区域的可读名称，读屏用 */
   label?: string
-  style2?: boolean
 }>(), { interval: 6000, autoplay: true, label: '内容轮播' })
 
 const index = ref(0)

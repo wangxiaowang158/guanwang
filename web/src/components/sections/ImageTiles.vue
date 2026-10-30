@@ -1,6 +1,6 @@
 <template>
   <!-- 图片磁贴：整卡背景图（或静音循环视频） + 底部渐变上的标题与说明（客户价值、应用场景）；未配图的卡片用品牌深色底 -->
-  <ul class="it" :class="[{ 'it--s2': style2 }, colsClass]" :style="cols ? { '--cols': cols } : undefined">
+  <ul class="it" :class="colsClass" :style="cols ? { '--cols': cols } : undefined">
     <li v-for="item in items" :key="item.id" class="it-tile">
       <ItemLink :item="item" link-class="it-link" class="it-inner">
         <SafeMedia v-if="item.image || item.video" :image="item.image" :video="item.video" :alt="item.title" :width="480" :height="300" class="it-img" />
@@ -23,7 +23,6 @@ import ItemLink from './ItemLink.vue'
 
 const props = defineProps<{
   items: PageItem[]
-  style2?: boolean
   /** 电脑端每行列数，后台「区块外观」配置；缺省随条数 */
   cols?: number
 }>()

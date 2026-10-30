@@ -1,6 +1,6 @@
 <template>
   <!-- 多维组合筛选条：每个维度一行，选项可多选；末尾「清空筛选」恢复全部 -->
-  <div class="mf" :class="{ 'mf--style2': style2, 'mf--dark': onDark }" role="group" aria-label="组合筛选" :aria-busy="loading">
+  <div class="mf" :class="{ 'mf--dark': onDark }" role="group" aria-label="组合筛选" :aria-busy="loading">
     <div v-for="dim in visibleDimensions" :key="dim.key" class="mf-row" role="group" :aria-label="dim.label">
       <span class="mf-label">{{ dim.label }}</span>
       <div class="mf-options">
@@ -47,7 +47,6 @@ const props = defineProps<{
   selected: Record<FilterDimension, string[]>
   onDark?: boolean
   loading?: boolean
-  style2?: boolean
 }>()
 
 defineEmits<{

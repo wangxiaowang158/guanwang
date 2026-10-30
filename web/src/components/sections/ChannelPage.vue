@@ -17,7 +17,7 @@
     >
       <!-- 三个业务页的页头转化入口：预约线上演示 -->
       <template v-if="showDemoCta" #actions>
-        <button type="button" class="cp-cta" :class="{ 'cp-cta--style2': theme.isStyle2 }" @click="openLead('productDemo', `${channelName}页头`)">
+        <button type="button" class="cp-cta" @click="openLead('productDemo', `${channelName}页头`)">
           预约线上演示
         </button>
       </template>
@@ -58,7 +58,6 @@
                 :selected="multi.selectedOf(block)"
                 :on-dark="onDark(i)"
                 :loading="paging.state(block).loading"
-                :style2="theme.isStyle2"
                 @toggle="(p) => multi.toggle(block, p.dimension, p.value)"
                 @clear="multi.clear(block)"
               />
@@ -91,7 +90,6 @@
             :total="totalPages(block)"
             :label="block.heading"
             :loading="paging.state(block).loading"
-            :style2="theme.isStyle2"
             :on-dark="onDark(i)"
             @change="(p) => paging.setQuery(block, { page: p })"
           />

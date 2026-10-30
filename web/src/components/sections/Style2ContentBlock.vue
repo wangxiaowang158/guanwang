@@ -17,15 +17,15 @@
     <Style2MetricBoard v-else-if="block.layout === 'metrics'" :items="metrics" :on-dark="onDark" />
     <Style2CooperationModes v-else-if="block.layout === 'modes'" :items="modes" :on-dark="onDark" />
     <Style2ImageGallery v-else-if="block.layout === 'gallery'" :images="gallery" :on-dark="onDark" :alt-prefix="`${block.heading} `" :cols="block.columns" />
-    <!-- 第三版区块：与样式一共用组件，style2 切为集团红、直角 -->
-    <MediaShowcase v-else-if="block.layout === 'media'" :items="sorted" :heading="block.heading" :on-dark="onDark" style2 />
-    <BrandStories v-else-if="block.layout === 'brand'" :items="sorted" style2 :cols="block.columns" />
-    <ImageTiles v-else-if="block.layout === 'tiles'" :items="sorted" style2 :cols="block.columns" />
-    <JobList v-else-if="block.layout === 'jobs'" :items="sorted" style2 :on-dark="onDark" />
+    <!-- 第三版区块：与样式一共用组件，外观随色板一致 -->
+    <MediaShowcase v-else-if="block.layout === 'media'" :items="sorted" :heading="block.heading" :on-dark="onDark" />
+    <BrandStories v-else-if="block.layout === 'brand'" :items="sorted" :cols="block.columns" />
+    <ImageTiles v-else-if="block.layout === 'tiles'" :items="sorted" :cols="block.columns" />
+    <JobList v-else-if="block.layout === 'jobs'" :items="sorted" :on-dark="onDark" />
     <!-- 证言：单条直接展示，多条轮播 -->
     <template v-else-if="block.layout === 'quote'">
       <Style2TestimonialQuote v-if="quotes.length === 1" :quote="quotes[0]" :on-dark="onDark" />
-      <BaseCarousel v-else :items="quotes" :label="block.heading" style2>
+      <BaseCarousel v-else :items="quotes" :label="block.heading">
         <template #default="{ item }"><Style2TestimonialQuote :quote="item" :on-dark="onDark" /></template>
       </BaseCarousel>
     </template>

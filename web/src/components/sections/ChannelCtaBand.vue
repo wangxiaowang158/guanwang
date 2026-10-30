@@ -1,6 +1,6 @@
 <template>
   <!-- 栏目页尾咨询通栏：读完整页的访客顺手留资，不用翻回顶部找按钮 -->
-  <section class="ccb" :class="{ 'ccb--s2': style2 }" aria-labelledby="channel-cta-title">
+  <section class="ccb" aria-labelledby="channel-cta-title">
     <div class="ccb-inner" :class="style2 ? 'rs-channel-container' : 'site-container'">
       <div class="ccb-text">
         <h2 id="channel-cta-title" class="ccb-title">有项目需求？</h2>

@@ -1,6 +1,6 @@
 <template>
   <!-- 区块页码：上一页 / 页码 / 下一页；页数多时中间以省略号收起 -->
-  <nav class="pager" :class="{ 'pager--style2': style2, 'pager--dark': onDark }" :aria-label="`${label}分页`">
+  <nav class="pager" :class="{ 'pager--dark': onDark }" :aria-label="`${label}分页`">
     <button type="button" class="pager-btn" :disabled="current <= 1 || loading" aria-label="上一页" @click="$emit('change', current - 1)">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
     </button>
@@ -33,7 +33,6 @@ const props = defineProps<{
   /** 区块名称，给读屏软件区分同页多个分页器 */
   label: string
   loading?: boolean
-  style2?: boolean
   onDark?: boolean
 }>()
 
