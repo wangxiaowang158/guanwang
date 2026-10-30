@@ -40,18 +40,15 @@ withDefaults(defineProps<{ items: ArticleRelated[]; heading?: string; style2?: b
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--color-line);
+  /* 苹果式卡片：不描边、不投影，悬停只让图片缓慢放大 */
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
-  transition: border-color var(--dur-base, 300ms), box-shadow var(--dur-base, 300ms);
 }
-.ar-card:hover { border-color: var(--color-brand-600); box-shadow: 0 6px 20px rgba(15, 35, 70, 0.08); }
 .ar-card:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
-.ar--s2 .ar-card { border-radius: 0; }
-.ar--s2 .ar-card:hover { border-color: var(--rs-primary); }
 .ar-media { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--color-surface); }
-.ar-media :deep(img) { width: 100%; height: 100%; object-fit: cover; }
-.ar-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; }
+.ar-media :deep(img) { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
+.ar-card:hover .ar-media :deep(img) { transform: scale(1.04); }
+.ar-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; }
 .ar-name {
   font-size: var(--text-fs-sm, 14px);
   font-weight: 600;
@@ -63,5 +60,4 @@ withDefaults(defineProps<{ items: ArticleRelated[]; heading?: string; style2?: b
   overflow: hidden;
 }
 .ar-hl { font-size: var(--text-fs-caption, 13px); font-weight: 600; color: var(--color-brand-600); }
-.ar--s2 .ar-hl { color: var(--rs-primary); }
 </style>

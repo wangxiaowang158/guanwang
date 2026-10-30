@@ -1,82 +1,32 @@
 <template>
-  <!-- 样式预览弹窗：用各自设计 token 渲染两套样式的示意缩略图，供管理员对比选择 -->
+  <!-- 样式预览弹窗：三套样式的首页配色示意，供管理员对比选择 -->
   <a-modal
     :open="open"
     title="网站样式预览"
-    width="900px"
+    width="960px"
     :footer="null"
     @update:open="(v: boolean) => $emit('update:open', v)"
   >
     <div class="preview-grid">
-      <!-- 样式一：深蓝科技风 -->
-      <div class="preview-col" :class="{ active: current === '1' }">
-        <div class="mock mock-s1">
-          <div class="mock-nav">
-            <span class="mock-logo s1">中</span>
-            <span class="mock-navitem"></span>
-            <span class="mock-navitem"></span>
-            <span class="mock-navitem"></span>
-            <span class="mock-cta s1"></span>
+      <div v-for="item in STYLES" :key="item.key" class="preview-col" :class="{ active: current === item.key }">
+        <!-- 示意图：顶栏 + 首屏 + 依次排列的板块，按该样式的板块底色顺序上色 -->
+        <div class="shot" role="img" :aria-label="`${item.name}首页配色示意`">
+          <div class="shot-nav"></div>
+          <div class="shot-hero is-dark">
+            <span class="shot-title"></span>
+            <span class="shot-line"></span>
+            <span class="shot-btn"></span>
           </div>
-          <div class="mock-hero s1">
-            <div class="mock-line s1-accent w60"></div>
-            <div class="mock-line dark w80 tall"></div>
-            <div class="mock-line dark w50 tall"></div>
-            <div class="mock-line gray w70"></div>
-            <div class="mock-btns">
-              <span class="mock-btn s1"></span>
-              <span class="mock-btn ghost"></span>
-            </div>
-          </div>
-          <div class="mock-cards">
-            <div class="mock-card s1"></div>
-            <div class="mock-card s1"></div>
-            <div class="mock-card s1"></div>
+          <div v-for="(band, i) in item.bands" :key="i" class="shot-band" :class="`is-${band}`">
+            <span class="shot-head"></span>
+            <span class="shot-cards"><i></i><i></i><i></i></span>
           </div>
         </div>
         <div class="preview-meta">
-          <div class="preview-name">样式一 · 深蓝科技风</div>
-          <p class="preview-desc">浅色清爽、蓝色科技感，居中标题 + 卡片网格，适合产品/技术型展示。</p>
-          <a-button size="small" type="primary" :disabled="current === '1'" @click="$emit('apply', '1')">
-            {{ current === '1' ? '当前使用中' : '应用此样式' }}
-          </a-button>
-        </div>
-      </div>
-      <!-- PREVIEW_S2 -->
-      <!-- 样式二：集团品牌风 -->
-      <div class="preview-col" :class="{ active: current === '2' }">
-        <div class="mock mock-s2">
-          <div class="mock-nav light">
-            <span class="mock-logo s2">中</span>
-            <span class="mock-navitem dark"></span>
-            <span class="mock-navitem dark"></span>
-            <span class="mock-navitem dark"></span>
-            <span class="mock-cta s2"></span>
-          </div>
-          <div class="mock-hero s2">
-            <div class="mock-line s2-accent w40"></div>
-            <div class="mock-line light w70 tall"></div>
-            <div class="mock-line light w50 tall"></div>
-            <div class="mock-line lightgray w60"></div>
-            <div class="mock-btns">
-              <span class="mock-btn s2"></span>
-              <span class="mock-btn ghost-light"></span>
-            </div>
-            <div class="mock-statbar">
-              <span></span><span></span><span></span><span></span>
-            </div>
-          </div>
-          <div class="mock-cards tight">
-            <div class="mock-card s2"><i></i></div>
-            <div class="mock-card s2"><i></i></div>
-            <div class="mock-card s2"><i></i></div>
-          </div>
-        </div>
-        <div class="preview-meta">
-          <div class="preview-name">样式二 · 集团品牌风</div>
-          <p class="preview-desc">满屏深色大图、编辑式左对齐排版、红色点缀，业务编号陈列，适合集团品牌形象。</p>
-          <a-button size="small" type="primary" :disabled="current === '2'" @click="$emit('apply', '2')">
-            {{ current === '2' ? '当前使用中' : '应用此样式' }}
+          <div class="preview-name">{{ item.name }}</div>
+          <p class="preview-desc">{{ item.desc }}</p>
+          <a-button size="small" type="primary" :disabled="current === item.key" @click="$emit('apply', item.key)">
+            {{ current === item.key ? '当前使用中' : '应用此样式' }}
           </a-button>
         </div>
       </div>
@@ -84,7 +34,34 @@
   </a-modal>
 </template>
 <script setup lang="ts">
-// 样式预览弹窗：纯展示，渲染两套模板示意图；选择由父组件处理
+// 样式预览弹窗：纯展示，选择由父组件处理
+// 用色块画示意而非截图：三套样式共用同一布局只在色调上区分，示意图不会随首页内容改版而过时
+
+/** 板块底色：black 纯黑 / graphite 深灰 / white 白 / mist 浅灰 */
+type Band = 'black' | 'graphite' | 'white' | 'mist'
+
+/** bands 是首屏之后各板块的底色顺序，与前台自动交替规则一致 */
+const STYLES: Array<{ key: string; name: string; desc: string; bands: Band[] }> = [
+  {
+    key: '1',
+    name: '样式一 · 深色',
+    desc: '整站深色，大标题与大图为主角，科技感最强，适合产品与技术展示。',
+    bands: ['graphite', 'black', 'graphite', 'black'],
+  },
+  {
+    key: '2',
+    name: '样式二 · 浅色',
+    desc: '白底与浅灰底为主，大留白、精致排版，清爽易读，适合内容较多的站点。',
+    bands: ['mist', 'white', 'mist', 'white'],
+  },
+  {
+    key: '3',
+    name: '样式三 · 黑白交替',
+    desc: '深色首屏，之后白底与深色板块交替出现，层次分明，兼顾质感与可读性。',
+    bands: ['white', 'black', 'white', 'black'],
+  },
+]
+
 defineProps<{
   open: boolean
   current: string
@@ -97,8 +74,8 @@ defineEmits<{
 <style scoped>
 .preview-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 .preview-col {
   border: 1px solid #f0f0f0;
@@ -124,150 +101,44 @@ defineEmits<{
   line-height: 1.6;
   color: #8c8c8c;
   margin-bottom: 12px;
-  min-height: 38px;
+  min-height: 58px;
 }
-/* 缩略图外框 */
-.mock {
-  height: 240px;
-  border-radius: 8px;
+
+/* 示意图：色值与前台三套色板一致（纯黑 / 深灰 / 白 / 浅灰 + 按钮蓝） */
+.shot {
   overflow: hidden;
   border: 1px solid #eee;
+  border-radius: 8px;
 }
-/* 顶栏 */
-.mock-nav {
+.shot-nav { height: 14px; background: rgba(22, 22, 23, 0.9); }
+.shot-hero {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 9px 12px;
-  background: rgba(255, 255, 255, 0.85);
-}
-.mock-nav.light {
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
-}
-.mock-logo {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 9px;
-  line-height: 16px;
-  text-align: center;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-.mock-logo.s1 { background: #1a7fd4; }
-.mock-logo.s2 { background: #c8161d; }
-.mock-navitem {
-  width: 22px;
-  height: 5px;
-  border-radius: 3px;
-  background: #c9d6e3;
-}
-.mock-navitem.dark { background: #d0d0d0; }
-.mock-cta {
-  width: 30px;
-  height: 12px;
-  border-radius: 3px;
-  margin-left: auto;
-}
-.mock-cta.s1 { background: #1a7fd4; }
-.mock-cta.s2 { background: #c8161d; }
-/* MOCK_HERO_CSS */
-/* Hero 区 */
-.mock-hero {
-  padding: 16px 14px;
-}
-.mock-hero.s1 {
-  background: linear-gradient(180deg, #eef4fc 0%, #fff 100%);
-  text-align: center;
-}
-.mock-hero.s1 .mock-line { margin-left: auto; margin-right: auto; }
-.mock-hero.s1 .mock-btns { justify-content: center; }
-.mock-hero.s2 {
-  background: linear-gradient(120deg, #1a1a1a 0%, #2a1416 60%, #3a161a 100%);
-  text-align: left;
-  position: relative;
-}
-.mock-line {
-  height: 6px;
-  border-radius: 3px;
-  margin-bottom: 7px;
-}
-.mock-line.tall { height: 11px; }
-.mock-line.dark { background: #2a3a4a; }
-.mock-line.gray { background: #c9d2dc; }
-.mock-line.light { background: #ffffff; }
-.mock-line.lightgray { background: #8a7a7c; }
-.mock-line.s1-accent { background: #1a7fd4; height: 5px; }
-.mock-line.s2-accent { background: #c8161d; height: 5px; }
-.w40 { width: 40%; }
-.w50 { width: 50%; }
-.w60 { width: 60%; }
-.w70 { width: 70%; }
-.w80 { width: 80%; }
-.mock-btns {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-}
-.mock-btn {
-  width: 40px;
-  height: 13px;
-  border-radius: 3px;
-}
-.mock-btn.s1 { background: #1a7fd4; }
-.mock-btn.s2 { background: #c8161d; }
-.mock-btn.ghost { border: 1px solid #cdd6e0; }
-.mock-btn.ghost-light { border: 1px solid rgba(255,255,255,0.5); }
-.mock-statbar {
-  display: flex;
-  gap: 1px;
-  margin-top: 14px;
-  border-top: 1px solid #333;
-  padding-top: 8px;
-}
-.mock-statbar span {
-  flex: 1;
-  height: 10px;
-  background: rgba(255,255,255,0.12);
-}
-/* MOCK_CARDS_CSS */
-/* 卡片区 */
-.mock-cards {
-  display: flex;
   gap: 8px;
-  padding: 12px 14px;
-  background: #fff;
+  padding: 28px 0 24px;
 }
-.mock-cards.tight {
-  gap: 1px;
-  padding: 0;
-  background: #e6e2db;
-}
-.mock-card {
-  flex: 1;
-  height: 40px;
-  border-radius: 6px;
-}
-.mock-card.s1 {
-  background: #f4f7fc;
-  border: 1px solid #e6eef7;
-}
-.mock-card.s2 {
-  background: #fff;
-  border-radius: 0;
-  height: 46px;
-  position: relative;
-}
-.mock-card.s2 i {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 12px;
-  height: 12px;
-  background: #c8161d;
-  opacity: 0.25;
-  border-radius: 2px;
-}
+.shot-title { width: 60%; height: 12px; border-radius: 3px; background: #f5f5f7; }
+.shot-line { width: 40%; height: 6px; border-radius: 3px; background: #86868b; }
+/* 胶囊按钮，与前台主按钮同为苹果蓝 */
+.shot-btn { width: 44px; height: 12px; margin-top: 4px; border-radius: 999px; background: #0071e3; }
+.shot-band { padding: 16px 14px; }
+.shot-head { display: block; width: 36%; height: 8px; margin: 0 auto 12px; border-radius: 3px; }
+.shot-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.shot-cards i { height: 34px; border-radius: 6px; }
+
+.is-dark,
+.is-black { background: #000; }
+.is-graphite { background: #161617; }
+.is-white { background: #fff; }
+.is-mist { background: #f5f5f7; }
+/* 深色板块：浅色标题、深灰卡片；浅色板块：深色标题、与底色错开的卡片 */
+.is-black .shot-head,
+.is-graphite .shot-head { background: #f5f5f7; }
+.is-black .shot-cards i { background: #1d1d1f; }
+.is-graphite .shot-cards i { background: #2a2a2d; }
+.is-white .shot-head,
+.is-mist .shot-head { background: #1d1d1f; }
+.is-white .shot-cards i { background: #f5f5f7; }
+.is-mist .shot-cards i { background: #fff; }
 </style>

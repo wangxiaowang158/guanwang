@@ -166,7 +166,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .cr { --cr-accent: var(--color-brand-600); --cr-radius: var(--radius-pill); position: relative; }
-.cr--style2 { --cr-accent: var(--rs-primary); --cr-radius: 0; }
 .cr-viewport { overflow: hidden; }
 /* 宽屏下箭头悬浮在内容两侧：给视口留出箭头的位置（12 + 44 + 12），避免压住幻灯片文字 */
 @media (min-width: 641px) {
@@ -184,7 +183,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   color: var(--color-ink-700);
-  background: rgba(255, 255, 255, 0.9);
+  /* 箭头底取卡片底色：浅色站白、深色站深灰 */
+  background: var(--color-elevated);
   border: 1px solid var(--color-line);
   border-radius: var(--cr-radius);
   transform: translateY(-50%);

@@ -178,9 +178,9 @@ export class SaveSiteConfigDto {
   @IsAssetUrl()
   shareImage?: string
 
-  /** 网站模板，只允许两种样式 */
+  /** 网站模板：'1' 样式一（深色）| '2' 样式二（浅色）| '3' 样式三（黑白交替） */
   @IsOptional()
-  @IsIn(['1', '2'], { message: '网站模板只能为 1 或 2' })
+  @IsIn(['1', '2', '3'], { message: '网站模板只能为 1、2 或 3' })
   template?: string
 
   /** 只收地址，不收 base64 内联图：内联图会让每次首页接口多背几百 KB */

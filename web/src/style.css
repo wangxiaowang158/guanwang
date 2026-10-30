@@ -4,22 +4,27 @@
    设计 token（样式一 / 全站通用）
    写在 @theme 里：Tailwind v4 会据此生成 bg-brand-600、text-fs-h2 这类工具类，
    组件里用工具类与 CSS 里用 var() 取到的是同一个值，两边不会各写各的。
+   static：默认 @theme 只输出被工具类或本文件 var() 用到的变量，--color-elevated 这类
+   只在 scoped 样式、JS 内联 style 里引用的会被裁掉，色板就断了；static 让全部变量都输出
    ============================================================ */
-@theme {
-  /* 品牌色阶：深蓝为主，取代原先 sky-500 与 blue-600 两套蓝并存的状况 */
-  --color-brand-50:  #eef5ff;
-  --color-brand-100: #d9e8ff;
-  --color-brand-200: #b8d4ff;
-  --color-brand-300: #86b6fb;
-  --color-brand-400: #4d8ff2;
-  --color-brand-500: #1f6fe5;
-  --color-brand-600: #0b57d0;
-  --color-brand-700: #0a45a8;
-  --color-brand-800: #0c3a85;
-  --color-brand-900: #0b2a5b;
-  --color-navy-950:  #071a36;
-  /* 辅助强调色：只用于数据与高亮，不作为按钮等大面积色块 */
-  --color-accent:    #00b8d9;
+@theme static {
+  /* 品牌色阶：苹果蓝 #0071e3 为主色（600），大面积只用黑白灰，蓝色只点缀按钮、链接与高亮。
+     这些值是浅色底的默认值，深色底（[data-tone='dark'] / .tone-dark）在下方覆盖 */
+  --color-brand-50:  #f0f6ff;
+  --color-brand-100: #dcebff;
+  --color-brand-200: #b3d4ff;
+  --color-brand-300: #7ab5ff;
+  --color-brand-400: #2997ff;
+  --color-brand-500: #0077ed;
+  --color-brand-600: #0071e3;
+  /* 700 用于浅灰底上的小字链接：#0071e3 在 #f5f5f7 上只有 4.3:1，#0066cc 为 5.1:1 */
+  --color-brand-700: #0066cc;
+  --color-brand-800: #004f9e;
+  --color-brand-900: #003470;
+  /* 深色区块底：纯黑。名字沿用 navy-950 免改存量引用 */
+  --color-navy-950:  #000000;
+  /* 辅助强调色：只用于数据与高亮，不作为大面积色块 */
+  --color-accent:    #2997ff;
 
   /*
    * 存量组件里写死了约 70 处 blue-*（text-blue-600 等），逐个改名收益低、易漏。
@@ -35,84 +40,148 @@
   --color-blue-600: var(--color-brand-600);
   --color-blue-700: var(--color-brand-700);
 
-  /* 中性色：正文与辅助文字，白底对比度均 ≥ 4.5:1 */
-  --color-ink-900: #0f172a;
-  --color-ink-700: #334155;
-  --color-ink-500: #64748b;
-  --color-ink-400: #94a3b8;
-  --color-line:    #e2e8f0;
-  --color-surface: #f5f7fa;
+  /* 中性色（苹果官网同款灰阶）：ink-500 在白底 5.1:1、浅灰底 4.7:1，均达正文 4.5:1；
+     ink-400 只用于不承载信息的装饰与占位 */
+  --color-ink-900: #1d1d1f;
+  --color-ink-700: #424245;
+  --color-ink-500: #6e6e73;
+  --color-ink-400: #86868b;
+  --color-line:    #d2d2d7;
+  --color-surface: #f5f5f7;
+  /* 页面底与卡片底：深色底下翻成黑 / 深灰。替代写死的 bg-white，
+     bg-white / text-white 保留给「永远是白色」的场景（图上反白字、深色按钮字） */
+  --color-canvas:  #ffffff;
+  --color-elevated: #ffffff;
 
-  /* 字号阶梯：标题行高 1.2-1.3，正文 1.75
-     正文 16px 起：中文笔画密，15px 在高分屏上偏小；参考站点正文多在 16-17px */
-  --text-fs-display: clamp(36px, 5.2vw, 64px);
-  --text-fs-h1: clamp(32px, 3.6vw, 48px);
-  --text-fs-h2: clamp(28px, 3vw, 40px);
-  --text-fs-h3: 20px;
-  --text-fs-h4: 18px;
-  --text-fs-body-lg: 18px;
-  --text-fs-body: 16px;
+  /* 字号阶梯：标题大、行距紧，正文 17px（苹果官网正文字号）；
+     中文笔画密，标题行高不低于 1.15，否则两行汉字会上下顶住 */
+  --text-fs-display: clamp(40px, 6.4vw, 80px);
+  --text-fs-h1: clamp(34px, 4.6vw, 56px);
+  --text-fs-h2: clamp(30px, 3.8vw, 48px);
+  --text-fs-h3: 21px;
+  --text-fs-h4: 19px;
+  --text-fs-body-lg: 19px;
+  --text-fs-body: 17px;
   --text-fs-sm: 14px;
   --text-fs-caption: 13px;
   --text-fs-xs: 12px;
 
-  /* 圆角：B2B 官网取 8-12px，偏克制 */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* 圆角：大圆角卡片 + 胶囊按钮，苹果官网卡片多在 18-28px */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
   --radius-pill: 999px;
 
-  /* 阴影三档：只用中性色，不做彩色光晕 */
-  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-2: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --shadow-3: 0 16px 40px rgba(15, 23, 42, 0.12);
+  /* 阴影：苹果风格基本不用阴影，靠底色分层；只给浮层（下拉、弹窗）留一档 */
+  --shadow-1: none;
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.12);
 
-  /* 动效时长与缓动：全站统一三档 */
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* 缓动：苹果官网常用的减速曲线，入场长、收尾柔 */
+  --ease-out: cubic-bezier(0.28, 0.11, 0.32, 1);
 }
 
 :root {
   /* 布局尺度：容器、页边距、导航高度、区块纵向留白 */
-  --container: 1280px;
+  --container: 1200px;
   --gutter: clamp(20px, 4vw, 40px);
-  --nav-h: 72px;
-  --section-py: clamp(64px, 8vw, 112px);
+  /* 顶栏 64px：比苹果的 44px 高，要放公司 logo 与中文栏目名 */
+  --nav-h: 64px;
+  /* 大留白：一个区块只讲一件事，上下各 80~160px */
+  --section-py: clamp(80px, 11vw, 160px);
   /* 区块标题到内容的统一间距：随屏宽缩放，手机上不至于空出一大截 */
-  --head-gap: clamp(32px, 4vw, 56px);
+  --head-gap: clamp(40px, 5vw, 72px);
 
-  --dur-fast: 150ms;
-  --dur-base: 250ms;
-  --dur-slow: 500ms;
-}
-
-/* Element Plus 变量覆盖：主色跟随品牌色阶 */
-:root {
-  --el-color-primary: var(--color-brand-600);
-  --el-border-radius-base: var(--radius-md);
-  --el-font-size-base: 14px;
+  --dur-fast: 200ms;
+  --dur-base: 300ms;
+  --dur-slow: 800ms;
 }
 
 /* ============================================================
-   品牌主题色别名（存量组件在用，值统一指向品牌色阶）
+   深色色板：样式一整站（html[data-tone='dark']），以及样式三的深色区块（.tone-dark）
+   只换「语义」色值，组件里的 text-ink-900 / bg-canvas / var(--color-line) 等写法不用改。
+   .tone-light 用于深色页面里必须保持浅底的局部（如合作伙伴 logo 墙）
    ============================================================ */
-:root {
+[data-tone='dark'],
+.tone-dark {
+  --color-canvas:   #000000;
+  --color-elevated: #1d1d1f;
+  --color-surface:  #161617;
+  /* ink-500 在 #161617 上 7:1、在 #1d1d1f 上 6.5:1 */
+  --color-ink-900:  #f5f5f7;
+  --color-ink-700:  #d2d2d7;
+  --color-ink-500:  #a1a1a6;
+  --color-ink-400:  #86868b;
+  --color-line:     #333336;
+  /* 深色底上的文字链接与高亮：#0071e3 在黑底只有 4.5:1、在深灰底不足，换亮一档。
+     按钮底色仍用 #0071e3（配白字 4.7:1），按钮请用 bg-action 而非 bg-brand-600 */
+  --color-brand-50:  rgba(41, 151, 255, 0.10);
+  --color-brand-100: rgba(41, 151, 255, 0.18);
+  --color-brand-200: #7ab5ff;
+  --color-brand-600: #2997ff;
+  --color-brand-700: #5eb0ff;
+  --shadow-2: none;
+  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+.tone-light {
+  --color-canvas:   #ffffff;
+  --color-elevated: #ffffff;
+  --color-surface:  #f5f5f7;
+  --color-ink-900:  #1d1d1f;
+  --color-ink-700:  #424245;
+  --color-ink-500:  #6e6e73;
+  --color-ink-400:  #86868b;
+  --color-line:     #d2d2d7;
+  --color-brand-50:  #f0f6ff;
+  --color-brand-100: #dcebff;
+  --color-brand-200: #b3d4ff;
+  --color-brand-600: #0071e3;
+  --color-brand-700: #0066cc;
+  color-scheme: light;
+}
+
+/* 按钮底色：深浅底一致用 #0071e3，白字对比度 4.7:1。
+   单独一个 token，是因为深色底下 brand-600 换成了更亮的链接蓝，配白字不达标 */
+@theme static {
+  --color-action:       #0071e3;
+  --color-action-hover: #0077ed;
+}
+
+/* ============================================================
+   以下别名都由语义色派生。CSS 变量的 var() 在「声明处」求值，
+   只写在 :root 上的话，.tone-dark 里改了 ink-900，别名仍是浅色值；
+   故别名在每个色板作用域上重新声明一次
+   ============================================================ */
+:root,
+[data-tone],
+.tone-dark,
+.tone-light {
+  /* Element Plus：主色跟随品牌色阶 */
+  --el-color-primary: var(--color-action);
+  --el-border-radius-base: var(--radius-md);
+  --el-font-size-base: 14px;
+
+  /* 品牌主题色别名（存量组件在用） */
   --brand-primary:        var(--color-brand-600);
   --brand-primary-dark:   var(--color-brand-700);
   --brand-primary-light:  var(--color-brand-300);
-  --brand-primary-glow:   rgba(11, 87, 208, 0.20);
-  --brand-primary-subtle: rgba(11, 87, 208, 0.08);
+  --brand-primary-glow:   rgba(0, 113, 227, 0.20);
+  --brand-primary-subtle: rgba(0, 113, 227, 0.08);
 }
 
-/* ============================================================
-   样式一 · 亮色现代科技风 token
-   ============================================================ */
-:root {
-  /* 背景层次 */
-  --zrh-bg-page:       #ffffff;
-  --zrh-bg-white:      #ffffff;
+/* Element Plus 暗色变量（theme-chalk/dark/css-vars.css）挂在 html.dark 上，特异性高于上面的 :root，
+   会把主色写回它默认的 #409eff；这里用同等选择器、后声明的规则再压回按钮蓝 */
+html.dark {
+  --el-color-primary: var(--color-action);
+
+  /* 样式一 / 三 共用 token */
+  --zrh-bg-page:       var(--color-canvas);
+  --zrh-bg-white:      var(--color-canvas);
   --zrh-bg-surface:    var(--color-surface);
   --zrh-bg-dark:       var(--color-navy-950);
-  --zrh-bg-dark-soft:  #0e2548;
+  --zrh-bg-dark-soft:  #1d1d1f;
 
   /* 文字 */
   --zrh-text-h:        var(--color-ink-900);
@@ -122,7 +191,7 @@
 
   /* 边框 */
   --zrh-border:        var(--color-line);
-  --zrh-border-light:  #eef2f6;
+  --zrh-border-light:  var(--color-surface);
 
   /* 板块节奏：统一指向全站布局尺度，首页与栏目页不再是两套口径 */
   --zrh-section-py:    var(--section-py);
@@ -138,31 +207,35 @@
 }
 
 /* ============================================================
-   样式二 · 集团品牌风 token（红色系，保留不变）
+   样式二 token：由集团红改为苹果浅色风，名字保留免改样式二组件。
+   主色指向按钮蓝；浅底（cream）改为苹果浅灰；深色区块仍是近黑底配白字
    ============================================================ */
-:root {
-  --rs-primary:        #c8161d;
-  --rs-primary-dark:   #9e1117;
-  --rs-primary-light:  #e23a40;
-  --rs-bg-cream:       #f7f4ef;
-  --rs-bg-white:       #ffffff;
-  --rs-bg-dark:        #1a1a1a;
-  --rs-bg-dark-soft:   #232323;
-  --rs-text-dark:      #1a1a1a;
-  --rs-text-body:      #4a4a4a;
-  /* 原 #8a8a8a 白底对比度约 3.4:1，不达正文 4.5:1，加深到 #6b6b6b（约 5.3:1） */
-  --rs-text-muted:     #6b6b6b;
+:root,
+[data-tone],
+.tone-dark,
+.tone-light {
+  --rs-primary:        var(--color-action);
+  --rs-primary-dark:   var(--color-brand-700);
+  --rs-primary-light:  var(--color-brand-400);
+  --rs-bg-cream:       var(--color-surface);
+  --rs-bg-white:       var(--color-canvas);
+  --rs-bg-dark:        #000000;
+  --rs-bg-dark-soft:   #1d1d1f;
+  --rs-text-dark:      var(--color-ink-900);
+  --rs-text-body:      var(--color-ink-700);
+  --rs-text-muted:     var(--color-ink-500);
   --rs-text-light:     #ffffff;
-  --rs-text-light-sub: #b8b8b8;
-  --rs-border:         #e6e2db;
-  --rs-border-dark:    #333333;
+  /* 深色区块上的辅助字：#a1a1a6 在黑底 8.2:1 */
+  --rs-text-light-sub: #a1a1a6;
+  --rs-border:         var(--color-line);
+  --rs-border-dark:    #333336;
   /* 纵向留白与页边距跟随全站尺度：随屏宽缩放，且与顶栏左右边距对齐（原固定 96px / 32px） */
   --rs-section-py:     var(--section-py);
   --rs-content-max:    var(--container);
   --rs-content-px:     var(--gutter);
-  --rs-text-hero:      clamp(40px, 6vw, 72px);
-  --rs-text-h1:        clamp(30px, 4vw, 52px);
-  --rs-text-h2:        clamp(22px, 3vw, 34px);
+  --rs-text-hero:      var(--text-fs-display);
+  --rs-text-h1:        var(--text-fs-h1);
+  --rs-text-h2:        var(--text-fs-h2);
 }
 
 /* ============================================================
@@ -178,12 +251,15 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
-               'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+  /* 系统字体：苹果设备上是 SF + 苹方，与苹果官网同字形；SF Pro 授权不允许网页嵌入，不打包 */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue',
+               'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--zrh-text-body);
-  background-color: var(--zrh-bg-page);
+  font-size: var(--text-fs-body);
+  line-height: 1.6;
+  color: var(--color-ink-700);
+  background-color: var(--color-canvas);
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -223,15 +299,53 @@ body {
    ============================================================ */
 .fade-up {
   opacity: 0;
-  /* 位移克制：16px 足以感知方向，再大会显得飘 */
-  transform: translateY(16px);
-  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  /* 苹果官网式入场：上移 24px、0.8s 长减速，比 16px / 0.6s 更「沉」 */
+  transform: translateY(24px);
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
 }
 .fade-up.visible {
   opacity: 1;
   /* 用 none 而非 translateY(0)：任何 transform 都会让内部 position: fixed 的弹层以本元素为定位基准 */
   transform: none;
 }
+
+/* 大图入场：从 1.04 倍缓慢收到原大，与 .fade-up 同用一套 visible 开关。
+   挂在图片本身而不是外框上：外框 overflow: hidden 负责裁掉放大的边 */
+.zoom-in {
+  transform: scale(1.04);
+  transition: transform 1.2s var(--ease-out);
+}
+.visible .zoom-in,
+.zoom-in.visible { transform: none; }
+
+/* 色板作用域的默认文字色：区块切到深色后，没写颜色类的正文跟着反白 */
+.tone-dark,
+.tone-light { color: var(--color-ink-700); }
+
+/* 胶囊按钮：全站主次按钮统一外形。主按钮 action 蓝底白字；次按钮描边，
+   颜色取 currentColor 系，放在深色首屏上传 .btn-pill--on-dark */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 24px;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
+}
+.btn-pill--primary { background: var(--color-action); color: #fff; }
+.btn-pill--primary:hover { background: var(--color-action-hover); }
+.btn-pill--ghost { background: transparent; color: var(--color-brand-600); border-color: var(--color-brand-600); }
+.btn-pill--ghost:hover { background: var(--color-brand-600); color: #fff; }
+.btn-pill--on-dark.btn-pill--ghost { color: #fff; border-color: rgba(255, 255, 255, 0.6); }
+.btn-pill--on-dark.btn-pill--ghost:hover { background: #fff; color: #1d1d1f; border-color: #fff; }
 
 /* 延迟梯队 */
 .delay-100 { transition-delay: 0.1s; }
@@ -321,10 +435,10 @@ body {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
-  .fade-up { opacity: 1; transform: none; }
+  .fade-up, .zoom-in { opacity: 1; transform: none; }
 }
 
 /* 打印：未滚到的区块仍是入场前的透明态，打印时一律显现，否则首屏以下整页空白 */
 @media print {
-  .fade-up { opacity: 1; transform: none; transition: none; }
+  .fade-up, .zoom-in { opacity: 1; transform: none; transition: none; }
 }

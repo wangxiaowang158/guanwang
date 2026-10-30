@@ -1,8 +1,9 @@
 <template>
   <!-- 样式一顶栏：品牌 + 数据驱动主导航（悬停/键盘聚焦展开子菜单）+ 会员入口 + 联系电话 -->
+  <!-- tone-dark：样式一、三首屏都是黑底，顶栏恒为深色毛玻璃（苹果产品页同款），内部语义色随之反白 -->
   <header
-    class="fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow] duration-300"
-    :class="menuOpen ? 'bg-white' : ['app-header-glass', { 'shadow-[0_1px_0_rgba(15,23,42,0.08)]': scrolled }]"
+    class="tone-dark fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow] duration-300"
+    :class="menuOpen ? 'bg-canvas' : ['app-header-glass', { 'shadow-[0_1px_0_rgba(255,255,255,0.08)]': scrolled }]"
     @keydown.esc="onEscape"
   >
     <div class="site-container">
@@ -10,7 +11,7 @@
         <RouterLink to="/" class="flex items-center gap-2.5 no-underline shrink-0 mr-8" :aria-label="`${companyShort} 首页`">
           <img v-if="siteLogo" :src="siteLogo" :alt="companyShort" class="h-9 w-auto max-w-[160px] object-contain" width="144" height="36" fetchpriority="high" />
           <template v-else>
-            <span class="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white text-base font-bold" aria-hidden="true">恒</span>
+            <span class="w-9 h-9 rounded-md bg-action flex items-center justify-center text-white text-base font-bold" aria-hidden="true">恒</span>
             <span class="flex flex-col leading-none">
               <span class="font-bold text-[17px] text-ink-900 tracking-wide">{{ companyShort }}</span>
               <span class="text-[10px] text-ink-500 tracking-[0.2em] mt-1">{{ companyEn }}</span>
@@ -128,7 +129,7 @@
         <!-- 常驻咨询入口：顶栏容器定宽，导航 + 会员 + 咨询已占满，电话改由右下角悬浮栏、移动端抽屉与页脚承担 -->
         <button
           type="button"
-          class="hidden lg:flex items-center px-5 h-10 rounded-md bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors shrink-0"
+          class="hidden lg:flex items-center px-4 h-8 rounded-full bg-action text-white text-sm font-medium hover:bg-action-hover transition-colors shrink-0"
           @click="openLead('consult', '顶栏')"
         >
           项目咨询
@@ -189,55 +190,44 @@ const { openLead } = useLeadModal()
 </script>
 
 <style scoped>
-/* 毛玻璃顶栏：半透白底 + 提饱和模糊，下方内容透出色彩但文字仍可读；
-   不做全透明：样式一部分页面顶部是浅底，透明顶栏上的深字与内容会叠在一起 */
+/* 毛玻璃顶栏：苹果官网同款深色半透 + 提饱和模糊，下方内容透出色彩但文字仍可读；
+   全站只此一处毛玻璃 */
 .app-header-glass {
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(22, 22, 23, 0.8);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
 }
 /* 不支持背景模糊的浏览器回落实底，避免半透明叠字 */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .app-header-glass { background-color: #fff; }
+  .app-header-glass { background-color: #161617; }
 }
 
+/* 导航文字：苹果式小字号、低对比灰，悬停 / 当前项提亮为白，不加下划线色条 */
 .nav-link {
   position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 0 14px;
-  font-size: 15px;
+  padding: 0 12px;
+  font-size: 14px;
   color: var(--color-ink-700);
   white-space: nowrap;
   transition: color var(--dur-fast);
 }
 .nav-link:hover,
-.nav-link.is-active { color: var(--color-brand-600); }
-/* 当前栏目底部品牌色指示条 */
-.nav-link::after {
-  content: '';
-  position: absolute;
-  left: 14px; right: 14px; bottom: 0;
-  height: 2px;
-  background: var(--color-brand-600);
-  transform: scaleX(0);
-  transition: transform var(--dur-base) var(--ease-out);
-}
-.nav-link.is-active::after,
-.nav-link:hover::after { transform: scaleX(1); }
+.nav-link.is-active { color: var(--color-ink-900); }
 
+/* 下拉：贴着顶栏展开的深色面板，大圆角，不加彩色顶边 */
 .dropdown-panel {
   position: absolute;
   left: 0;
   top: 100%;
   min-width: 220px;
   padding: 12px 8px;
-  background: #fff;
+  background: var(--color-elevated);
   border: 1px solid var(--color-line);
-  border-top: 2px solid var(--color-brand-600);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 .dropdown-title {
   margin: 0 0 6px;
@@ -257,8 +247,8 @@ const { openLead } = useLeadModal()
 }
 .dropdown-link:hover,
 .dropdown-link:focus-visible {
-  background: var(--color-brand-50);
-  color: var(--color-brand-600);
+  background: var(--color-surface);
+  color: var(--color-ink-900);
 }
 
 /* 超级菜单：按分组数等分列，每列至少 200px；前半段菜单项靠左对齐父项向右展开，

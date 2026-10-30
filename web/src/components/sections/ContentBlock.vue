@@ -76,19 +76,20 @@
       <li
         v-for="item in block.items"
         :key="item.id"
-        class="px-5 py-2.5 rounded-md border text-sm"
-        :class="onDark ? 'border-white/30 text-white bg-white/10' : 'border-line text-ink-700 bg-white'"
+        class="px-5 py-2.5 rounded-full border text-sm"
+        :class="onDark ? 'border-white/30 text-white bg-white/10' : 'border-line text-ink-700 bg-[var(--section-card,var(--color-surface))]'"
       >{{ item.title }}</li>
     </ul>
 
     <!-- 序号步骤 -->
     <ol v-else-if="block.layout === 'steps'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <li v-for="(item, i) in block.items" :key="item.id" class="flex items-start gap-4 p-6 rounded-lg border border-line bg-white">
-        <span class="w-10 h-10 rounded-md bg-brand-600 text-white flex items-center justify-center text-sm font-bold shrink-0 tabular-nums" aria-hidden="true">
+      <li v-for="(item, i) in block.items" :key="item.id" class="flex items-start gap-5 p-7 rounded-[var(--radius-xl)] bg-[var(--section-card,var(--color-surface))]">
+        <!-- 序号：大号灰字，不用色块，靠字号区分层次 -->
+        <span class="text-[28px] leading-none font-bold text-ink-400 shrink-0 tabular-nums" aria-hidden="true">
           {{ String(i + 1).padStart(2, '0') }}
         </span>
         <div>
-          <h3 class="text-base font-semibold text-ink-900 mb-1.5">{{ item.title }}</h3>
+          <h3 class="text-fs-h4 font-bold text-ink-900 mb-1.5">{{ item.title }}</h3>
           <p v-if="item.desc" class="text-ink-500 text-sm leading-relaxed">{{ item.desc }}</p>
         </div>
       </li>
@@ -110,10 +111,11 @@
     <!-- 富文本：正文有 HTML 时按富文本渲染，否则回落纯文本描述 -->
     <div v-else-if="block.layout === 'rich'" class="max-w-3xl mx-auto space-y-8">
       <div v-for="item in block.items" :key="item.id">
-        <h3 class="text-lg font-semibold mb-3" :class="onDark ? 'text-white' : 'text-ink-900'">{{ item.title }}</h3>
+        <!-- 深色区块已套 .tone-dark，ink 语义色自动反白，不再按 onDark 分支写颜色 -->
+        <h3 class="text-fs-h3 font-bold mb-3 text-ink-900">{{ item.title }}</h3>
         <!-- eslint-disable-next-line vue/no-v-html -- 已过 DOMPurify 净化，见 richHtml -->
-        <div v-if="item.html" class="rich-html text-fs-body leading-loose" :class="onDark ? 'text-slate-200' : 'text-ink-700'" v-html="richHtml(item.html)"></div>
-        <p v-else-if="item.desc" class="text-fs-body leading-loose" :class="onDark ? 'text-slate-200' : 'text-ink-700'">{{ item.desc }}</p>
+        <div v-if="item.html" class="rich-html text-fs-body leading-loose text-ink-700" v-html="richHtml(item.html)"></div>
+        <p v-else-if="item.desc" class="text-fs-body leading-loose text-ink-700">{{ item.desc }}</p>
         <AttachmentLink v-if="item.file" class="mt-4" :file="item.file" :name="item.title" :on-dark="onDark" />
       </div>
     </div>

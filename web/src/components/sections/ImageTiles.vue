@@ -34,7 +34,7 @@ const colsClass = computed(() => (props.cols ? 'it--fixed' : props.items.length 
 
 <style scoped>
 .it {
-  --it-radius: var(--radius-lg);
+  --it-radius: var(--radius-xl);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
@@ -42,7 +42,6 @@ const colsClass = computed(() => (props.cols ? 'it--fixed' : props.items.length 
   padding: 0;
   list-style: none;
 }
-.it--s2 { --it-radius: 0; }
 @media (min-width: 1024px) {
   .it--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .it--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -55,11 +54,10 @@ const colsClass = computed(() => (props.cols ? 'it--fixed' : props.items.length 
   height: 100%;
   min-height: 200px;
   overflow: hidden;
-  /* 未配图时的底色：品牌深色 + 斜向渐变，文字仍可读 */
-  background: linear-gradient(135deg, var(--color-navy-950), var(--color-brand-700));
+  /* 未配图时的底色：近黑实色，白字可读；三套模板一致，不用彩色渐变 */
+  background: #1d1d1f;
   border-radius: var(--it-radius);
 }
-.it--s2 .it-inner { background: linear-gradient(135deg, var(--rs-bg-dark), var(--rs-primary-dark)); }
 :deep(.it-link) { display: block; height: 100%; color: inherit; text-decoration: none; }
 :deep(.it-link:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .it-inner .it-img {
@@ -74,7 +72,7 @@ const colsClass = computed(() => (props.cols ? 'it--fixed' : props.items.length 
 @media (prefers-reduced-motion: reduce) { .it-inner:hover .it-img { transform: none; } }
 /* 底部渐变压暗，保证白字在任意照片上可读 */
 .it-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.72) 100%); }
-.it-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px; }
-.it-title { margin: 0; font-size: 18px; font-weight: 700; color: #fff; }
+.it-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 24px; }
+.it-title { margin: 0; font-size: var(--text-fs-h3); font-weight: 700; color: #fff; }
 .it-desc { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: rgba(255, 255, 255, 0.85); }
 </style>

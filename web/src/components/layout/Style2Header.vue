@@ -1,8 +1,8 @@
 <template>
-  <!-- 样式二顶栏：集团品牌风。深色首屏上透明底 + 白字，滚动后或无深色首屏的页面为白底 + 深字 -->
+  <!-- 样式二顶栏（浅色）：深色首屏上透明底 + 白字，滚动后或无深色首屏的页面为浅色毛玻璃 + 深字 -->
   <header
     class="rs-header fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow] duration-300"
-    :class="solid ? 'bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]' : 'bg-transparent'"
+    :class="solid ? 'rs-header-glass shadow-[0_1px_0_rgba(0,0,0,0.08)]' : 'bg-transparent'"
     @keydown.esc="onEscape"
   >
     <!-- 左右边距与正文容器同一 token，任何屏宽下 Logo 与板块内容左缘对齐 -->
@@ -48,9 +48,9 @@
               <div
                 v-if="item.children?.length && openKey === item.key && groupChildren(item.children)"
                 :id="`nav-panel-${item.key}`"
-                class="rs-mega absolute top-full bg-white shadow-xl border-t-2"
+                class="rs-mega rs-panel absolute top-full"
                 :class="idx >= visibleMenu.length / 2 ? 'right-0' : 'left-0'"
-                :style="{ borderColor: 'var(--rs-primary)', '--mega-cols': Math.min(groupChildren(item.children)?.length ?? 1, 4) }"
+                :style="{ '--mega-cols': Math.min(groupChildren(item.children)?.length ?? 1, 4) }"
               >
                 <section v-for="g in groupChildren(item.children)" :key="g.title" class="min-w-0">
                   <p v-if="g.title" class="rs-mega-title">{{ g.title }}</p>
@@ -66,8 +66,7 @@
               <!-- 无分组：保持原有单列 -->
               <div
                 v-else-if="item.children?.length && openKey === item.key"
-                class="absolute left-0 top-full min-w-48 bg-white shadow-xl py-2 border-t-2"
-                style="border-color: var(--rs-primary)"
+                class="rs-panel absolute left-0 top-full min-w-48 py-2"
               >
                 <NavLink
                   v-for="child in item.children"
@@ -103,8 +102,7 @@
               <div
                 v-if="overflowMenu.length && openKey === MORE_KEY"
                 :id="`nav-panel-${MORE_KEY}`"
-                class="rs-more absolute right-0 top-full min-w-56 bg-white shadow-xl py-2 border-t-2"
-                style="border-color: var(--rs-primary)"
+                class="rs-more rs-panel absolute right-0 top-full min-w-56 py-2"
               >
                 <section v-for="item in overflowMenu" :key="item.key" class="rs-more-group">
                   <NavLink
@@ -132,7 +130,7 @@
           <!-- 常驻咨询入口：顶栏容器定宽，导航 + 会员 + 咨询已占满，电话改由右下角悬浮栏、移动端抽屉与页脚承担 -->
           <button
             type="button"
-            class="rs-call hidden lg:flex items-center px-5 h-10 text-sm font-medium text-white"
+            class="rs-call hidden lg:flex items-center px-4 h-8 rounded-full text-sm font-medium text-white"
             @click="openLead('consult', '顶栏')"
           >
             项目咨询
@@ -214,41 +212,40 @@ const subColor = computed(() => (solid.value ? 'text-ink-500' : 'text-white/60')
 </script>
 
 <style scoped>
-/* 移动端抽屉跟随样式二的品牌红与直角 */
+/* 移动端抽屉：按钮蓝 + 胶囊 */
 .rs-header {
   --nav-accent: var(--rs-primary);
-  --nav-radius: 0;
+  --nav-radius: var(--radius-pill);
 }
+/* 浅色毛玻璃：苹果官网首页同款；不支持模糊时回落实底 */
+.rs-header-glass {
+  background-color: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .rs-header-glass { background-color: var(--color-canvas); }
+}
+/* 导航：不加下划线色条，当前项 / 悬停只把字压到最深（透明底上是纯白） */
 .rs-nav-link {
   position: relative;
-}
-.rs-nav-link::after {
-  content: '';
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 18px;
-  height: 2px;
-  background: var(--rs-primary);
-  transform: scaleX(0);
-  transition: transform 0.25s ease;
-}
-.rs-nav-link:hover::after,
-.rs-nav-link.is-active::after {
-  transform: scaleX(1);
+  opacity: 0.8;
+  transition: opacity var(--dur-fast);
 }
 .rs-nav-link:hover,
-.rs-nav-link.is-active {
-  color: var(--rs-primary-light) !important;
-}
-.bg-white .rs-nav-link:hover,
-.bg-white .rs-nav-link.is-active {
-  color: var(--rs-primary) !important;
-}
+.rs-nav-link.is-active { opacity: 1; }
+/* 下拉：大圆角浮层，悬停整行浅灰底，不用整行品牌色块 */
 .rs-dropdown-link:hover,
 .rs-dropdown-link:focus-visible {
-  background: var(--rs-primary);
-  color: #fff;
+  background: var(--color-surface);
+  color: var(--color-ink-900);
+}
+.rs-panel {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
 }
 /* 超级菜单：按分组数等分列，宽度不超过视口 */
 .rs-mega {
@@ -270,9 +267,6 @@ const subColor = computed(() => (solid.value ? 'text-ink-500' : 'text-white/60')
 .rs-mega-link { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; font-size: 14px; color: var(--rs-text-dark); text-decoration: none; transition: background 0.2s ease, color 0.2s ease; }
 .rs-mega-icon { flex-shrink: 0; width: 24px; height: 24px; margin-top: 1px; object-fit: contain; }
 .rs-mega-desc { display: block; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--rs-text-muted); }
-/* 悬停整行变红底时，说明文字同步转白，否则灰字压红底看不清 */
-.rs-mega-link:hover .rs-mega-desc,
-.rs-mega-link:focus-visible .rs-mega-desc { color: rgba(255, 255, 255, 0.85); }
 /* 被收纳进「更多」的栏目：脱离文档流且不可见、不可聚焦，但保留宽度供重新测量 */
 .rs-nav-item--overflow {
   position: absolute;
@@ -290,7 +284,7 @@ const subColor = computed(() => (solid.value ? 'text-ink-500' : 'text-white/60')
   transition: background 0.2s ease;
 }
 .rs-call:hover {
-  background: var(--rs-primary-dark);
+  background: var(--color-action-hover);
 }
 .rs-dropdown-enter-active,
 .rs-dropdown-leave-active,

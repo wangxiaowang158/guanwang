@@ -97,7 +97,7 @@ defineEmits<{
   max-height: calc(100svh - var(--nav-h));
   overflow-y: auto;
   padding: 8px 16px 20px;
-  background: #fff;
+  background: var(--color-canvas);
   border-top: 1px solid var(--color-line);
 }
 .mobile-item { border-bottom: 1px solid var(--color-line); }
@@ -123,7 +123,8 @@ defineEmits<{
   color: #fff;
   font-size: 15px;
   font-weight: 500;
-  background: var(--nav-accent, var(--color-brand-600));
-  border-radius: var(--nav-radius, var(--radius-md));
+  /* 按钮底用 action 蓝：深色底下 brand-600 是亮链接蓝，配白字对比度不够 */
+  background: var(--nav-accent, var(--color-action));
+  border-radius: var(--nav-radius, var(--radius-pill));
 }
 </style>

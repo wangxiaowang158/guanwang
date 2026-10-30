@@ -25,19 +25,16 @@ defineProps<{
 </script>
 
 <style scoped>
+/* 独立大圆角卡片网格，无描边、无顶部色条、无 hover 变色；底色与区块错开分层 */
 .rs-cm-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1px;
+  gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
-  background: var(--rs-border);
-  border: 1px solid var(--rs-border);
 }
-.rs-cm-item { position: relative; padding: 36px 28px 28px; background: #fff; transition: background 0.25s ease; }
-.rs-cm-item::before { content: ''; position: absolute; top: 0; left: 28px; width: 32px; height: 3px; background: var(--rs-primary); }
-.rs-cm-item:hover { background: var(--rs-bg-cream); }
-.rs-cm-title { margin: 0 0 10px; font-size: 18px; font-weight: 700; color: var(--rs-text-dark); }
+.rs-cm-item { position: relative; padding: 32px 28px; background: var(--section-card, var(--rs-bg-cream)); border-radius: var(--radius-xl); }
+.rs-cm-title { margin: 0 0 10px; font-size: var(--text-fs-h3); font-weight: 700; line-height: 1.3; color: var(--rs-text-dark); }
 .rs-cm-desc { margin: 0; font-size: 14px; line-height: 1.75; color: var(--rs-text-body); }
 </style>

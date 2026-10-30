@@ -1,6 +1,6 @@
 <template>
   <!-- 联系我们：左侧联系方式，右侧在线留言表单（SRS 3.5.2） -->
-  <div class="cs" :class="{ 'cs--style2': theme.isStyle2 }">
+  <div class="cs">
     <ul class="cs-info">
       <li v-for="info in contactItems" :key="info.label" class="cs-info-item">
         <span class="cs-info-icon" aria-hidden="true">
@@ -13,7 +13,7 @@
         </div>
       </li>
       <li v-if="site.wechatQr" class="cs-info-item">
-        <img :src="site.wechatQr" alt="微信公众号二维码" class="w-24 h-24 object-contain bg-white border border-line p-1" width="96" height="96" loading="lazy" />
+        <img :src="site.wechatQr" alt="微信公众号二维码" class="w-24 h-24 object-contain bg-white rounded-md p-1" width="96" height="96" loading="lazy" />
         <p class="cs-info-label self-center">微信扫码咨询</p>
       </li>
     </ul>
@@ -117,14 +117,12 @@ import { submitAnonymousFeedback, submitMemberFeedback } from '@/api/feedback'
 import HoneypotField from '@/components/common/HoneypotField.vue'
 import { useFormGuard } from '@/composables/useFormGuard'
 import { useMemberStore } from '@/stores/member'
-import { useThemeStore } from '@/stores/theme'
 import { API_SUCCESS_CODE } from '@/config'
 import { safeExternalUrl } from '@/utils/sanitize'
 import { PHONE_PATTERN } from '@/utils/validators'
 import { CONTACT_ICONS } from './contactIcons'
 
 const memberStore = useMemberStore()
-const theme = useThemeStore()
 const props = defineProps<{ site: Partial<SiteInfo> }>()
 
 /** 留言内容上限，与 SRS 3.5.2、后端 DTO 一致 */

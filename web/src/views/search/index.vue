@@ -1,9 +1,9 @@
 <template>
   <!-- 站内搜索结果页；关键词与页码都记在地址里，可分享、可后退 -->
   <!-- 顶部留白须大于固定顶栏高度（样式二 76px），本页无头图兜不住这段 -->
-  <div class="bg-white">
+  <div class="bg-canvas">
     <div class="max-w-4xl mx-auto px-6 lg:px-8 pt-[116px] pb-16 md:pb-24">
-      <h1 class="text-[28px] font-bold text-ink-900">站内搜索</h1>
+      <h1 class="text-4xl md:text-5xl font-bold leading-tight text-ink-900">站内搜索</h1>
 
       <form class="search-form mt-6" role="search" @submit.prevent="submit">
         <label for="search-q" class="sr-only">搜索关键词</label>
@@ -182,39 +182,44 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
   height: 48px;
-  padding: 0 16px;
-  font-size: 16px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  padding: 0 20px;
+  font-size: var(--text-fs-body);
+  color: var(--color-ink-900);
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
   outline: none;
   transition: border-color var(--dur-fast) ease;
 }
+.search-input::placeholder { color: var(--color-ink-400); }
 .search-input:focus-visible {
   border-color: var(--color-brand-600);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-600) 20%, transparent);
 }
+/* 胶囊按钮，按钮蓝底白字（深浅底一致） */
 .search-btn {
   height: 48px;
   padding: 0 28px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--text-fs-body);
+  font-weight: 500;
   color: #fff;
-  background: var(--color-brand-600);
-  border-radius: var(--radius-md);
+  background: var(--color-action);
+  border-radius: var(--radius-pill);
+  transition: background-color var(--dur-fast);
 }
 .search-btn:hover {
-  background: var(--color-brand-700);
+  background: var(--color-action-hover);
 }
 .search-hit {
   display: block;
 }
 .search-tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 10px;
   font-size: 12px;
-  color: var(--color-brand-700);
-  background: var(--color-brand-50);
-  border-radius: var(--radius-sm);
+  color: var(--color-ink-700);
+  background: var(--color-surface);
+  border-radius: var(--radius-pill);
 }
 .search-title {
   margin-top: 8px;

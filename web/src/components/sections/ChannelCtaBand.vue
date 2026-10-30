@@ -8,8 +8,8 @@
         <p class="ccb-desc">告诉我们建筑类型与用能情况，专属顾问会尽快与您联系，一起梳理节能改造思路。</p>
       </div>
       <div class="ccb-actions">
-        <button type="button" class="ccb-btn ccb-btn--primary" @click="openLead('consult', `${source}页尾`)">立即咨询</button>
-        <button type="button" class="ccb-btn" @click="openLead('energyAssess', `${source}页尾`)">预约节能测算</button>
+        <button type="button" class="btn-pill btn-pill--primary" @click="openLead('consult', `${source}页尾`)">立即咨询</button>
+        <button type="button" class="btn-pill btn-pill--ghost" @click="openLead('energyAssess', `${source}页尾`)">预约节能测算</button>
       </div>
     </div>
   </section>
@@ -24,33 +24,11 @@ const { openLead } = useLeadModal()
 </script>
 
 <style scoped>
-.ccb { padding: clamp(40px, 6vw, 72px) 0; background: linear-gradient(120deg, var(--color-brand-900, #0b2550), var(--color-brand-600, #1f5eff)); color: #fff; }
-.ccb--s2 { background: var(--rs-primary); }
-.ccb-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
-.ccb-text { max-width: 640px; }
-.ccb-title { margin: 0; font-size: var(--text-fs-h2); font-weight: 700; line-height: 1.25; }
-.ccb-desc { margin: 10px 0 0; font-size: var(--text-fs-body); line-height: 1.7; color: rgba(255, 255, 255, 0.85); }
-.ccb-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-/* 右下角悬浮快捷栏（QuickActions，right-4 + 约 48px 宽）会压住靠右的按钮，宽屏时让出它的位置 */
-@media (min-width: 768px) {
-  .ccb-actions { padding-right: 56px; }
-}
-.ccb-btn {
-  height: 44px;
-  padding: 0 22px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-md, 8px);
-  cursor: pointer;
-  transition: background var(--dur-fast, 150ms), color var(--dur-fast, 150ms);
-}
-.ccb-btn:hover { background: rgba(255, 255, 255, 0.12); }
-.ccb-btn--primary { color: var(--color-brand-700, #1645c4); background: #fff; border-color: #fff; }
-.ccb-btn--primary:hover { background: rgba(255, 255, 255, 0.9); }
-.ccb--s2 .ccb-btn { border-radius: 0; }
-.ccb--s2 .ccb-btn--primary { color: var(--rs-primary); }
-.ccb-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* 苹果式收尾区：中性浅灰（深色站为深灰）底、居中大字 + 两枚胶囊按钮，不用品牌色渐变通栏 */
+.ccb { padding: clamp(72px, 9vw, 128px) 0; background: var(--color-surface); }
+.ccb-inner { display: flex; flex-direction: column; align-items: center; gap: 32px; text-align: center; }
+.ccb-text { max-width: 720px; }
+.ccb-title { margin: 0; font-size: var(--text-fs-h2); font-weight: 700; line-height: 1.15; color: var(--color-ink-900); }
+.ccb-desc { margin: 16px 0 0; font-size: var(--text-fs-body-lg); line-height: 1.6; color: var(--color-ink-500); }
+.ccb-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
 </style>

@@ -63,7 +63,7 @@ const pages = computed<number[]>(() => {
 <style scoped>
 .pager {
   --pager-accent: var(--color-brand-600);
-  --pager-radius: var(--radius-md);
+  --pager-radius: var(--radius-pill);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -71,7 +71,6 @@ const pages = computed<number[]>(() => {
   gap: 6px;
   margin-top: 40px;
 }
-.pager--style2 { --pager-accent: var(--rs-primary); --pager-radius: 0; }
 .pager-btn {
   min-width: 40px;
   height: 40px;
@@ -81,18 +80,20 @@ const pages = computed<number[]>(() => {
   justify-content: center;
   font-size: 14px;
   color: var(--color-ink-700);
-  background: #fff;
+  background: var(--color-canvas);
   border: 1px solid var(--color-line);
   border-radius: var(--pager-radius);
   cursor: pointer;
   transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
 }
 .pager-btn:hover:not(:disabled):not(.is-current) { color: var(--pager-accent); border-color: var(--pager-accent); }
-.pager-btn.is-current { color: #fff; background: var(--pager-accent); border-color: var(--pager-accent); cursor: default; }
+/* 当前页白字实底用按钮蓝（action）：深色下 brand-600 是亮链接蓝，配白字不达标 */
+.pager-btn.is-current { color: #fff; background: var(--color-action); border-color: var(--color-action); cursor: default; }
 .pager-btn:disabled:not(.is-current) { opacity: 0.4; cursor: not-allowed; }
 .pager-gap { padding: 0 4px; color: var(--color-ink-400); }
 
 .pager--dark .pager-btn:not(.is-current) { color: #fff; background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.3); }
-.pager--dark .pager-btn.is-current { color: var(--color-ink-900); background: #fff; border-color: #fff; }
+/* 白底上的字写死近黑：.tone-dark 里 ink-900 已翻成浅色，用它会白字落白底 */
+.pager--dark .pager-btn.is-current { color: #1d1d1f; background: #fff; border-color: #fff; }
 .pager--dark .pager-gap { color: rgba(255, 255, 255, 0.6); }
 </style>

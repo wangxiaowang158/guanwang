@@ -111,8 +111,8 @@ onMounted(load)
 
 .mf-item {
   padding: 18px 20px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
 }
 
 .mf-head {
@@ -124,7 +124,7 @@ onMounted(load)
 .mf-type {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-ink-900);
 }
 
 .mf-time {
@@ -137,7 +137,7 @@ onMounted(load)
   margin: 10px 0 0;
   font-size: 14px;
   line-height: 1.7;
-  color: #334155;
+  color: var(--color-ink-700);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -145,7 +145,7 @@ onMounted(load)
 .mf-replies {
   margin-top: 14px;
   padding-left: 14px;
-  border-left: 2px solid var(--brand-primary, #0ea5e9);
+  border-left: 2px solid var(--color-brand-600);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -160,14 +160,14 @@ onMounted(load)
 
 .mf-reply-by {
   font-weight: 600;
-  color: var(--brand-primary-dark, #0284c7);
+  color: var(--color-brand-700);
 }
 
 .mf-reply-body {
   margin: 4px 0 0;
   font-size: 14px;
   line-height: 1.7;
-  color: #334155;
+  color: var(--color-ink-700);
   white-space: pre-wrap;
   word-break: break-word;
 }

@@ -37,13 +37,13 @@ defineProps<{
 </script>
 
 <style scoped>
-.rs-pp-list { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; background: var(--rs-border); }
-.rs-pp-row { display: flex; gap: 1px; background: var(--rs-border); }
-.rs-pp-cell { position: relative; flex: 1 1 0; min-width: 0; padding: 28px; background: #fff; }
-.rs-pp-cell--solution { background: var(--rs-bg-cream); }
-.rs-pp-index { position: absolute; top: 20px; right: 24px; font-size: 24px; font-weight: 800; color: var(--rs-primary); opacity: 0.2; }
-.rs-pp-tag { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--rs-text-muted); }
-.rs-pp-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: var(--rs-text-dark); }
+/* 每行一张大圆角卡，行内三段用 1px 细线分隔；卡片底色与区块错开（--section-card 由 ChannelPage 给出） */
+.rs-pp-list { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.rs-pp-row { display: flex; gap: 1px; overflow: hidden; background: var(--rs-border); border-radius: var(--radius-xl); }
+.rs-pp-cell { position: relative; flex: 1 1 0; min-width: 0; padding: 28px 32px; background: var(--section-card, var(--rs-bg-cream)); }
+.rs-pp-index { position: absolute; top: 24px; right: 28px; font-size: 28px; font-weight: 700; color: var(--rs-text-muted); opacity: 0.3; }
+.rs-pp-tag { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--rs-text-muted); }
+.rs-pp-title { margin: 0 0 8px; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.35; color: var(--rs-text-dark); }
 .rs-pp-text { margin: 0; font-size: 14px; line-height: 1.75; color: var(--rs-text-body); }
 .rs-pp-text--strong { font-size: 15px; color: var(--rs-text-dark); }
 .rs-pp-value { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.5; color: var(--rs-primary); }

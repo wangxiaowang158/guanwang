@@ -1,7 +1,7 @@
 <template>
   <!-- 隐私政策：官网收集个人信息（在线留言、会员注册）的告知页，页脚常驻入口 -->
   <!-- 顶部留白需大于固定顶栏高度（样式二 76px），否则当前位置会被顶栏压住；本页无头图兜不住这段 -->
-  <div class="bg-white">
+  <div class="bg-canvas">
     <div class="max-w-3xl mx-auto px-6 lg:px-8 pt-[116px] pb-16 md:pb-24">
       <nav class="flex items-center gap-2 text-[13px] text-ink-500 mb-8" aria-label="当前位置">
         <RouterLink to="/" class="hover:text-brand-600 transition-colors">首页</RouterLink>

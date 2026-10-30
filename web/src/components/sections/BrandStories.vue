@@ -72,8 +72,7 @@ const storyHtml = computed(() => sanitizeRichText(active.value?.html ?? ''))
 </script>
 
 <style scoped>
-.bs { --bs-accent: var(--color-brand-600); --bs-radius: var(--radius-lg); display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
-.bs--s2 { --bs-accent: var(--rs-primary); --bs-radius: 0; }
+.bs { --bs-accent: var(--color-brand-600); --bs-radius: var(--radius-xl); display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 @media (min-width: 768px) { .bs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .bs--fixed { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); } }
 /* 只有一个品牌（未来人居的小鹿爱家）：图文左右排，不留半边空白 */
@@ -86,8 +85,8 @@ const storyHtml = computed(() => sanitizeRichText(active.value?.html ?? ''))
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--color-line);
+  /* 无描边：底色与区块错开分层 */
+  background: var(--section-card, var(--color-surface));
   border-radius: var(--bs-radius);
 }
 .bs-media { background: var(--color-surface); }
@@ -103,15 +102,16 @@ const storyHtml = computed(() => sanitizeRichText(active.value?.html ?? ''))
   min-height: 44px;
   margin-top: 16px;
   padding: 0 20px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   color: var(--bs-accent);
   background: none;
   border: 1px solid var(--bs-accent);
-  border-radius: var(--bs-radius);
+  border-radius: var(--radius-pill);
   cursor: pointer;
 }
-.bs-btn:hover { color: #fff; background: var(--bs-accent); }
+/* hover 实底白字用按钮蓝：深色下 --bs-accent（brand-600）是亮链接蓝，配白字不达标 */
+.bs-btn:hover { color: #fff; background: var(--color-action); border-color: var(--color-action); }
 .bs-btn:focus-visible { outline: 2px solid var(--bs-accent); outline-offset: 2px; }
 .bs-mask {
   --bs-accent: var(--color-brand-600);
@@ -122,21 +122,20 @@ const storyHtml = computed(() => sanitizeRichText(active.value?.html ?? ''))
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(0, 0, 0, 0.6);
 }
-.bs-mask.bs--s2 { --bs-accent: var(--rs-primary); }
 .bs-dialog {
   position: relative;
   width: 100%;
   max-width: 720px;
   max-height: calc(100svh - 32px);
   overflow-y: auto;
-  padding: 32px;
-  background: #fff;
-  border-radius: var(--radius-lg);
+  padding: 40px;
+  /* 弹窗 Teleport 到 body，色板跟随整站（html[data-tone]），深色站里是深灰底 */
+  background: var(--color-elevated);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-3);
 }
-.bs--s2 .bs-dialog { border-radius: 0; }
 .bs-dialog:focus { outline: none; }
 .bs-close {
   position: absolute;

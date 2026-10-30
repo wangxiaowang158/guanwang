@@ -2,7 +2,7 @@
   <!-- 线索预约弹窗：全站唯一一份，挂在 DefaultLayout；由 useLeadModal 的 openLead 唤起 -->
   <Teleport to="body">
     <Transition name="lead-fade">
-      <div v-if="visible" class="lead-mask" :class="{ 'lead--style2': theme.isStyle2 }" @mousedown.self="closeLead">
+      <div v-if="visible" class="lead-mask" @mousedown.self="closeLead">
         <div
           ref="dialogRef"
           class="lead-dialog"
@@ -96,10 +96,8 @@ import { useFocusTrap } from '@/composables/useFocusTrap'
 import { useFormGuard } from '@/composables/useFormGuard'
 import { useLeadModal } from '@/composables/useLeadModal'
 import HoneypotField from './HoneypotField.vue'
-import { useThemeStore } from '@/stores/theme'
 import { PHONE_PATTERN, checkOptionalEmail } from '@/utils/validators'
 
-const theme = useThemeStore()
 const route = useRoute()
 const { visible, leadType, sourceHint, closeLead } = useLeadModal()
 const guard = useFormGuard()
@@ -201,8 +199,10 @@ async function handleSubmit(): Promise<void> {
 <style scoped>
 .lead-mask {
   --lead-accent: var(--color-brand-600);
-  --lead-radius: var(--radius-lg);
+  --lead-radius: var(--radius-xl);
   --lead-ctl-radius: var(--radius-md);
+  /* 错误红：浅底 #d70015、深色站 #ff453a，对比度均 ≥ 4.5:1 */
+  --lead-danger: #d70015;
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -210,17 +210,17 @@ async function handleSubmit(): Promise<void> {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(0, 0, 0, 0.55);
 }
-.lead--style2 { --lead-accent: var(--rs-primary); --lead-radius: 0; --lead-ctl-radius: 0; }
+/* 弹窗卡：浅色站白、深色站 #1d1d1f；颜色全走色板变量 */
 .lead-dialog {
   position: relative;
   width: 100%;
   max-width: 600px;
   max-height: calc(100svh - 32px);
   overflow-y: auto;
-  padding: 32px;
-  background: #fff;
+  padding: 40px;
+  background: var(--color-elevated);
   border-radius: var(--lead-radius);
   box-shadow: var(--shadow-3);
 }
@@ -241,43 +241,46 @@ async function handleSubmit(): Promise<void> {
 }
 .lead-close:hover,
 .lead-close:focus-visible { color: var(--lead-accent); }
-.lead-title { margin: 0 40px 6px 0; font-size: var(--text-fs-h3); font-weight: 700; color: var(--color-ink-900); }
+:global([data-tone='dark']) .lead-mask { --lead-danger: #ff453a; }
+.lead-title { margin: 0 40px 6px 0; font-size: 28px; font-weight: 700; line-height: 1.2; color: var(--color-ink-900); }
 .lead-hint { margin: 0 0 20px; font-size: 14px; line-height: 1.7; color: var(--color-ink-500); }
 .lead-form { display: flex; flex-direction: column; gap: 16px; }
 .lead-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .lead-label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: var(--color-ink-700); }
-.lead-req { color: #dc2626; }
+.lead-req { color: var(--lead-danger); }
+/* 输入框取页面底色，与弹窗卡底错开 */
 .lead-input {
   width: 100%;
-  padding: 10px 12px;
-  font-size: 15px;
+  padding: 12px 14px;
+  font-size: var(--text-fs-body);
   color: var(--color-ink-900);
-  background: #fff;
+  background: var(--color-canvas);
   border: 1px solid var(--color-line);
   border-radius: var(--lead-ctl-radius);
 }
 .lead-input:focus-visible { outline: 2px solid var(--lead-accent); outline-offset: 1px; border-color: var(--lead-accent); }
-.lead-input.is-error { border-color: #dc2626; }
-.lead-err { margin: 4px 0 0; font-size: 13px; color: #dc2626; }
+.lead-input.is-error { border-color: var(--lead-danger); }
+.lead-err { margin: 4px 0 0; font-size: 13px; color: var(--lead-danger); }
 .lead-err--block { margin: 0; }
 .lead-count-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 4px; }
 .lead-count { font-size: 12px; color: var(--color-ink-500); font-variant-numeric: tabular-nums; }
 .lead-agree { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.7; color: var(--color-ink-500); cursor: pointer; }
 .lead-check { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--lead-accent); }
 .lead-link { color: var(--lead-accent); text-decoration: underline; }
+/* 胶囊按钮，按钮蓝底白字（深浅底一致） */
 .lead-submit {
-  height: 46px;
-  padding: 0 28px;
-  font-size: 15px;
+  height: 48px;
+  padding: 0 32px;
+  font-size: var(--text-fs-body);
   font-weight: 500;
   color: #fff;
-  background: var(--lead-accent);
+  background: var(--color-action);
   border: 0;
-  border-radius: var(--lead-ctl-radius);
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: filter var(--dur-fast);
+  transition: background-color var(--dur-fast);
 }
-.lead-submit:hover:not(:disabled) { filter: brightness(1.1); }
+.lead-submit:hover:not(:disabled) { background: var(--color-action-hover); }
 .lead-submit:disabled { cursor: progress; opacity: 0.7; }
 .lead-done { padding: 12px 0 4px; text-align: left; }
 

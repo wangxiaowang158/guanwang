@@ -2,7 +2,7 @@
   <!-- 首页新闻资讯：三列卡片（配图 + 日期 + 标题 + 摘要），整卡进详情；底部「更多资讯」进新闻页；无数据整块不渲染 -->
   <HomeBlock v-if="items.length" id="news" :eyebrow="eyebrow || '新闻资讯'" :title="title || '中瑞恒最新动态'" :style2="style2" :tone="tone || 'white'">
     <ul class="hn-grid">
-      <li v-for="item in items" :key="item.id" class="hn-card" :class="{ 'hn-card--s2': style2 }">
+      <li v-for="item in items" :key="item.id" class="hn-card">
         <ItemLink :item="item" link-class="hn-link" class="hn-inner">
           <div class="hn-media">
             <SafeImage :src="item.image" :fallback="fallback" :alt="item.title" :width="480" :height="270" />
@@ -16,7 +16,7 @@
       </li>
     </ul>
     <div class="hn-more-wrap">
-      <RouterLink to="/news" class="hn-more" :class="{ 'hn-more--s2': style2 }">更多资讯</RouterLink>
+      <RouterLink to="/news" class="hn-more">更多资讯</RouterLink>
     </div>
   </HomeBlock>
 </template>
@@ -52,19 +52,18 @@ const fallback = defaultImageOf('news')
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  /* 苹果式卡片：不描边、不投影，悬停只让图片缓慢放大 */
+  background: var(--hb-card, var(--color-elevated));
+  border-radius: var(--radius-xl);
 }
-.hn-card--s2 .hn-inner { border-radius: 0; }
-:deep(.hn-link) { color: inherit; text-decoration: none; transition: box-shadow var(--dur-fast); }
-:deep(.hn-link:hover) { box-shadow: var(--shadow-2); }
+:deep(.hn-link) { color: inherit; text-decoration: none; }
 :deep(.hn-link:focus-visible) { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
 .hn-media { aspect-ratio: 16 / 9; overflow: hidden; background: var(--color-surface); }
-.hn-media :deep(img) { width: 100%; height: 100%; object-fit: cover; }
-.hn-body { padding: 20px 24px 24px; }
+.hn-media :deep(img) { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease-out); }
+.hn-inner:hover .hn-media :deep(img) { transform: scale(1.04); }
+.hn-body { padding: 24px 28px 28px; }
 .hn-date { font-size: 13px; color: var(--color-ink-500); }
-.hn-title { margin: 8px 0 0; font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--color-ink-900); }
+.hn-title { margin: 8px 0 0; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.4; color: var(--color-ink-900); }
 .hn-desc {
   display: -webkit-box;
   margin: 8px 0 0;
@@ -75,19 +74,15 @@ const fallback = defaultImageOf('news')
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.hn-more-wrap { margin-top: 32px; text-align: center; }
+.hn-more-wrap { margin-top: 48px; text-align: center; }
+/* 「查看全部」用苹果式文字链：蓝字 + 箭头 */
 .hn-more {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 28px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-fs-body);
   color: var(--color-brand-600);
-  border: 1px solid var(--color-brand-600);
-  border-radius: var(--radius-md);
 }
-.hn-more:hover { color: #fff; background: var(--color-brand-600); }
-.hn-more--s2 { color: var(--rs-primary); border-color: var(--rs-primary); border-radius: 0; }
-.hn-more--s2:hover { background: var(--rs-primary); }
+.hn-more::after { content: '›'; margin-left: 4px; font-size: 1.2em; line-height: 1; }
+.hn-more:hover { text-decoration: underline; }
 </style>

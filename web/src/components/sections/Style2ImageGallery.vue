@@ -31,7 +31,7 @@ withDefaults(defineProps<{
 .rs-ig-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 2px;
+  gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -40,7 +40,7 @@ withDefaults(defineProps<{
 .rs-ig-grid--fixed { grid-template-columns: 1fr; }
 @media (min-width: 640px) { .rs-ig-grid--fixed { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .rs-ig-grid--fixed { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); } }
-.rs-ig-item { aspect-ratio: 4 / 3; overflow: hidden; background: var(--rs-bg-cream); }
-.rs-ig-item :deep(img) { transition: transform 0.5s ease; }
-.rs-ig-item:hover :deep(img) { transform: scale(1.05); }
+.rs-ig-item { aspect-ratio: 4 / 3; overflow: hidden; background: var(--rs-bg-cream); border-radius: var(--radius-lg); }
+.rs-ig-item :deep(img) { transition: transform var(--dur-slow) var(--ease-out); }
+.rs-ig-item:hover :deep(img) { transform: scale(1.04); }
 </style>

@@ -2,12 +2,12 @@
 
 .cb-tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 10px;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-brand-700);
   background: var(--color-brand-50);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
 }
 
 /* 业务线 / 行业标签：与 cb-tag 区分，用描边弱化，允许窄屏换行 */
@@ -24,7 +24,7 @@
   font-size: 12px;
   color: var(--color-ink-700);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
 }
 
 /* ── 图文条目 ── */
@@ -33,43 +33,37 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
-}
-.cb-card-link {
-  transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base) var(--ease-out);
-}
-.cb-card-link:hover {
-  border-color: var(--color-brand-200);
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+  /* 苹果式卡片：无描边无阴影，靠与区块底色错开的底色分层。
+     --section-card 由 ChannelPage 按区块底色给出（浅灰底区块配白卡），缺省浅灰卡 */
+  background: var(--section-card, var(--color-surface));
+  border-radius: var(--radius-xl);
 }
 .cb-card-media {
   aspect-ratio: 16 / 10;
   overflow: hidden;
   background: var(--color-surface);
 }
+/* hover 只让图片缓慢放大，不上浮不加阴影 */
 .cb-card-media :deep(img) { transition: transform var(--dur-slow) var(--ease-out); }
 .cb-card-link:hover .cb-card-media :deep(img) { transform: scale(1.04); }
 .cb-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 28px;
 }
 .cb-card-index {
-  font-size: 13px;
+  font-size: 28px;
   font-weight: 700;
-  color: var(--color-brand-300);
-  letter-spacing: 0.06em;
-  margin-bottom: 16px;
+  line-height: 1;
+  color: var(--color-ink-400);
+  margin-bottom: 20px;
 }
 .cb-card-title {
   margin: 0 0 8px;
-  font-size: var(--text-fs-h4);
-  font-weight: 600;
-  line-height: 1.45;
+  font-size: var(--text-fs-h3);
+  font-weight: 700;
+  line-height: 1.3;
   color: var(--color-ink-900);
   transition: color var(--dur-fast);
 }

@@ -23,16 +23,19 @@ const { display } = useCountUp(elRef, props.value)
   font-weight: 700;
   color: #fff;
   line-height: 1.1;
+  /* 数字是拉丁字形，收紧字距；单位与标签是中文，不收 */
   letter-spacing: -0.02em;
 }
 .hero-stat-value span {
   font-size: 0.5em;
   margin-left: 2px;
-  color: var(--color-accent);
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.72);
 }
 .hero-stat-label {
   margin-top: 6px;
   font-size: var(--text-fs-sm);
-  color: rgba(226, 232, 240, 0.75);
+  /* 首屏恒为深色遮罩：#a1a1a6 在黑底 8:1 */
+  color: #a1a1a6;
 }
 </style>

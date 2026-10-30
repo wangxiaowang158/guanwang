@@ -31,10 +31,9 @@ defineProps<{ items: ExtraMetric[]; style2?: boolean }>()
 @media (min-width: 768px) {
   .ah { grid-template-columns: repeat(var(--ah-cols, 4), minmax(0, 1fr)); }
 }
-.ah--s2 { border-radius: 0; }
-.ah-item { padding: 18px 20px; background: var(--color-surface, #f7f9fc); }
+.ah-item { padding: 20px 24px; background: var(--color-surface); }
 .ah-label { margin: 0 0 6px; font-size: var(--text-fs-caption, 13px); color: var(--color-ink-500); }
-.ah-value { margin: 0; font-size: clamp(24px, 2.6vw, 32px); font-weight: 700; line-height: 1.2; color: var(--color-brand-600); }
-.ah--s2 .ah-value { color: var(--rs-primary); }
+/* 大数字用主文字色：苹果式数据展示靠字号说话，不靠彩色 */
+.ah-value { margin: 0; font-size: clamp(28px, 3vw, 40px); font-weight: 700; line-height: 1.15; color: var(--color-ink-900); }
 .ah-unit { margin-left: 2px; font-size: 0.5em; font-weight: 600; }
 </style>

@@ -5,6 +5,7 @@ import type { HomeSectionConfig, HomeSectionKey, HomeSections, HomeTone, SiteInf
 import type { PageItem } from '@/api/page'
 import type { BusinessBrief } from './useHomeShowcase'
 import { useHomeCopy } from './useHomeCopy'
+import type { SiteTone } from '@/stores/theme'
 
 /** 后台未保存过布局（或接口还没返回）时的顺序，与后端 HOME_SECTIONS 一致 */
 const DEFAULT_ORDER: HomeSectionKey[] = ['business-trio', 'advantage', 'case', 'news', 'partner', 'view', 'contact']
@@ -30,6 +31,11 @@ export function useHomeLayout(
   briefs: Ref<BusinessBrief[]>,
   news: Ref<PageItem[]>,
   cases: Ref<PageItem[]>,
+  /**
+   * 整站色调：mixed（样式三）时 auto 块在「白 / 黑」间交替，否则在「浅灰 / 白」间交替；
+   * dark（样式一）时白底与深色底同为纯黑，比较相邻块时把 dark 视同 white，免得连成一片
+   */
+  siteTone: () => SiteTone = () => 'light',
 ) {
   const { heading, contactHeading } = useHomeCopy(sections, site)
 
@@ -68,17 +74,22 @@ export function useHomeLayout(
    */
   const rendered = computed<RenderedSection[]>(() => {
     const list = layout.value.filter(cfg => cfg.visible && hasContent(cfg.key))
+    // 交替的两种底色：样式三首屏是黑，首块白、再黑白相间；其余首块浅灰、再白灰相间
+    const t = siteTone()
+    const [first, second]: RenderedSection['tone'][] = t === 'mixed' ? ['white', 'dark'] : ['surface', 'white']
+    // 深色站里 white 与 dark 渲染出来都是纯黑，按「看起来的颜色」比较
+    const look = (x?: HomeTone) => (t === 'dark' && x === 'dark' ? 'white' : x)
     const out: RenderedSection[] = []
     list.forEach((cfg, i) => {
       let tone: RenderedSection['tone']
       if (cfg.tone !== 'auto') tone = cfg.tone
       else {
-        const prev = out[i - 1]?.tone
-        const nextFixed = list[i + 1]?.tone !== 'auto' ? list[i + 1]?.tone : undefined
-        tone = prev === 'surface' ? 'white' : 'surface'
+        const prev = look(out[i - 1]?.tone)
+        const nextFixed = list[i + 1]?.tone !== 'auto' ? look(list[i + 1]?.tone) : undefined
+        tone = prev === first ? second : first
         // 与下一块撞色且换一个不会撞上一块时才换，优先保证和上一块错开
         if (tone === nextFixed) {
-          const alt = tone === 'surface' ? 'white' : 'surface'
+          const alt = tone === first ? second : first
           if (alt !== prev) tone = alt
         }
       }

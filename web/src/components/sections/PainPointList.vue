@@ -39,31 +39,30 @@ defineProps<{
 .pp-list { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none; }
 .pp-row {
   display: flex;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  /* 无描边：底色与区块错开分层（--section-card 由 ChannelPage 给出） */
+  background: var(--section-card, var(--color-surface));
+  border-radius: var(--radius-xl);
   overflow: hidden;
 }
-.pp-cell { position: relative; flex: 1 1 0; min-width: 0; padding: 24px 28px; }
-/* 段与段之间用品牌色箭头衔接，表达「问题 → 方案 → 结果」的方向 */
+.pp-cell { position: relative; flex: 1 1 0; min-width: 0; padding: 28px 32px; }
+/* 段与段之间用细分隔线 + 小箭头衔接，表达「问题 → 方案 → 结果」的方向；箭头底色与卡片同色才看不出接缝 */
 .pp-cell + .pp-cell { border-left: 1px solid var(--color-line); }
 .pp-cell + .pp-cell::before {
   content: '';
   position: absolute;
   left: -7px;
-  top: 32px;
+  top: 36px;
   width: 12px;
   height: 12px;
-  background: #fff;
+  background: var(--section-card, var(--color-surface));
   border-top: 1px solid var(--color-line);
   border-right: 1px solid var(--color-line);
   transform: rotate(45deg);
 }
-.pp-cell--solution { background: var(--color-brand-50); }
-.pp-tag { margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--color-ink-500); }
+.pp-tag { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--color-ink-500); }
 .pp-cell--solution .pp-tag,
 .pp-cell--value .pp-tag { color: var(--color-brand-600); }
-.pp-title { margin: 0 0 8px; font-size: var(--text-fs-h4); font-weight: 600; line-height: 1.45; color: var(--color-ink-900); }
+.pp-title { margin: 0 0 8px; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.35; color: var(--color-ink-900); }
 .pp-text { margin: 0; font-size: 14px; line-height: 1.75; color: var(--color-ink-700); }
 .pp-text--strong { font-size: 15px; color: var(--color-ink-900); }
 .pp-value { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.5; color: var(--color-brand-600); }

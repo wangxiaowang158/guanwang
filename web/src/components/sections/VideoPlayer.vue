@@ -57,7 +57,7 @@ watch(() => props.src, () => { failed.value = false })
   /* 固定 16:9 占位，避免视频元数据到达前的高度跳动 */
   aspect-ratio: 16 / 9;
   background: #000;
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   object-fit: contain;
 }
 
@@ -74,9 +74,9 @@ watch(() => props.src, () => { failed.value = false })
 }
 
 .video-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-ink-900);
 }
 
 .video-desc {

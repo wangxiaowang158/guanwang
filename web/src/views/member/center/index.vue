@@ -76,12 +76,12 @@ async function onLogout() {
 .center {
   padding-top: 64px;
   min-height: 70vh;
-  background: var(--zrh-bg-page, #f8fafc);
+  background: var(--color-surface);
 }
 
 .center-head {
-  background: #fff;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: var(--color-canvas);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .center-head-inner {
@@ -105,7 +105,7 @@ async function onLogout() {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--brand-primary, #0ea5e9);
+  background: var(--color-action);
   color: #fff;
   font-size: 20px;
   font-weight: 600;
@@ -122,7 +122,7 @@ async function onLogout() {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-ink-900);
 }
 
 .center-phone {

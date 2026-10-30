@@ -2,7 +2,7 @@
   <!-- 首页项目案例：三列卡片（配图 + 行业/模式标签 + 标题 + 两个量化结果），整卡进详情；底部「全部案例」进案例页；无数据整块不渲染 -->
   <HomeBlock v-if="items.length" id="case" :eyebrow="eyebrow || '项目案例'" :title="title || '用节能数据说话的标杆项目'" :style2="style2" :tone="tone || 'white'">
     <ul class="hc-grid">
-      <li v-for="item in items" :key="item.id" class="hc-card" :class="{ 'hc-card--s2': style2 }">
+      <li v-for="item in items" :key="item.id" class="hc-card">
         <ItemLink :item="item" link-class="hc-link" class="hc-inner">
           <div class="hc-media">
             <SafeImage :src="item.image" :fallback="fallback" :alt="item.title" :width="480" :height="270" />
@@ -25,7 +25,7 @@
       </li>
     </ul>
     <div class="hc-more-wrap">
-      <RouterLink to="/case" class="hc-more" :class="{ 'hc-more--s2': style2, 'hc-more--dark': tone === 'dark' }">查看全部案例</RouterLink>
+      <RouterLink to="/case" class="hc-more">查看全部案例</RouterLink>
     </div>
   </HomeBlock>
 </template>
@@ -76,28 +76,28 @@ const fallback = defaultImageOf('case')
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--hb-card, #fff);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  /* 苹果式卡片：不描边、不投影，靠与板块底色错开的卡片底色（--hb-card）分层 */
+  background: var(--hb-card, var(--color-elevated));
+  border-radius: var(--radius-xl);
 }
-.hc-card--s2 .hc-inner { border-radius: 0; border-top: 3px solid var(--rs-primary); }
-:deep(.hc-link) { color: inherit; text-decoration: none; transition: box-shadow var(--dur-fast), transform var(--dur-fast); }
-:deep(.hc-link:hover) { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+:deep(.hc-link) { color: inherit; text-decoration: none; }
+/* 悬停只让图片缓慢放大，卡片本身不上浮不加阴影 */
+.hc-media :deep(img) { transition: transform var(--dur-slow) var(--ease-out); }
+.hc-inner:hover .hc-media :deep(img) { transform: scale(1.04); }
 :deep(.hc-link:focus-visible) { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
 .hc-media { aspect-ratio: 16 / 9; overflow: hidden; background: var(--color-surface); }
 .hc-media :deep(img) { width: 100%; height: 100%; object-fit: cover; }
-.hc-body { display: flex; flex: 1; flex-direction: column; padding: 20px 24px 24px; }
+.hc-body { display: flex; flex: 1; flex-direction: column; padding: 24px 28px 28px; }
 .hc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
 .hc-tag {
   padding: 2px 10px;
   font-size: 12px;
   line-height: 20px;
-  color: var(--color-brand-700, #1645c4);
-  background: var(--color-brand-50, #eef4ff);
+  color: var(--color-ink-500);
+  background: var(--color-surface);
   border-radius: 999px;
 }
-.hc-card--s2 .hc-tag { color: var(--rs-primary); background: transparent; border: 1px solid currentColor; border-radius: 0; }
-.hc-title { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--color-ink-900); overflow-wrap: anywhere; }
+.hc-title { margin: 0; font-size: var(--text-fs-h3); font-weight: 700; line-height: 1.35; color: var(--color-ink-900); overflow-wrap: anywhere; }
 .hc-desc {
   display: -webkit-box;
   margin: 8px 0 0;
@@ -112,25 +112,17 @@ const fallback = defaultImageOf('case')
 .hc-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: auto 0 0; padding-top: 16px; }
 .hc-metric { padding-top: 12px; border-top: 1px solid var(--color-line); }
 .hc-metric-label { font-size: 12px; color: var(--color-ink-500); }
-.hc-metric-value { margin: 4px 0 0; font-size: 24px; font-weight: 700; line-height: 1.2; color: var(--color-brand-600); }
-.hc-card--s2 .hc-metric-value { color: var(--rs-primary); }
-.hc-metric-unit { margin-left: 2px; font-size: 13px; font-weight: 500; }
-.hc-more-wrap { margin-top: 32px; text-align: center; }
+.hc-metric-value { margin: 4px 0 0; font-size: 28px; font-weight: 700; line-height: 1.15; color: var(--color-ink-900); }
+.hc-metric-unit { margin-left: 2px; font-size: 14px; font-weight: 500; color: var(--color-ink-500); }
+.hc-more-wrap { margin-top: 48px; text-align: center; }
+/* 「查看全部」用苹果式文字链：蓝字 + 箭头，不做描边按钮 */
 .hc-more {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 28px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-fs-body);
   color: var(--color-brand-600);
-  border: 1px solid var(--color-brand-600);
-  border-radius: var(--radius-md);
 }
-.hc-more:hover { color: #fff; background: var(--color-brand-600); }
-.hc-more--s2 { color: var(--rs-primary); border-color: var(--rs-primary); border-radius: 0; }
-.hc-more--s2:hover { background: var(--rs-primary); }
-/* 深色底：按钮反白，否则品牌色描边在深蓝上看不清 */
-.hc-more--dark { color: #fff; border-color: rgba(255, 255, 255, 0.7); }
-.hc-more--dark:hover { color: var(--color-navy-950); background: #fff; }
+.hc-more::after { content: '›'; margin-left: 4px; font-size: 1.2em; line-height: 1; }
+.hc-more:hover { text-decoration: underline; }
 </style>

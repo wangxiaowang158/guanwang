@@ -203,14 +203,14 @@ onMounted(async () => {
 .as-block + .as-block {
   margin-top: 32px;
   padding-top: 28px;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-top: 1px solid var(--color-line);
 }
 
 .as-title {
   margin: 0 0 16px;
   font-size: 15px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-ink-900);
 }
 
 .as-hint {

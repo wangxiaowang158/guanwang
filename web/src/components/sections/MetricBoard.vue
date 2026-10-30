@@ -40,14 +40,14 @@ defineProps<{
 .mb-item {
   display: flex;
   flex-direction: column;
-  padding: 28px 20px;
+  padding: 36px 24px;
   text-align: center;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  background: var(--section-card, var(--color-surface));
+  border-radius: var(--radius-xl);
 }
-.mb-value { order: -1; margin: 0 0 8px; font-size: clamp(32px, 3.4vw, 44px); font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; color: var(--color-brand-600); }
-.mb-unit { margin-left: 4px; font-size: 18px; font-weight: 600; }
+/* 苹果式数据：超大数字、深色字，数字本身就是视觉重点，不再上品牌色 */
+.mb-value { order: -1; margin: 0 0 10px; font-size: clamp(40px, 4.6vw, 64px); font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; color: var(--color-ink-900); }
+.mb-unit { margin-left: 4px; font-size: 20px; font-weight: 600; }
 .mb-label { font-size: 15px; font-weight: 500; color: var(--color-ink-900); }
 .mb-note { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: var(--color-ink-500); }
 

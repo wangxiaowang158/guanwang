@@ -4,7 +4,7 @@
   <HomeBlock v-if="items.length" id="partner" :eyebrow="eyebrow || '战略合作'" :title="title || '产业伙伴 · 科创伙伴 · 合作伙伴'" :style2="style2" :tone="tone || 'surface'">
     <div class="hp-groups">
       <section v-for="g in groups" :key="g.name" class="hp-group">
-        <h3 class="hp-group-title" :class="{ 'hp-group-title--s2': style2 }">{{ g.name }}</h3>
+        <h3 class="hp-group-title">{{ g.name }}</h3>
         <ul class="hp-grid">
           <li v-for="p in g.items" :key="p.id">
             <component
@@ -12,8 +12,7 @@
               :href="safeExternalUrl(p.link) || undefined"
               :target="safeExternalUrl(p.link) ? '_blank' : undefined"
               :rel="safeExternalUrl(p.link) ? 'noopener noreferrer' : undefined"
-              class="hp-item"
-              :class="{ 'hp-item--s2': style2 }"
+              class="hp-item tone-light"
             >
               <img v-if="imgs.usable(p.logo)" :src="p.logo" :alt="p.name" class="hp-logo" width="140" height="48" loading="lazy" @error="imgs.markBroken(p.logo)" />
               <span v-else>{{ p.name }}</span>
@@ -67,13 +66,10 @@ const imgs = useBrokenImages()
 .hp-groups { display: flex; flex-direction: column; gap: 40px; }
 .hp-group-title {
   margin: 0 0 16px;
-  padding-left: 12px;
-  font-size: 18px;
+  font-size: var(--text-fs-h4);
   font-weight: 700;
   color: var(--color-ink-900);
-  border-left: 3px solid var(--color-brand-600);
 }
-.hp-group-title--s2 { border-left-color: var(--rs-primary); }
 .hp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 @media (min-width: 768px) { .hp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1200px) { .hp-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
@@ -86,12 +82,12 @@ const imgs = useBrokenImages()
   font-size: 14px;
   color: var(--color-ink-700);
   text-align: center;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  /* logo 多为深色图形，格子恒为浅底（模板上加了 tone-light），深色站里也看得清 */
+  background: var(--color-canvas);
+  border-radius: var(--radius-lg);
+  transition: opacity var(--dur-fast);
 }
-.hp-item--s2 { border-radius: 0; }
-a.hp-item:hover { border-color: var(--color-brand-600); }
+a.hp-item:hover { opacity: 0.8; }
 a.hp-item:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
 .hp-logo { max-width: 100%; max-height: 48px; object-fit: contain; }
 </style>

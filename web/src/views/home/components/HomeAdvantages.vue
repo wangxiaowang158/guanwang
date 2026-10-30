@@ -2,7 +2,7 @@
   <!-- 首页核心优势：四张卡（图标或序号 + 标题 + 说明）；无数据整块不渲染 -->
   <HomeBlock v-if="items.length" id="advantage" :eyebrow="eyebrow || '核心优势'" :title="title || '从方案到交付的全程保障'" :style2="style2" :tone="tone || 'white'">
     <ul class="ha-grid">
-      <li v-for="(item, i) in items" :key="item.id" class="ha-card" :class="{ 'ha-card--s2': style2 }">
+      <li v-for="(item, i) in items" :key="item.id" class="ha-card">
         <!-- 后台选了图标显示图标，未选（或图标已下架）回落为序号 -->
         <component :is="homeIconOf(item.icon)" v-if="homeIconOf(item.icon)" class="ha-icon" aria-hidden="true" />
         <span v-else class="ha-index tabular-nums" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
@@ -38,13 +38,10 @@ defineProps<{
   padding: 32px 24px;
   text-align: center;
   background: var(--hb-card, var(--color-surface));
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
 }
-.ha-card--s2 { background: var(--hb-card, var(--rs-bg-cream)); border-radius: 0; border-top: 3px solid var(--rs-primary); }
 .ha-icon { width: 40px; height: 40px; margin: 0 auto 16px; color: var(--color-brand-600); }
-.ha-card--s2 .ha-icon { color: var(--rs-primary); }
-.ha-index { display: block; margin-bottom: 12px; font-size: 28px; font-weight: 800; color: var(--color-brand-600); opacity: 0.35; }
-.ha-card--s2 .ha-index { color: var(--rs-primary); }
-.ha-title { margin: 0; font-size: 18px; font-weight: 700; color: var(--color-ink-900); }
+.ha-index { display: block; margin-bottom: 12px; font-size: 28px; font-weight: 700; color: var(--color-ink-400); }
+.ha-title { margin: 0; font-size: var(--text-fs-h4); font-weight: 700; color: var(--color-ink-900); }
 .ha-desc { margin: 10px 0 0; font-size: 14px; line-height: 1.7; color: var(--color-ink-500); }
 </style>

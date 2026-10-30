@@ -41,7 +41,7 @@ withDefaults(defineProps<{
 .ig-grid--fixed { grid-template-columns: 1fr; }
 @media (min-width: 640px) { .ig-grid--fixed { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .ig-grid--fixed { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); } }
-.ig-item { aspect-ratio: 16 / 10; overflow: hidden; background: var(--color-surface); border-radius: var(--radius-md); }
+.ig-item { aspect-ratio: 16 / 10; overflow: hidden; background: var(--color-surface); border-radius: var(--radius-lg); }
 /* 首张跨两列两行，形成主次；仅在宽屏、图片多于两张时启用 */
 @media (min-width: 900px) {
   .ig-item--lead { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }

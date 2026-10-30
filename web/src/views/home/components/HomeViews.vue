@@ -2,7 +2,7 @@
   <!-- 首页「我眼中的中瑞恒」：媒体报道与行业评价，四列卡片（配图或视频 + 标题 + 说明），有链接时整卡新窗口打开；无数据整块不渲染 -->
   <HomeBlock v-if="items.length" id="view" :eyebrow="eyebrow || '我眼中的中瑞恒'" :title="title || '媒体与行业的关注和认可'" :style2="style2" :tone="tone || 'white'">
     <ul class="hv-grid">
-      <li v-for="v in items" :key="v.id" class="hv-card" :class="{ 'hv-card--s2': style2 }">
+      <li v-for="v in items" :key="v.id" class="hv-card">
         <component
           :is="safeExternalUrl(v.link) ? 'a' : 'article'"
           :href="safeExternalUrl(v.link) || undefined"
@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-// 首页「我眼中的中瑞恒」，后台「首页 → 我眼中的中瑞恒」维护；两套样式共用，style2 切直角红条
+// 首页「我眼中的中瑞恒」，后台「首页 → 我眼中的中瑞恒」维护；三套样式共用同一外观，底色随板块色调
 import type { ViewItem } from '@/api/home'
 import SafeMedia from '@/components/common/SafeMedia.vue'
 import { HOME_DEFAULT_IMAGES } from '@/config/defaultImages'
@@ -54,29 +54,21 @@ const fallback = HOME_DEFAULT_IMAGES.view
   overflow: hidden;
   color: inherit;
   text-decoration: none;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
-  transition: box-shadow var(--dur-base), transform var(--dur-base) var(--ease-out);
+  /* 苹果式卡片：不描边、不投影、悬停不上浮，只让图片缓慢放大 */
+  background: var(--hb-card, var(--color-elevated));
+  border-radius: var(--radius-xl);
 }
-a.hv-inner:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
 a.hv-inner:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
-.hv-card--s2 .hv-inner { border: 0; border-top: 2px solid var(--rs-primary); border-radius: 0; }
-.hv-card--s2 a.hv-inner:focus-visible { outline-color: var(--rs-primary); }
-.hv-media { aspect-ratio: 16 / 9; overflow: hidden; background: var(--color-brand-50); }
-.hv-card--s2 .hv-media { background: var(--rs-bg-cream); }
+.hv-media { aspect-ratio: 16 / 9; overflow: hidden; background: var(--color-surface); }
 .hv-media :deep(img),
-.hv-media :deep(video) { transition: transform 0.5s ease; }
+.hv-media :deep(video) { transition: transform var(--dur-slow) var(--ease-out); }
 a.hv-inner:hover .hv-media :deep(img),
 a.hv-inner:hover .hv-media :deep(video) { transform: scale(1.04); }
 @media (prefers-reduced-motion: reduce) {
-  a.hv-inner:hover { transform: none; }
   a.hv-inner:hover .hv-media :deep(img),
   a.hv-inner:hover .hv-media :deep(video) { transform: none; }
 }
-.hv-body { padding: 20px 24px 24px; }
-.hv-title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.5; color: var(--color-ink-900); }
-.hv-card--s2 .hv-title { font-weight: 700; color: var(--rs-text-dark); }
+.hv-body { padding: 24px 28px 28px; }
+.hv-title { margin: 0; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.4; color: var(--color-ink-900); }
 .hv-desc { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--color-ink-500); }
-.hv-card--s2 .hv-desc { color: var(--rs-text-muted); }
 </style>

@@ -2,8 +2,8 @@
   <!-- 三大业务：配图 + 业务名 + 主张 + 一句话说明 + 查看详情；缺字段的行不显示，无数据整块不渲染 -->
   <HomeBlock v-if="briefs.length" id="business-trio" :eyebrow="eyebrow || '三大业务'" :title="title || '能源智能体 · 建筑生命体 · 未来人居'" :style2="style2" :tone="tone || 'surface'">
     <ul class="ht-grid">
-      <li v-for="(b, i) in briefs" :key="b.key" class="ht-card" :class="{ 'ht-card--s2': style2 }">
-        <div v-if="b.image || b.video" class="ht-media">
+      <li v-for="(b, i) in briefs" :key="b.key" class="ht-card">
+        <div v-if="b.image || b.video" class="ht-media tone-light">
           <SafeMedia :image="b.image" :video="b.video" :alt="b.title || b.name" :width="480" :height="300" fit="contain" class="ht-img" />
         </div>
         <span v-else class="ht-index tabular-nums" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
@@ -51,22 +51,17 @@ defineProps<{
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 32px 28px;
-  background: var(--hb-card, #fff);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  /* 苹果式卡片：不描边，靠卡片底色与板块底色错开分层 */
+  background: var(--hb-card, var(--color-elevated));
+  border-radius: var(--radius-xl);
 }
-.ht-card--s2 { border: 0; border-top: 3px solid var(--rs-primary); border-radius: 0; }
-.ht-index { font-size: 24px; font-weight: 800; color: var(--color-brand-600); opacity: 0.25; }
-.ht-card--s2 .ht-index { color: var(--rs-primary); }
-.ht-name { margin: 8px 0 12px; font-size: var(--text-fs-caption); font-weight: 600; letter-spacing: 0.08em; color: var(--color-brand-600); }
-.ht-card--s2 .ht-name { color: var(--rs-primary); }
-.ht-pain { margin: 0 0 16px; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.5; color: var(--color-ink-900); overflow-wrap: anywhere; }
-.ht-card--s2 .ht-pain { color: var(--rs-text-dark); }
+.ht-index { font-size: 24px; font-weight: 700; color: var(--color-ink-400); }
+.ht-name { margin: 8px 0 12px; font-size: var(--text-fs-sm); font-weight: 600; color: var(--color-ink-500); }
+.ht-pain { margin: 0 0 16px; font-size: var(--text-fs-h3); font-weight: 700; line-height: 1.35; color: var(--color-ink-900); overflow-wrap: anywhere; }
 .ht-row { margin: 0 0 12px; font-size: var(--text-fs-sm); line-height: 1.8; color: var(--color-ink-700); overflow-wrap: anywhere; }
-.ht-card--s2 .ht-row { color: var(--rs-text-body); }
-/* 配图贴卡片顶边铺满：抵消卡片内边距；信息图按比例完整显示，不裁切 */
-.ht-media { margin: -32px -28px 16px; overflow: hidden; background: #fff; border-bottom: 1px solid var(--color-line); }
+/* 配图贴卡片顶边铺满：抵消卡片内边距；信息图多为白底，放进浅色作用域，深色站里也不突兀 */
+.ht-media { margin: -36px -32px 20px; overflow: hidden; background: var(--color-canvas); }
 .ht-media .ht-img { display: block; width: 100%; height: 200px; object-fit: contain; }
 /* 说明文字最多四行，三张卡高度接近 */
 .ht-row { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -79,15 +74,13 @@ defineProps<{
   padding: 0 12px;
   font-size: 13px;
   color: var(--color-ink-700);
-  background: #fff;
+  background: transparent;
   border: 1px solid var(--color-line);
   border-radius: 999px;
   transition: color var(--dur-fast), border-color var(--dur-fast);
 }
 .ht-scene:hover { color: var(--color-brand-600); border-color: var(--color-brand-600); }
 .ht-scene:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
-.ht-card--s2 .ht-scene { border-radius: 0; }
-.ht-card--s2 .ht-scene:hover { color: var(--rs-primary); border-color: var(--rs-primary); }
 /* 链接推到卡片底部，三张卡内容长短不一时底部对齐 */
 .ht-more {
   display: inline-flex;
@@ -96,10 +89,8 @@ defineProps<{
   min-height: 44px;
   margin-top: auto;
   padding-top: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-fs-body);
   color: var(--color-brand-600);
 }
-.ht-card--s2 .ht-more { color: var(--rs-primary); }
 .ht-more:hover { text-decoration: underline; }
 </style>

@@ -4,7 +4,12 @@ import App from './App.vue'
 import router from './router'
 import { onAuthExpired } from './api/request'
 import { useMemberStore } from './stores/member'
+import { applyCachedSiteTone } from './stores/theme'
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import './style.css'
+
+// 模板确定前根组件不渲染，这段时间按上次的色调铺底色，深色站不先闪白
+applyCachedSiteTone()
 
 const app = createApp(App)
 app.use(createPinia())

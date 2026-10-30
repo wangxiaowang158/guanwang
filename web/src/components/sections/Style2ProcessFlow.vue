@@ -28,18 +28,17 @@ defineProps<{
 </script>
 
 <style scoped>
+/* 独立大圆角卡片网格，无描边；底色与区块错开分层 */
 .rs-pf-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1px;
+  gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
-  background: var(--rs-border);
-  border: 1px solid var(--rs-border);
 }
-.rs-pf-item { display: flex; align-items: flex-start; gap: 20px; padding: 28px; background: #fff; }
-.rs-pf-num { flex-shrink: 0; font-size: 32px; font-weight: 800; line-height: 1; color: var(--rs-primary); }
-.rs-pf-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: var(--rs-text-dark); }
+.rs-pf-item { display: flex; align-items: flex-start; gap: 20px; padding: 28px; background: var(--section-card, var(--rs-bg-cream)); border-radius: var(--radius-xl); }
+.rs-pf-num { flex-shrink: 0; font-size: 32px; font-weight: 700; line-height: 1; color: var(--rs-primary); }
+.rs-pf-title { margin: 0 0 8px; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.35; color: var(--rs-text-dark); }
 .rs-pf-desc { margin: 0; font-size: 14px; line-height: 1.75; color: var(--rs-text-muted); }
 </style>

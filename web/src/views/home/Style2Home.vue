@@ -37,7 +37,7 @@
 </template>
 <!-- STYLE2_HOME_SCRIPT -->
 <script setup lang="ts">
-// 样式二首页（集团品牌风）：复用首页聚合数据，仅呈现层不同
+// 样式二首页（浅色）：复用首页聚合数据，仅首屏呈现层不同
 import { ref, computed, onMounted } from 'vue'
 import { getHomeSections, recordVisit } from '@/api/home'
 import type { HomeSections } from '@/api/home'
@@ -107,7 +107,8 @@ onMounted(async () => {
   min-height: min(100svh, 880px);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(120deg, #1a1a1a 0%, #2a1416 55%, #3a161a 100%);
+  /* 首屏背景是任意照片，白字必须压在深色遮罩上，故浅色站首屏也保持深色 */
+  background: #000;
   overflow: hidden;
 }
 .rs-hero-media {
@@ -122,26 +123,23 @@ onMounted(async () => {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background:
-    radial-gradient(circle at 78% 30%, rgba(200, 22, 29, 0.28), transparent 42%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.2) 60%);
+  /* 中性黑遮罩：上浅下深，标题区可读、照片本身仍是主角 */
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.25) 65%);
   pointer-events: none;
 }
 .rs-hero-tag {
   display: inline-block;
-  font-size: 13px;
-  letter-spacing: 0.2em;
+  font-size: var(--text-fs-body-lg);
+  font-weight: 600;
   color: var(--rs-text-light-sub);
-  padding-bottom: 14px;
-  border-bottom: 2px solid var(--rs-primary);
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 /* 中文标题不用合成加粗与负字距，理由同样式一 */
 .rs-hero-title {
   font-size: var(--rs-text-hero);
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
-  line-height: 1.2;
+  line-height: 1.1;
   letter-spacing: 0;
 }
 .rs-hero-title-part {
@@ -153,8 +151,8 @@ onMounted(async () => {
 /* STYLE2_HERO_CSS2 */
 .rs-hero-desc {
   margin-top: 24px;
-  font-size: 16px;
-  line-height: 1.9;
+  font-size: var(--text-fs-body-lg);
+  line-height: 1.7;
   color: var(--rs-text-light-sub);
   max-width: 36rem;
 }
@@ -167,12 +165,11 @@ onMounted(async () => {
   /* 顶栏 76px 叠在首屏上，文案整体下移避开 */
   padding: 128px 0 64px;
 }
+/* 数据条不做毛玻璃（全站毛玻璃只留给顶栏），只用一条细分隔线与首屏分开 */
 .rs-hero-stats {
   position: relative;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.04);
-  border-top: 1px solid var(--rs-border-dark);
-  backdrop-filter: blur(4px);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 .rs-hero-stats-note { margin: 0 auto; padding-bottom: 14px; font-size: 12px; text-align: right; color: rgba(255, 255, 255, 0.55); }
 .rs-hero-stat-item {
@@ -180,26 +177,30 @@ onMounted(async () => {
   text-align: center;
 }
 /* STYLE2_BTN_CSS */
-.rs-btn-primary {
-  padding: 14px 34px;
-  background: var(--rs-primary);
-  color: #fff;
-  font-size: 15px;
+/* 首屏按钮：胶囊形；主按钮按钮蓝，次按钮白描边（首屏恒为深色） */
+.rs-btn-primary,
+.rs-btn-ghost {
+  min-height: 48px;
+  padding: 0 28px;
+  font-size: 17px;
   font-weight: 500;
-  transition: background 0.2s ease;
+  border-radius: var(--radius-pill);
+  transition: background-color var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+.rs-btn-primary {
+  background: var(--color-action);
+  color: #fff;
 }
 .rs-btn-primary:hover {
-  background: var(--rs-primary-light);
+  background: var(--color-action-hover);
 }
 .rs-btn-ghost {
-  padding: 14px 34px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   color: #fff;
-  font-size: 15px;
-  font-weight: 500;
-  transition: all 0.2s ease;
 }
 .rs-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #fff;
+  color: #1d1d1f;
+  border-color: #fff;
 }
 </style>

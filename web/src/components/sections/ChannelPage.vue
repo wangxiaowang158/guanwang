@@ -114,7 +114,7 @@
 
     <div v-else class="site-container py-32">
       <EmptyState text="内容加载失败，请稍后重试">
-        <button type="button" class="mt-4 px-5 h-10 text-sm rounded-md border border-line text-ink-700 hover:border-brand-600 hover:text-brand-600" @click="load(target)">
+        <button type="button" class="mt-4 px-5 h-10 text-sm rounded-full border border-line text-ink-700 hover:border-brand-600 hover:text-brand-600" @click="load(target)">
           重新加载
         </button>
       </EmptyState>
@@ -292,7 +292,7 @@ const visibleBlocks = computed(() => {
 })
 
 // 区块底色交替与深色反白：见 useBlockTones
-const { onDark, sectionClass, sectionStyle } = useBlockTones(visibleBlocks, () => theme.isStyle2)
+const { onDark, sectionClass, sectionStyle } = useBlockTones(visibleBlocks, () => theme.isStyle2, () => theme.tone)
 
 /** 以该区块为筛选目标的分类栏目的锚点 */
 function aliasAnchorsOf(block: PageBlock): string[] {
@@ -441,7 +441,7 @@ onUnmounted(() => {
   font-weight: 600;
   line-height: 1.5;
   text-align: center;
-  color: #7a4b00;
+  color: #7a4b00; /* 警示琥珀色，刻意不随色板，三套色调下都醒目 */
   background: #fff4d6;
   border-top: 1px solid #f5d48a;
 }
@@ -449,26 +449,21 @@ onUnmounted(() => {
   padding-top: var(--section-py);
   padding-bottom: var(--section-py);
 }
-/* 页头转化按钮：样式一品牌蓝圆角，样式二集团红直角；最小触控高度 44px 便于移动端点按 */
+/* 页头转化按钮：胶囊形、按钮蓝底白字，三套模板一致；最小触控高度 44px 便于移动端点按 */
 .cp-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   padding: 0 28px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 500;
   color: #fff;
-  background: var(--color-brand-600);
-  border-radius: var(--radius-md);
+  background: var(--color-action);
+  border-radius: var(--radius-pill);
   transition: background-color var(--dur-fast);
 }
-.cp-cta:hover { background: var(--color-brand-700); }
-.cp-cta--style2 {
-  background: var(--rs-primary);
-  border-radius: 0;
-}
-.cp-cta--style2:hover { background: var(--rs-primary); filter: brightness(0.92); }
+.cp-cta:hover { background: var(--color-action-hover); }
 /* 筛选无结果时的「清空筛选」 */
 .cp-clear {
   margin-top: 16px;
@@ -476,6 +471,7 @@ onUnmounted(() => {
   padding: 0 20px;
   font-size: 14px;
   border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
   color: var(--color-ink-700);
 }
 .cp-clear:hover { border-color: var(--color-brand-600); color: var(--color-brand-600); }

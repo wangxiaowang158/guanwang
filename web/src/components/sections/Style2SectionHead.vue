@@ -1,5 +1,5 @@
 <template>
-  <!-- 样式二区块标题：左对齐主标题 + 红色短条 + 副标题，新区块组件共用 -->
+  <!-- 样式二区块标题：左对齐大字主标题 + 灰色副标题，新区块组件共用 -->
   <div v-if="heading" class="rs-head" :class="{ 'rs-head--ondark': onDark }">
     <h2 class="rs-head-title">{{ heading }}</h2>
     <p v-if="subheading" class="rs-head-sub">{{ subheading }}</p>
@@ -17,26 +17,23 @@ defineProps<{
 </script>
 
 <style scoped>
+.rs-head { margin-bottom: var(--head-gap); }
 .rs-head-title {
   margin: 0;
   font-size: var(--rs-text-h2);
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.15;
   color: var(--rs-text-dark);
 }
 .rs-head-sub {
   max-width: 48rem;
-  margin: 12px 0 0;
-  font-size: var(--text-fs-body);
-  line-height: 1.8;
-  color: var(--rs-text-body);
+  margin: 16px 0 0;
+  font-size: var(--text-fs-body-lg);
+  line-height: 1.6;
+  color: var(--rs-text-muted);
 }
-.rs-head-bar {
-  width: 48px;
-  height: 3px;
-  margin: 18px 0 36px;
-  background: var(--rs-primary);
-}
+/* 苹果风格不用标题下的色条装饰，靠字号与留白区分层次 */
+.rs-head-bar { display: none; }
 .rs-head--ondark .rs-head-title { color: #fff; }
 .rs-head--ondark .rs-head-sub { color: var(--rs-text-light-sub); }
 </style>

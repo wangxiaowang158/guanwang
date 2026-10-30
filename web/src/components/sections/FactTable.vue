@@ -31,16 +31,16 @@ defineProps<{
   gap: 1px;
   margin: 0;
   overflow: hidden;
+  /* 1px 间隙露出底色当格间细线，外框不再描边 */
   background: var(--color-line);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
 }
-.ft-cell { padding: 20px 24px; background: #fff; }
+.ft-cell { padding: 24px 28px; background: var(--section-card, var(--color-surface)); }
 .ft-label { margin-bottom: 6px; font-size: 13px; color: var(--color-ink-500); }
 .ft-value { margin: 0; font-size: var(--text-fs-body-lg); font-weight: 600; line-height: 1.5; color: var(--color-ink-900); }
 
-.ft-grid--dark { background: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.3); }
-.ft-grid--dark .ft-cell { background: rgba(15, 23, 42, 0.55); }
+.ft-grid--dark { background: rgba(255, 255, 255, 0.3); }
+.ft-grid--dark .ft-cell { background: rgba(0, 0, 0, 0.55); }
 .ft-grid--dark .ft-label { color: var(--color-ink-400); }
 .ft-grid--dark .ft-value { color: #fff; }
 </style>

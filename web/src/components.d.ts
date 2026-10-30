@@ -73,7 +73,6 @@ declare module 'vue' {
     Style2ContentBlock: typeof import('./components/sections/Style2ContentBlock.vue')['default']
     Style2CooperationModes: typeof import('./components/sections/Style2CooperationModes.vue')['default']
     Style2FactTable: typeof import('./components/sections/Style2FactTable.vue')['default']
-    Style2Footer: typeof import('./components/layout/Style2Footer.vue')['default']
     Style2Header: typeof import('./components/layout/Style2Header.vue')['default']
     Style2ImageGallery: typeof import('./components/sections/Style2ImageGallery.vue')['default']
     Style2MetricBoard: typeof import('./components/sections/Style2MetricBoard.vue')['default']

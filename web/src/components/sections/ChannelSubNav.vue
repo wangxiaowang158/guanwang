@@ -103,7 +103,9 @@ onBeforeUnmount(() => {
   top: var(--nav-h);
   z-index: 30;
   height: 48px;
-  background: rgba(255, 255, 255, 0.92);
+  /* 半透明页面底：深色站里随色板变成半透明黑，不再是写死的白；不支持 color-mix 的浏览器回落实底 */
+  background: var(--color-canvas);
+  background: color-mix(in srgb, var(--color-canvas) 88%, transparent);
   border-bottom: 1px solid var(--color-line);
   -webkit-backdrop-filter: saturate(180%) blur(16px);
   backdrop-filter: saturate(180%) blur(16px);
@@ -131,7 +133,7 @@ onBeforeUnmount(() => {
   transition: color var(--dur-fast, 150ms), border-color var(--dur-fast, 150ms);
 }
 .csn-link:hover { color: var(--color-ink-900); }
-.csn-link.is-active { color: var(--color-brand-600); font-weight: 600; border-bottom-color: var(--color-brand-600); }
-.csn--s2 .csn-link.is-active { color: var(--rs-primary); border-bottom-color: var(--rs-primary); }
+/* 当前段落：苹果式本地导航，深色字 + 细下划线，不用品牌色；三套模板一致 */
+.csn-link.is-active { color: var(--color-ink-900); font-weight: 600; border-bottom-color: var(--color-ink-900); }
 .csn-link:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: -2px; }
 </style>

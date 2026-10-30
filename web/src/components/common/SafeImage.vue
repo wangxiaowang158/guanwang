@@ -61,12 +61,9 @@ watch(() => [props.src, props.fallback], () => { failed.value = new Set() })
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 品牌浅色底 + 细网格，缺图时仍像刻意留出的版面，而不是一块空白 */
-  background:
-    linear-gradient(rgba(11, 87, 208, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
-    linear-gradient(90deg, rgba(11, 87, 208, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
-    var(--color-brand-50);
-  color: var(--color-brand-300);
+  /* 中性浅灰底（深色站深灰），缺图时是一块干净的留白版面，图标用最浅一级灰 */
+  background: var(--color-surface);
+  color: var(--color-ink-400);
 }
 .safe-image--placeholder svg {
   width: 40px;

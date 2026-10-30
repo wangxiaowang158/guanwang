@@ -1,12 +1,12 @@
 /* 内容详情页 —— 由 views/article/index.vue 以 scoped 方式引入
    阅读区宽度控制在约 36 个汉字一行，正文 17px / 行高 1.9 */
 
+/* 三套样式共用同一外观；颜色走色板变量，深色站里自动转深色 */
 .article-page {
   --a-accent: var(--color-brand-600);
-  --a-radius: var(--radius-lg);
-  background: #fff;
+  --a-radius: var(--radius-xl);
+  background: var(--color-canvas);
 }
-.article-page--style2 { --a-accent: var(--rs-primary); --a-radius: 0; }
 
 .article-wrap {
   max-width: 800px;
@@ -34,16 +34,15 @@
 }
 .article-channel {
   margin: 0 0 12px;
-  font-size: 13px;
+  font-size: var(--text-fs-sm);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--a-accent);
+  color: var(--color-ink-500);
 }
 .article-title {
   margin: 0;
-  font-size: clamp(26px, 3.2vw, 36px);
+  font-size: clamp(30px, 4vw, 48px);
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.2;
   color: var(--color-ink-900);
 }
 .article-meta {
@@ -56,13 +55,12 @@
   color: var(--color-ink-500);
 }
 .article-tag {
-  padding: 2px 8px;
+  padding: 2px 10px;
   font-weight: 500;
-  color: #fff;
-  background: var(--a-accent);
-  border-radius: var(--radius-sm);
+  color: var(--color-ink-700);
+  background: var(--color-surface);
+  border-radius: var(--radius-pill);
 }
-.article-page--style2 .article-tag { border-radius: 0; }
 
 .article-cover {
   display: block;
@@ -100,21 +98,22 @@
   gap: 16px;
   margin-top: 64px;
   padding: 24px 28px;
-  background: var(--color-surface, #f8fafc);
+  background: var(--color-surface);
   border-radius: var(--a-radius);
 }
-.article-page--style2 .article-cta { background: var(--rs-bg-cream); }
-.article-cta-text { margin: 0; font-size: 16px; font-weight: 600; color: var(--color-ink-900); }
+.article-cta-text { margin: 0; font-size: var(--text-fs-body); font-weight: 600; color: var(--color-ink-900); }
+/* 胶囊按钮，按钮蓝底白字（深浅底一致） */
 .article-cta-btn {
   min-height: 44px;
   padding: 0 28px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--text-fs-body);
+  font-weight: 500;
   color: #fff;
-  background: var(--a-accent);
-  border-radius: var(--a-radius);
+  background: var(--color-action);
+  border-radius: var(--radius-pill);
+  transition: background-color var(--dur-fast);
 }
-.article-cta-btn:hover { filter: brightness(0.92); }
+.article-cta-btn:hover { background: var(--color-action-hover); }
 @media (max-width: 640px) {
   .article-cta-btn { width: 100%; }
 }
@@ -132,12 +131,10 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-  padding: 16px 20px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--a-radius);
-  transition: border-color var(--dur-fast);
+  padding: 18px 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
 }
-.article-around-item:hover { border-color: var(--a-accent); }
 .article-around-item--next { text-align: right; }
 .article-around-label { font-size: 12px; color: var(--color-ink-500); }
 .article-around-title {
@@ -174,7 +171,7 @@
   font-size: 14px;
   color: var(--color-ink-700);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   transition: color var(--dur-fast), border-color var(--dur-fast);
 }
 .article-btn:hover { color: var(--a-accent); border-color: var(--a-accent); }

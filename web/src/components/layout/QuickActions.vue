@@ -3,7 +3,6 @@
   <div
     ref="rootRef"
     class="qa fixed right-4 bottom-24 z-40 flex flex-col items-end gap-2"
-    :class="{ 'qa--style2': theme.isStyle2 }"
     @keydown.esc="closeMenu"
   >
     <!-- 预约入口：收起为一个按钮，展开后列出四类线索入口，避免窄屏上并排四个图标 -->
@@ -68,7 +67,6 @@ import { LEAD_TYPE_LABEL } from '@/api/feedback'
 import type { LeadType } from '@/api/feedback'
 import { useLeadModal } from '@/composables/useLeadModal'
 import { useSiteStore } from '@/stores/site'
-import { useThemeStore } from '@/stores/theme'
 import { useWindowScroll, scrollToTop } from '@/composables/useWindowScroll'
 import { safeExternalUrl } from '@/utils/sanitize'
 import PhoneIcon from './PhoneIcon.vue'
@@ -77,7 +75,6 @@ import PhoneIcon from './PhoneIcon.vue'
 const LEAD_ENTRIES: LeadType[] = ['consult', 'energyAssess', 'productDemo', 'channel']
 
 const siteStore = useSiteStore()
-const theme = useThemeStore()
 const site = computed(() => siteStore.site)
 /** 悬浮条配置；后端未下发（旧接口）时按全部显示，与升级前一致 */
 const floatBar = computed(() => site.value.ext?.floatBar ?? { enabled: true, showPhone: true, showWechat: true })
@@ -127,8 +124,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.qa { --qa-accent: var(--color-brand-600); --qa-radius: var(--radius-md); }
-.qa--style2 { --qa-accent: var(--rs-primary); --qa-radius: 0; }
+/* 悬浮条：圆形按钮；三套样式同一外观，颜色走色板变量 */
+.qa { --qa-accent: var(--color-brand-600); --qa-radius: var(--radius-pill); }
 
 .qa-btn {
   position: relative;
@@ -137,9 +134,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--color-elevated);
   border: 1px solid var(--color-line);
-  border-radius: var(--qa-radius);
+  border-radius: 50%;
   box-shadow: var(--shadow-2);
   color: var(--color-ink-500);
   cursor: pointer;
@@ -147,9 +144,10 @@ onMounted(() => {
 }
 .qa-btn:hover,
 .qa-btn:focus-visible { color: var(--qa-accent); border-color: var(--qa-accent); }
-.qa-btn--primary { background: var(--qa-accent); border-color: var(--qa-accent); color: #fff; }
+/* 主按钮：按钮蓝底白字（深浅底一致） */
+.qa-btn--primary { background: var(--color-action); border-color: var(--color-action); color: #fff; }
 .qa-btn--primary:hover,
-.qa-btn--primary:focus-visible { color: #fff; filter: brightness(1.1); }
+.qa-btn--primary:focus-visible { color: #fff; background: var(--color-action-hover); border-color: var(--color-action-hover); }
 
 /* 提示气泡：悬停与键盘聚焦都显示 */
 .qa-tip {
@@ -157,7 +155,8 @@ onMounted(() => {
   right: calc(100% + 8px);
   padding: 6px 10px;
   font-size: 13px;
-  color: #fff;
+  /* 反色气泡：字取页面底色、底取主文字色，深浅站都是高对比 */
+  color: var(--color-canvas);
   white-space: nowrap;
   background: var(--color-ink-900);
   border-radius: var(--radius-sm);
@@ -165,7 +164,8 @@ onMounted(() => {
   pointer-events: none;
   transition: opacity var(--dur-fast);
 }
-.qa-tip--qr { padding: 8px; background: #fff; border: 1px solid var(--color-line); box-shadow: var(--shadow-2); }
+/* 二维码恒放白底，深色站里也扫得出 */
+.qa-tip--qr { padding: 8px; background: #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-3); }
 .qa-btn:hover .qa-tip,
 .qa-btn:focus-visible .qa-tip { opacity: 1; }
 
@@ -175,10 +175,10 @@ onMounted(() => {
   flex-direction: column;
   gap: 6px;
   padding: 6px;
-  background: #fff;
+  background: var(--color-elevated);
   border: 1px solid var(--color-line);
-  border-radius: var(--qa-radius);
-  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 .qa-menu-item {
   min-height: 44px;
@@ -189,12 +189,12 @@ onMounted(() => {
   text-align: left;
   background: none;
   border: 0;
-  border-radius: var(--qa-radius);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: color var(--dur-fast), background var(--dur-fast);
 }
 .qa-menu-item:hover,
-.qa-menu-item:focus-visible { color: #fff; background: var(--qa-accent); }
+.qa-menu-item:focus-visible { color: #fff; background: var(--color-action); }
 
 .fade-enter-active,
 .fade-leave-active { transition: opacity 0.2s ease; }

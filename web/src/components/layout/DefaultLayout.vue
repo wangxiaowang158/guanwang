@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-white">
+  <div class="min-h-screen flex flex-col bg-canvas">
     <!-- 跳到正文：键盘用户不必每页都 Tab 过整条导航 -->
     <a href="#main" class="skip-link">跳到正文</a>
     <component :is="headerComp" />
@@ -20,21 +20,20 @@
 </template>
 
 <script setup lang="ts">
-// 主题感知布局：按当前模板解析顶栏/页脚组件
-// 两套模板按需异步加载：访客只会用到其中一套，静态 import 会把两套都打进首屏包
+// 主题感知布局：按当前模板解析顶栏组件；页脚三套共用（浅灰底，随色板深浅自动切换）
+// 两种顶栏按需异步加载：访客只会用到其中一套，静态 import 会把两套都打进首屏包
 import { computed, defineAsyncComponent } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import LeadFormModal from '@/components/common/LeadFormModal.vue'
 import QuickActions from './QuickActions.vue'
+import AppFooter from './AppFooter.vue'
 
 const AppHeader = defineAsyncComponent(() => import('./AppHeader.vue'))
-const AppFooter = defineAsyncComponent(() => import('./AppFooter.vue'))
 const Style2Header = defineAsyncComponent(() => import('./Style2Header.vue'))
-const Style2Footer = defineAsyncComponent(() => import('./Style2Footer.vue'))
 
 const theme = useThemeStore()
 const headerComp = computed(() => (theme.isStyle2 ? Style2Header : AppHeader))
-const footerComp = computed(() => (theme.isStyle2 ? Style2Footer : AppFooter))
+const footerComp = AppFooter
 </script>
 
 <style scoped>
@@ -59,7 +58,7 @@ const footerComp = computed(() => (theme.isStyle2 ? Style2Footer : AppFooter))
   left: 8px;
   z-index: 100;
   padding: 8px 16px;
-  background: var(--color-brand-600);
+  background: var(--color-action);
   color: #fff;
   font-size: 14px;
   border-radius: var(--radius-md);

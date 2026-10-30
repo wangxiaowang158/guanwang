@@ -26,8 +26,9 @@
           <a-form-item label="网站模板" name="template">
             <div class="template-row">
               <a-radio-group v-model:value="form.template">
-                <a-radio value="1">样式一（深蓝科技风）</a-radio>
-                <a-radio value="2">样式二（集团品牌风）</a-radio>
+                <a-radio value="1">样式一（深色）</a-radio>
+                <a-radio value="2">样式二（浅色）</a-radio>
+                <a-radio value="3">样式三（黑白交替）</a-radio>
               </a-radio-group>
               <a-button type="link" class="preview-btn" @click="previewOpen = true">
                 <EyeOutlined /> 样式预览

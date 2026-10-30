@@ -100,10 +100,7 @@ const close = (i: number) => { if (openIndex.value === i) openIndex.value = -1 }
   transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 .fx-icon:hover,
-.fx-icon:focus-visible { opacity: 1; color: #fff; background: var(--color-brand-600); border-color: var(--color-brand-600); }
-.fx--s2 .fx-icon { border-radius: 0; }
-.fx--s2 .fx-icon:hover,
-.fx--s2 .fx-icon:focus-visible { background: var(--rs-primary); border-color: var(--rs-primary); }
+.fx-icon:focus-visible { opacity: 1; color: #fff; background: var(--color-action); border-color: var(--color-action); }
 .fx-icon:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .fx-qr {
   position: absolute;
@@ -116,13 +113,13 @@ const close = (i: number) => { if (openIndex.value === i) openIndex.value = -1 }
   gap: 6px;
   padding: 10px;
   font-size: 12px;
-  color: var(--color-ink-700);
+  /* 二维码恒放白底，深色站里也扫得出；文字随之用固定深灰 */
   background: #fff;
-  border-radius: 8px;
+  color: #424245;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   transform: translateX(-50%);
 }
-.fx--s2 .fx-qr { border-radius: 0; }
 .fx-qr img { display: block; width: 120px; height: 120px; object-fit: contain; }
 .fx-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; font-size: 13px; }
 .fx-links-label { opacity: 0.6; }

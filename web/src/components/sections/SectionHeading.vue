@@ -1,14 +1,14 @@
 <template>
-  <!-- 区块标题：主标题 + 品牌色短条 + 副标题；onDark 时切换浅色文字（用于背景图区块） -->
+  <!-- 区块标题：苹果式大字主标题 + 灰色副标题，不加色条装饰；
+       深色与背景图区块外层已套 .tone-dark，ink 语义色自动反白 -->
   <div class="mb-[var(--head-gap)]" :class="left ? 'text-left' : 'text-center'">
-    <h2 class="text-fs-h2 font-bold leading-tight" :class="onDark ? 'text-white' : 'text-ink-900'">{{ heading }}</h2>
-    <span class="block w-10 h-[3px] mt-4 rounded-full" :class="[onDark ? 'bg-accent' : 'bg-brand-600', left ? '' : 'mx-auto']" aria-hidden="true"></span>
-    <p v-if="subheading" class="text-fs-body leading-relaxed max-w-2xl mt-4" :class="[onDark ? 'text-slate-200' : 'text-ink-500', left ? '' : 'mx-auto']">{{ subheading }}</p>
+    <h2 class="text-fs-h2 font-bold leading-[1.15] text-ink-900">{{ heading }}</h2>
+    <p v-if="subheading" class="text-fs-body-lg leading-relaxed max-w-2xl mt-4 text-ink-500" :class="left ? '' : 'mx-auto'">{{ subheading }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-// 区块标题，纯展示组件；onDark 用于深色/背景图区块上的浅色文字
+// 区块标题，纯展示组件；onDark 保留给调用方传参，颜色已由所在区块的色板决定
 import { computed } from 'vue'
 
 const props = defineProps<{

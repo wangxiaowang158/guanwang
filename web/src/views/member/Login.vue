@@ -214,7 +214,7 @@ onMounted(async () => {
   border-radius: var(--el-border-radius-base);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 15px;
-  color: #0f172a;
+  color: var(--color-ink-900);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -234,11 +234,11 @@ onMounted(async () => {
 }
 
 .auth-links a {
-  color: #64748b;
+  color: var(--color-ink-500);
   text-decoration: none;
 }
 
 .auth-links a:hover {
-  color: var(--brand-primary, #0ea5e9);
+  color: var(--color-brand-600);
 }
 </style>

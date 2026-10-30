@@ -90,7 +90,8 @@ onMounted(() => {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--nav-accent, var(--brand-primary));
+  /* 白字头像底用按钮蓝：深色站里 brand-primary 是亮链接蓝，配白字不达标 */
+  background: var(--color-action);
   color: #fff;
   font-size: 12px;
   font-weight: 600;

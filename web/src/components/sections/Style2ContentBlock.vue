@@ -31,14 +31,14 @@
     </template>
 
     <!-- 图文条目：有图显示配图，无图显示编号；可点击时整卡为入口 -->
-    <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 gap-px" :class="cardCols" style="background: var(--rs-border)">
+    <div v-else-if="block.layout === 'cards'" class="grid grid-cols-1 md:grid-cols-2 gap-6" :class="cardCols">
       <ItemLink v-for="item in sorted" :key="item.id" :item="item" link-class="rs-card--link" class="rs-card block">
         <div v-if="item.image || item.video || fallbackImage" class="rs-card-media">
           <SafeMedia :image="item.image" :video="item.video" :fallback="fallbackImage" :alt="item.title" :width="480" :height="300" />
         </div>
         <span v-else class="rs-card-index">{{ String(item.sort).padStart(2, '0') }}</span>
         <div v-if="item.tag || item.date" class="flex items-center gap-3 mb-3 text-xs">
-          <span v-if="item.tag" class="px-2.5 py-0.5 font-medium text-white" style="background: var(--rs-primary)">{{ item.tag }}</span>
+          <span v-if="item.tag" class="rs-pill-tag">{{ item.tag }}</span>
           <time v-if="item.date" :datetime="item.date" class="tabular-nums" style="color: var(--rs-text-muted)">{{ item.date }}</time>
         </div>
         <!-- 业务线与行业标签：案例、产品、方案卡片按 extra 展示 -->
@@ -53,10 +53,9 @@
     <!-- 条目列表：左红条 + 标题摘要 + 日期；可点击时整行为入口 -->
     <div v-else-if="block.layout === 'list'" class="divide-y" style="border-color: var(--rs-border)">
       <ItemLink v-for="item in sorted" :key="item.id" :item="item" link-class="rs-row--link" class="rs-row flex items-start gap-5 py-6 first:pt-0">
-        <div class="w-1 self-stretch shrink-0" style="background: var(--rs-primary)"></div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-3 flex-wrap mb-1.5">
-            <span v-if="item.tag" class="px-2.5 py-0.5 text-xs font-medium text-white" style="background: var(--rs-primary)">{{ item.tag }}</span>
+            <span v-if="item.tag" class="rs-pill-tag">{{ item.tag }}</span>
             <h3 class="rs-row-title text-base font-bold">{{ item.title }}</h3>
           </div>
           <p v-if="item.desc" class="text-sm leading-relaxed" style="color: var(--rs-text-body)">{{ item.desc }}</p>
@@ -74,8 +73,8 @@
     </div>
 
     <!-- steps：编号流程 -->
-    <ol v-else-if="block.layout === 'steps'" class="grid grid-cols-1 md:grid-cols-2 gap-px" style="background: var(--rs-border)">
-      <li v-for="(item, i) in sorted" :key="item.id" class="flex items-start gap-5 bg-white p-7">
+    <ol v-else-if="block.layout === 'steps'" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <li v-for="(item, i) in sorted" :key="item.id" class="rs-step flex items-start gap-5 p-7">
         <div class="rs-step-num">{{ String(i + 1).padStart(2, '0') }}</div>
         <div>
           <h3 class="text-base font-bold mb-2" style="color: var(--rs-text-dark)">{{ item.title }}</h3>
@@ -171,46 +170,40 @@ const richHtml = (html: string) => sanitizeRichText(html)
 </script>
 
 <style scoped>
+/* 区块标题：苹果式大字紧行距，不加色条；深色区块外层已套 .tone-dark，--rs-text-* 自动反白 */
 .rs-block-eyebrow {
   font-size: var(--rs-text-h2);
   font-weight: 700;
   color: var(--rs-text-dark);
-  line-height: 1.3;
+  line-height: 1.15;
   margin: 0;
 }
 .rs-block-sub {
-  margin: 12px 0 0;
-  font-size: var(--text-fs-body);
-  line-height: 1.8;
-  color: var(--rs-text-body);
+  margin: 16px 0 0;
+  font-size: var(--text-fs-body-lg);
+  line-height: 1.6;
+  color: var(--rs-text-muted);
   max-width: 48rem;
 }
-.rs-block--ondark .rs-block-eyebrow {
-  color: #fff;
-}
-.rs-block-bar {
-  width: 48px;
-  height: 3px;
-  background: var(--rs-primary);
-  margin: 18px 0 36px;
-}
+/* 原红色短条改为纯留白：只保留标题区到内容的间距 */
+.rs-block-bar { height: 0; margin-bottom: var(--head-gap); }
 /* 后台「区块外观」选了居中 */
 .rs-block-head--center { text-align: center; }
 .rs-block-head--center .rs-block-sub { margin-left: auto; margin-right: auto; }
-.rs-block-head--center .rs-block-bar { margin-left: auto; margin-right: auto; }
+/* 卡片：独立大圆角，无描边；底色与区块错开（--section-card 由 ChannelPage 给出） */
 .rs-card {
   position: relative;
-  background: #fff;
+  overflow: hidden;
+  background: var(--section-card, var(--rs-bg-cream));
+  border-radius: var(--radius-xl);
   padding: 32px 28px;
-  transition: background 0.25s ease;
 }
-/* 只有可点击的条目给悬停反馈，不可点击的条目悬停变色会让人以为能点 */
-.rs-card--link:hover {
-  background: var(--rs-bg-cream);
-}
+/* 只有可点击的条目给悬停反馈：图片缓慢放大、标题变链接蓝；不可点击的不给，免得以为能点 */
+.rs-card-media :deep(img) { transition: transform var(--dur-slow) var(--ease-out); }
+.rs-card--link:hover .rs-card-media :deep(img) { transform: scale(1.04); }
 .rs-card--link:hover .rs-card-title,
 .rs-row--link:hover .rs-row-title {
-  color: var(--rs-primary);
+  color: var(--color-brand-600);
 }
 .rs-card-media {
   margin: -32px -28px 24px;
@@ -222,23 +215,34 @@ const richHtml = (html: string) => sanitizeRichText(html)
   color: var(--rs-text-dark);
   transition: color 0.2s ease;
 }
-/* 背景图区块上的列表：行底加白，避免深色文字压在图片上看不清 */
-.rs-block--ondark .rs-row {
-  background: #fff;
-  padding-left: 20px;
-  padding-right: 20px;
-}
 .rs-card-index {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--rs-primary);
-  opacity: 0.25;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--rs-text-muted);
+  opacity: 0.5;
 }
 .rs-card-title {
-  font-size: 16px;
+  font-size: var(--text-fs-h4);
   font-weight: 700;
+  line-height: 1.35;
   color: var(--rs-text-dark);
   margin: 12px 0 8px;
+  transition: color var(--dur-fast);
+}
+/* 标签：浅品牌色胶囊，替代原先实心红块 */
+.rs-pill-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-brand-700);
+  background: var(--color-brand-50);
+  border-radius: var(--radius-pill);
+}
+/* 序号步骤：大圆角卡，底色与区块错开 */
+.rs-step {
+  background: var(--section-card, var(--rs-bg-cream));
+  border-radius: var(--radius-xl);
 }
 .rs-card-desc {
   font-size: 14px;
@@ -259,24 +263,21 @@ const richHtml = (html: string) => sanitizeRichText(html)
   font-size: 12px;
   color: var(--rs-text-body);
   border: 1px solid var(--rs-border);
+  border-radius: var(--radius-pill);
 }
+/* 名称集合：胶囊形，纯展示不可点，不给 hover 变色 */
 .rs-tag {
   padding: 10px 22px;
-  border: 1px solid var(--rs-border);
   font-size: 14px;
   color: var(--rs-text-body);
-  background: #fff;
-  transition: all 0.2s ease;
-}
-.rs-tag:hover {
-  border-color: var(--rs-primary);
-  color: var(--rs-primary);
+  background: var(--section-card, var(--rs-bg-cream));
+  border-radius: var(--radius-pill);
 }
 .rs-step-num {
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
   color: var(--rs-primary);
-  opacity: 0.4;
   flex-shrink: 0;
 }
 
@@ -331,11 +332,13 @@ const richHtml = (html: string) => sanitizeRichText(html)
 .rich-html :deep(blockquote) {
   margin: 1em 0;
   padding-left: 1em;
-  border-left: 3px solid var(--rs-primary);
+  border-left: 3px solid var(--rs-border);
+  color: var(--rs-text-muted);
 }
 
+/* 正文链接走链接蓝（brand-600 在深色下自动换亮一档），不用按钮蓝 */
 .rich-html :deep(a) {
-  color: var(--rs-primary);
+  color: var(--color-brand-600);
   text-decoration: underline;
 }
 
@@ -344,6 +347,7 @@ const richHtml = (html: string) => sanitizeRichText(html)
   max-width: 100%;
   display: block;
   margin: 1.2em 0;
+  border-radius: var(--radius-md);
 }
 
 .rich-html :deep(video) {
@@ -351,20 +355,5 @@ const richHtml = (html: string) => sanitizeRichText(html)
   background: #000;
 }
 
-/* 背景图板块：标题与富文本切换浅色，卡片/列表保持白底悬浮于图上 */
-.rs-block--ondark .rs-block-sub {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* 深色板块上富文本内的标题同样要提亮 */
-.rs-block--ondark .rich-html :deep(h2),
-.rs-block--ondark .rich-html :deep(h3) {
-  color: #fff;
-}
-.rs-block--ondark .rs-rich-title {
-  color: #fff;
-}
-.rs-block--ondark .rs-rich-text {
-  color: rgba(255, 255, 255, 0.85);
-}
+/* 深色 / 背景图区块：外层已套 .tone-dark，--rs-text-* 与卡片底色随色板自动反白，这里不再逐个改白 */
 </style>

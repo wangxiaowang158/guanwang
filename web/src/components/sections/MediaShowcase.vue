@@ -62,38 +62,35 @@ const texts = computed(() => props.items.filter(it => !it.video && !isSafeUrl(it
 </script>
 
 <style scoped>
-.ms { --ms-accent: var(--color-brand-600); --ms-radius: var(--radius-lg); }
-.ms--s2 { --ms-accent: var(--rs-primary); --ms-radius: 0; }
+.ms { --ms-accent: var(--color-brand-600); --ms-radius: var(--radius-xl); }
 .ms-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 /* 两件及以上并排（框架图里「产品介绍」左右两张图）；窄屏回落单列 */
 @media (min-width: 768px) {
   .ms-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 .ms-figure { margin: 0; }
+/* 图片框浅灰底：后台白底产品图在深色页上也不会突兀，统一落在圆角浅框里 */
 .ms-img-link {
   display: block;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--color-line);
+  background: var(--section-card, var(--color-surface));
   border-radius: var(--ms-radius);
 }
 .ms-img-link:focus-visible { outline: 2px solid var(--ms-accent); outline-offset: 2px; }
 .ms-img { display: block; width: 100%; height: auto; }
 .ms-caption { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
-.ms-cap-title { font-size: 15px; font-weight: 600; color: var(--color-ink-900); }
+.ms-cap-title { font-size: 17px; font-weight: 700; color: var(--color-ink-900); }
 .ms-cap-desc { font-size: 14px; line-height: 1.7; color: var(--color-ink-500); }
-.ms--dark .ms-cap-title { color: #fff; }
-.ms--dark .ms-cap-desc { color: rgba(226, 232, 240, 0.85); }
-/* 文字说明卡：左侧强调色竖条 */
+/* 深色 / 背景图区块：外层 .tone-dark 已让 ink 反白；背景图上再压暗一档保证可读 */
+.ms--dark .ms-cap-desc { color: rgba(255, 255, 255, 0.85); }
+/* 文字说明卡：无描边无竖条，底色与区块错开分层 */
 .ms-texts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin: 0; padding: 0; list-style: none; }
 @media (min-width: 768px) { .ms-texts { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
 .ms-text {
-  padding: 20px 24px;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-left: 3px solid var(--ms-accent);
+  padding: 28px;
+  background: var(--section-card, var(--color-surface));
   border-radius: var(--ms-radius);
 }
-.ms-text-title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.6; color: var(--color-ink-900); }
+.ms-text-title { margin: 0; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.4; color: var(--color-ink-900); }
 .ms-text-desc { margin: 8px 0 0; font-size: 14px; line-height: 1.8; color: var(--color-ink-500); }
 </style>

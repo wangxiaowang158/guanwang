@@ -32,13 +32,15 @@ defineProps<{
 .tq {
   max-width: 52rem;
   margin: 0 auto;
-  padding: 40px 36px;
+  padding: 48px 40px;
   text-align: center;
-  background: var(--color-brand-50);
-  border-radius: var(--radius-lg);
+  /* 中性底色：苹果风格大面积不用品牌色 */
+  background: var(--section-card, var(--color-surface));
+  border-radius: var(--radius-xl);
 }
-.tq-mark { width: 32px; height: 32px; margin: 0 auto 16px; color: var(--color-brand-300); }
-.tq-text { margin: 0; font-size: var(--text-fs-body-lg); line-height: 1.9; color: var(--color-ink-900); }
+.tq-mark { width: 32px; height: 32px; margin: 0 auto 20px; color: var(--color-ink-400); }
+/* 引文即主角：放大到小标题字号 */
+.tq-text { margin: 0; font-size: clamp(20px, 2.2vw, 26px); font-weight: 600; line-height: 1.6; color: var(--color-ink-900); }
 .tq-cap { margin-top: 20px; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .tq-author { font-weight: 600; color: var(--color-ink-900); }
 .tq-org { color: var(--color-ink-500); }

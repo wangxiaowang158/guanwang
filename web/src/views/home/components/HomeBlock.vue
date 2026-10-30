@@ -1,6 +1,6 @@
 <template>
   <!-- 新版首页板块外壳：底色 + 容器 + 标题；样式一居中、样式二左对齐，由 style2 切换 -->
-  <section :id="id" class="hb" :class="[style2 ? 'hb--s2' : 'hb--s1', `hb--${tone}`]">
+  <section :id="id" class="hb" :class="[style2 ? 'hb--s2' : 'hb--s1', `hb--${tone}`, { 'tone-dark': tone === 'dark' }]">
     <!-- 进入视口淡入上移：底色随 section 立即铺满，只有内容做入场，避免整块闪白 -->
     <div :ref="track('content')" class="hb-container fade-up" :class="{ visible: shown.has('content') }">
       <header v-if="eyebrow || title" class="hb-head">
@@ -37,31 +37,20 @@ withDefaults(defineProps<{
 .hb--s1 .hb-container { max-width: var(--container); padding: 0 var(--gutter); }
 .hb--s2 .hb-container { max-width: var(--rs-content-max); padding: 0 var(--rs-content-px); }
 
-/* 底色：样式一白/浅灰/深蓝，样式二白/米色/深色
-   --hb-card 是板块里卡片的底色，与板块底色错开：白底配浅色卡、浅色底配白卡、深色底配白卡，卡片边界始终可见 */
-.hb { --hb-card: #fff; }
-.hb--s1.hb--white { --hb-card: var(--color-surface); }
-.hb--s2.hb--white { --hb-card: var(--rs-bg-cream); }
-.hb--s1.hb--white { background: #fff; }
-.hb--s1.hb--surface { background: var(--color-surface); }
-.hb--s1.hb--dark { background: var(--color-navy-950); }
-.hb--s2.hb--white { background: var(--rs-bg-white); }
-.hb--s2.hb--surface { background: var(--rs-bg-cream); }
-.hb--s2.hb--dark { background: var(--rs-bg-dark); }
+/* 底色全部走色板变量：深色站里白 / 浅灰自动是黑 / 深灰；dark 恒为纯黑
+   --hb-card 是板块里卡片的底色，与板块底色错开：白底配浅灰卡、浅灰底配白卡、黑底配深灰卡，卡片边界始终可见 */
+.hb { --hb-card: var(--color-elevated); }
+.hb--white { --hb-card: var(--color-surface); }
+.hb--dark { --hb-card: var(--color-elevated); }
+.hb--white { background: var(--color-canvas); }
+.hb--surface { background: var(--color-surface); }
+.hb--dark { background: var(--color-navy-950); }
 
+/* 标题：苹果式大字、紧行距；中文不加负字距（汉字会挤在一起） */
 .hb-head { margin-bottom: var(--head-gap); }
 .hb--s1 .hb-head { text-align: center; }
-.hb-eyebrow { margin: 0 0 12px; font-weight: 600; }
-.hb--s1 .hb-eyebrow { font-size: var(--text-fs-xs); letter-spacing: 0.16em; color: var(--color-brand-600); }
-.hb--s2 .hb-eyebrow { font-size: 13px; letter-spacing: 0.15em; color: var(--rs-primary); }
-.hb-title { margin: 0; font-weight: 700; line-height: 1.3; }
-.hb--s1 .hb-title { font-size: var(--text-fs-h2); color: var(--color-ink-900); }
-.hb--s2 .hb-title { font-size: var(--rs-text-h2); color: var(--rs-text-dark); }
-.hb-bar { display: block; width: 48px; height: 3px; margin-top: 18px; }
-.hb--s1 .hb-bar { margin-left: auto; margin-right: auto; background: var(--color-brand-600); border-radius: 2px; }
-.hb--s2 .hb-bar { background: var(--rs-primary); }
-
-.hb--dark .hb-title { color: #fff; }
-.hb--s2.hb--dark .hb-eyebrow { color: #fff; opacity: 0.75; }
-.hb--s1.hb--dark .hb-eyebrow { color: var(--color-accent); }
+.hb-eyebrow { margin: 0 0 12px; font-weight: 600; font-size: var(--text-fs-body); color: var(--color-ink-500); }
+.hb-title { margin: 0; font-weight: 700; line-height: 1.15; font-size: var(--text-fs-h2); color: var(--color-ink-900); }
+/* 苹果风格不用标题下的色条装饰，靠字号与留白区分层次 */
+.hb-bar { display: none; }
 </style>

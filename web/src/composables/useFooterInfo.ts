@@ -1,4 +1,4 @@
-// 页脚公共数据 —— 样式一 AppFooter 与样式二 Style2Footer 共用
+// 页脚公共数据 —— 三套模板共用的 AppFooter 取值
 // 两套页脚的取值口径（版权兜底、二维码显隐、栏目分组）必须一致，收在这里避免各写一份
 import { computed, onMounted } from 'vue'
 import type { MenuNode } from '@/api/menu'

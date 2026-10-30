@@ -35,14 +35,13 @@ defineProps<{
   list-style: none;
 }
 .cm-item {
-  padding: 28px 24px;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--dur-base), box-shadow var(--dur-base);
+  padding: 32px 28px;
+  /* 无描边无 hover 阴影：底色与区块错开分层 */
+  background: var(--section-card, var(--color-surface));
+  border-radius: var(--radius-xl);
 }
-.cm-item:hover { border-color: var(--color-brand-200); box-shadow: var(--shadow-2); }
-.cm-mark { display: block; width: 28px; height: 4px; margin-bottom: 18px; background: var(--color-brand-600); border-radius: var(--radius-pill); }
-.cm-title { margin: 0 0 10px; font-size: var(--text-fs-h3); font-weight: 600; line-height: 1.4; color: var(--color-ink-900); }
+/* 苹果风格不用色条装饰，靠标题字号区分层次 */
+.cm-mark { display: none; }
+.cm-title { margin: 0 0 10px; font-size: var(--text-fs-h3); font-weight: 700; line-height: 1.3; color: var(--color-ink-900); }
 .cm-desc { margin: 0; font-size: 14px; line-height: 1.75; color: var(--color-ink-500); }
 </style>

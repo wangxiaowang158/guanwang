@@ -69,7 +69,6 @@ const isSelected = (dim: FilterDimension, value: string) => props.selected[dim].
   gap: 14px;
   margin-bottom: 32px;
 }
-.mf--style2 { --mf-accent: var(--rs-primary); --mf-radius: 0; }
 .mf-row { display: flex; align-items: flex-start; gap: 16px; }
 .mf-label {
   flex-shrink: 0;
@@ -85,14 +84,15 @@ const isSelected = (dim: FilterDimension, value: string) => props.selected[dim].
   padding: 0 16px;
   font-size: 14px;
   color: var(--color-ink-700);
-  background: #fff;
+  background: var(--color-canvas);
   border: 1px solid var(--color-line);
   border-radius: var(--mf-radius);
   cursor: pointer;
   transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
 }
 .mf-btn:hover:not(.is-active):not(:disabled) { color: var(--mf-accent); border-color: var(--mf-accent); }
-.mf-btn.is-active { color: #fff; background: var(--mf-accent); border-color: var(--mf-accent); font-weight: 500; }
+/* 选中态白字实底用按钮蓝（action）：深色下 brand-600 是亮链接蓝，配白字不达标 */
+.mf-btn.is-active { color: #fff; background: var(--color-action); border-color: var(--color-action); font-weight: 500; }
 .mf-btn:disabled { cursor: progress; }
 .mf-btn:disabled:not(.is-active) { opacity: 0.6; }
 .mf-foot { padding-left: 72px; }
@@ -111,7 +111,8 @@ const isSelected = (dim: FilterDimension, value: string) => props.selected[dim].
 /* 背景图区块：改用白色描边与白字，深色底上品牌色对比度不足 */
 .mf--dark .mf-label { color: #fff; }
 .mf--dark .mf-btn:not(.is-active) { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.4); }
-.mf--dark .mf-btn.is-active { color: var(--color-ink-900); background: #fff; border-color: #fff; }
+/* 白底上的字写死近黑：.tone-dark 里 ink-900 已翻成浅色，用它会白字落白底 */
+.mf--dark .mf-btn.is-active { color: #1d1d1f; background: #fff; border-color: #fff; }
 .mf--dark .mf-clear { color: #fff; }
 
 @media (max-width: 640px) {

@@ -84,7 +84,7 @@ export class SiteConfig {
   @Column({ type: 'varchar', length: 500, default: '' })
   wechatQr!: string
 
-  /** 网站模板：'1' 样式一 | '2' 样式二 */
+  /** 网站模板：'1' 样式一（深色）| '2' 样式二（浅色）| '3' 样式三（黑白交替） */
   @Column({ type: 'varchar', length: 8, default: '1' })
   template!: string
 

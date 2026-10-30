@@ -1,10 +1,10 @@
 <template>
   <!-- 404：地址不存在时停在原地址并给出去处，不再静默跳首页 -->
   <!-- 顶部留白让出固定顶栏（样式二 76px） -->
-  <div class="bg-white">
+  <div class="bg-canvas">
     <div class="max-w-3xl mx-auto px-6 lg:px-8 pt-[160px] pb-24 md:pb-32 text-center">
-      <p class="text-7xl md:text-8xl font-bold text-brand-100 leading-none tabular-nums" aria-hidden="true">404</p>
-      <h1 class="text-2xl md:text-3xl font-bold text-ink-900 mt-6">页面不存在</h1>
+      <p class="text-7xl md:text-8xl font-bold text-ink-400 leading-none tabular-nums" aria-hidden="true">404</p>
+      <h1 class="text-3xl md:text-5xl font-bold text-ink-900 leading-tight mt-6">页面不存在</h1>
       <p class="text-[15px] text-ink-500 mt-3">
         您访问的地址可能已调整或输入有误。
       </p>
@@ -15,14 +15,11 @@
           v-for="item in quickLinks"
           :key="item.path"
           :to="item.path"
-          class="text-sm text-blue-600 hover:text-blue-700 transition-colors no-underline"
+          class="text-[15px] text-brand-600 hover:underline no-underline"
         >{{ item.label }}</RouterLink>
       </nav>
 
-      <RouterLink
-        to="/"
-        class="inline-flex items-center justify-center mt-10 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors no-underline"
-      >返回首页</RouterLink>
+      <RouterLink to="/" class="btn-pill btn-pill--primary mt-10 no-underline">返回首页</RouterLink>
     </div>
   </div>
 </template>

@@ -54,7 +54,7 @@ const downloadName = computed(() => {
   transition: background-color var(--dur-fast) ease;
 }
 .attach:hover {
-  background: color-mix(in srgb, var(--color-brand-600) 14%, #fff);
+  background: var(--color-brand-100);
 }
 .attach--dark {
   color: #fff;

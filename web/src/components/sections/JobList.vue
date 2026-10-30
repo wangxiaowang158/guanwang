@@ -49,25 +49,18 @@ const mailtoOf = (title: string) =>
 .jobs {
   --job-accent: var(--color-brand-600);
   --job-radius: var(--radius-lg);
+  /* 按钮底色固定按钮蓝：深色下 brand-600 是亮链接蓝，配白字不达标 */
+  --job-btn: var(--color-action);
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 64rem;
   margin: 0 auto;
 }
-.jobs--style2 {
-  --job-accent: var(--rs-primary);
-  --job-radius: 0;
-}
 .job {
-  background: #fff;
-  border: 1px solid var(--color-line);
+  /* 无描边无阴影：底色与区块错开分层；展开态不变色，靠箭头与内容区展开表达 */
+  background: var(--section-card, var(--color-surface));
   border-radius: var(--job-radius);
-  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
-}
-.job[open] {
-  border-color: var(--job-accent);
-  box-shadow: var(--shadow-2);
 }
 .job-head {
   display: flex;
@@ -130,30 +123,24 @@ const mailtoOf = (title: string) =>
 .job-apply-btn {
   display: inline-flex;
   align-items: center;
-  height: 40px;
-  padding: 0 22px;
-  font-size: 14px;
+  height: 44px;
+  padding: 0 24px;
+  font-size: 15px;
   font-weight: 500;
   color: #fff;
-  background: var(--job-accent);
-  border-radius: var(--radius-md);
-}
-.jobs--style2 .job-apply-btn {
-  border-radius: 0;
+  background: var(--job-btn);
+  border-radius: var(--radius-pill);
+  transition: background-color var(--dur-fast);
 }
 .job-apply-btn:hover {
-  opacity: 0.9;
+  background: var(--color-action-hover);
 }
 .job-apply-tip {
   font-size: 13px;
   color: var(--color-ink-500);
 }
-/* 背景图区块上：卡片仍用白底，保证正文可读 */
-.jobs--dark .job {
-  border-color: transparent;
-}
 @media (prefers-reduced-motion: reduce) {
-  .job, .job-arrow {
+  .job-arrow {
     transition: none;
   }
 }

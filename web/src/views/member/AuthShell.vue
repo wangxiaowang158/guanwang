@@ -38,7 +38,8 @@ defineProps<{
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--zrh-bg-page, #f8fafc);
+  /* 页面浅灰（深色站深灰）、卡片白（深色站 #1d1d1f），颜色全走色板变量 */
+  background: var(--color-surface);
 }
 
 .auth-bar {
@@ -47,8 +48,8 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  background: #fff;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-canvas);
 }
 .auth-brand {
   display: flex;
@@ -61,7 +62,7 @@ defineProps<{
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: var(--brand-primary, #0ea5e9);
+  background: var(--color-action);
   color: #fff;
   font-weight: 700;
   display: flex;
@@ -78,7 +79,7 @@ defineProps<{
 .auth-brand-cn {
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-ink-900);
 }
 
 .auth-brand-en {
@@ -89,12 +90,12 @@ defineProps<{
 
 .auth-back {
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-ink-500);
   text-decoration: none;
 }
 
 .auth-back:hover {
-  color: var(--brand-primary, #0ea5e9);
+  color: var(--color-brand-600);
 }
 .auth-main {
   flex: 1;
@@ -108,17 +109,17 @@ defineProps<{
 .auth-card {
   width: 100%;
   max-width: 420px;
-  padding: 36px 32px 32px;
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 16px;
+  padding: 40px 36px 36px;
+  background: var(--color-elevated);
+  border-radius: var(--radius-xl);
 }
 
 .auth-title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  color: #0f172a;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink-900);
 }
 
 .auth-subtitle {
@@ -130,7 +131,7 @@ defineProps<{
 .auth-foot {
   margin: 20px 0 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-ink-500);
   text-align: center;
 }
 

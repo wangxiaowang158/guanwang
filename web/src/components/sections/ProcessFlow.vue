@@ -36,25 +36,21 @@ defineProps<{
 }
 .pf-item {
   position: relative;
-  padding: 24px 22px 22px;
-  background: #fff;
-  border: 1px solid var(--color-line);
-  border-top: 3px solid var(--color-brand-600);
-  border-radius: var(--radius-md);
+  padding: 28px;
+  /* 无描边无顶部色条：底色与区块错开分层 */
+  background: var(--section-card, var(--color-surface));
+  border-radius: var(--radius-xl);
 }
+/* 步骤号：大号品牌蓝数字，不用实心圆底 */
 .pf-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-bottom: 14px;
-  font-size: 15px;
+  display: block;
+  margin-bottom: 16px;
+  font-size: 32px;
   font-weight: 700;
-  color: #fff;
-  background: var(--color-brand-600);
-  border-radius: var(--radius-pill);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-brand-600);
 }
-.pf-title { margin: 0 0 8px; font-size: var(--text-fs-h4); font-weight: 600; line-height: 1.45; color: var(--color-ink-900); }
+.pf-title { margin: 0 0 8px; font-size: var(--text-fs-h4); font-weight: 700; line-height: 1.35; color: var(--color-ink-900); }
 .pf-desc { margin: 0; font-size: 14px; line-height: 1.75; color: var(--color-ink-500); }
 </style>

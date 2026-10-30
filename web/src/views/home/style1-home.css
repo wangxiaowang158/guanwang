@@ -11,13 +11,14 @@
 }
 
 /* ── 首屏 ── */
+/* 首屏恒为黑底（样式一、三都是）：苹果产品页式居中大标题，背景图 / 视频压暗后做衬底 */
 .s1-hero {
   position: relative;
-  min-height: min(100svh, 880px);
+  min-height: min(100svh, 920px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-navy-950);
+  background: #000;
 }
 .s1-hero-media {
   position: absolute; inset: 0;
@@ -25,42 +26,38 @@
   object-fit: cover;
   z-index: 0;
 }
-/* 深色渐变遮罩：保证任意背景图上白字都可读；只留一层，让背景图/视频本身成为视觉主角 */
+/* 遮罩：上下压暗、中间透亮，标题落在中上部仍可读，底部给数据条留出深色底 */
 .s1-hero-overlay {
   position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(90deg, rgba(7, 26, 54, 0.88) 0%, rgba(7, 26, 54, 0.62) 55%, rgba(7, 26, 54, 0.35) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.85) 100%);
 }
 .s1-hero-inner {
   position: relative; z-index: 3;
   flex: 1;
-  display: flex; align-items: center;
+  display: flex; align-items: center; justify-content: center;
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
-  padding: calc(var(--nav-h) + 48px) var(--gutter) 64px;
+  padding: calc(var(--nav-h) + 56px) var(--gutter) 72px;
+  text-align: center;
 }
-.s1-hero-content { max-width: 720px; }
+.s1-hero-content { max-width: 880px; display: flex; flex-direction: column; align-items: center; }
+/* 副标语：苹果式「产品名上方一行小字」，不加边框胶囊 */
 .s1-hero-tag {
   display: inline-flex; align-items: center; gap: 10px;
-  font-size: var(--text-fs-sm);
-  color: var(--color-brand-200);
-  letter-spacing: 0.04em;
-  margin: 0 0 24px;
-  padding: 6px 14px;
-  border: 1px solid rgba(184, 212, 255, 0.25);
-  border-radius: var(--radius-pill);
+  font-size: var(--text-fs-body-lg);
+  font-weight: 600;
+  color: #a1a1a6;
+  margin: 0 0 16px;
 }
-.s1-tag-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--color-accent);
-}
+.s1-tag-dot { display: none; }
 /* 中文标题：苹方最重只到 Semibold，800 会被浏览器合成加粗而发糊；
    负字距是给拉丁字母收紧用的，用在汉字上会挤在一起，故归零 */
 .s1-hero-title {
   font-size: var(--text-fs-display);
   font-weight: 700;
-  line-height: 1.2;
-  color: #fff;
+  line-height: 1.1;
+  color: #f5f5f7;
   margin: 0 0 24px;
   letter-spacing: 0;
 }
@@ -68,44 +65,47 @@
   display: inline-block;
 }
 .s1-hero-title-part:not(:last-child) {
-  margin-right: 0.5em;
+  margin-right: 0.4em;
 }
 .s1-hero-desc {
-  font-size: var(--text-fs-body-lg);
-  line-height: 1.8;
-  color: rgba(226, 232, 240, 0.85);
+  font-size: clamp(19px, 1.8vw, 24px);
+  line-height: 1.5;
+  color: #a1a1a6;
   margin: 0 0 40px;
-  max-width: 600px;
+  max-width: 680px;
 }
-.s1-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+/* 按钮：苹果式胶囊，主按钮蓝底白字、次按钮白色描边 */
+.s1-hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
 .s1-btn-primary,
 .s1-btn-outline {
-  padding: 14px 32px;
-  font-size: 15px;
-  font-weight: 600;
-  border-radius: var(--radius-md);
+  min-height: 48px;
+  padding: 0 28px;
+  font-size: 17px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background var(--dur-base), border-color var(--dur-base), transform var(--dur-fast);
+  transition: background-color var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
 }
 .s1-btn-primary {
-  background: var(--color-brand-600);
+  background: var(--color-action);
   color: #fff;
-  border: 1px solid var(--color-brand-600);
+  border: 1px solid var(--color-action);
 }
-.s1-btn-primary:hover { background: var(--color-brand-500); transform: translateY(-1px); }
+.s1-btn-primary:hover { background: var(--color-action-hover); border-color: var(--color-action-hover); }
 .s1-btn-outline {
   background: transparent;
   color: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
-.s1-btn-outline:hover { border-color: #fff; background: rgba(255, 255, 255, 0.06); }
+.s1-btn-outline:hover { border-color: #fff; background: #fff; color: #1d1d1f; }
 
 /* 首屏底部数据条：随文档流排在首屏底部，移动端不会压住按钮 */
 .s1-stats-bar {
   position: relative; z-index: 3;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(7, 26, 54, 0.55);
-  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 .s1-stats-grid {
   display: grid;
@@ -115,7 +115,13 @@
 @media (max-width: 767px) {
   .s1-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.s1-stats-note { margin: 0 auto; padding-bottom: 14px; font-size: 12px; text-align: right; color: rgba(226, 232, 240, 0.6); }
+.s1-stats-note { margin: 0 auto; padding-bottom: 14px; font-size: 12px; text-align: right; color: #86868b; }
 
 /* 首屏背景视频暂停按钮：底部是业绩数据条，挪到右上角导航下方 */
-.s1-hero .home-hero-toggle { top: 96px; bottom: auto; }
+.s1-hero .home-hero-toggle { top: calc(var(--nav-h) + 24px); bottom: auto; }
+
+/* 首屏入场：标题区淡入上移，背景图从 1.04 倍缓慢收回；减少动效时 style.css 统一关闭 */
+.s1-hero-content { animation: s1-rise var(--dur-slow) var(--ease-out) both; }
+.s1-hero-media { animation: s1-settle 1.6s var(--ease-out) both; }
+@keyframes s1-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes s1-settle { from { transform: scale(1.04); } to { transform: none; } }

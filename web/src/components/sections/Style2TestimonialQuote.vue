@@ -26,14 +26,15 @@ defineProps<{
 </script>
 
 <style scoped>
+/* 大圆角中性卡，不用左侧品牌色竖条；引文放大到小标题字号 */
 .rs-tq {
   max-width: 56rem;
   margin: 0;
-  padding: 36px 40px;
-  background: var(--rs-bg-cream);
-  border-left: 4px solid var(--rs-primary);
+  padding: 48px;
+  background: var(--section-card, var(--rs-bg-cream));
+  border-radius: var(--radius-xl);
 }
-.rs-tq-text { margin: 0; font-size: 18px; line-height: 1.9; color: var(--rs-text-dark); }
+.rs-tq-text { margin: 0; font-size: clamp(20px, 2.2vw, 26px); font-weight: 600; line-height: 1.6; color: var(--rs-text-dark); }
 .rs-tq-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 20px; font-size: 14px; }
 .rs-tq-author { font-weight: 700; color: var(--rs-text-dark); }
 .rs-tq-org { color: var(--rs-text-muted); }

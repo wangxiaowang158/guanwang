@@ -1,5 +1,5 @@
 <template>
-  <!-- 样式二栏目 Hero：深色编辑式，左对齐大标题 + 红色装饰条；bg 配置背景图时叠加于底色 -->
+  <!-- 样式二栏目 Hero：黑底左对齐白色大字；bg 配置背景图时叠黑色遮罩 -->
   <section class="rs-page-hero" :class="{ 'rs-page-hero--img': bg || video }" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined">
     <HeroVideoLayer :src="video" :poster="bg" />
     <div class="rs-page-hero-overlay"></div>
@@ -35,25 +35,32 @@ defineProps<{
 </script>
 
 <style scoped>
+/* 栏目页头恒为黑底白字（有图时再压黑遮罩），原因见下方 .rs-page-hero 的注释 */
 .rs-page-hero {
   position: relative;
-  padding-top: 140px;
-  padding-bottom: 64px;
-  background: linear-gradient(120deg, #1a1a1a 0%, #2a1416 60%, #3a161a 100%);
+  padding-top: calc(76px + clamp(64px, 9vw, 120px));
+  padding-bottom: clamp(64px, 8vw, 112px);
+  /* 无图时也是黑底白字：样式二顶栏在栏目页首屏上是透明底白字（Style2Header 的 DARK_HERO_ROUTES），
+     浅底会让顶栏文字看不见 */
+  background: #000;
   overflow: hidden;
+  --hero-ink: #f5f5f7;
+  --hero-sub: #a1a1a6;
 }
-/* 配置背景图：覆盖底色铺满，叠加深色蒙版保证文字可读 */
+/* 配置背景图：覆盖底色铺满，叠加黑色蒙版保证白字可读 */
 .rs-page-hero--img {
+  background-color: #000;
   background-size: cover;
   background-position: center;
+  --hero-ink: #fff;
+  --hero-sub: rgba(255, 255, 255, 0.8);
 }
 .rs-page-hero--img .rs-page-hero-overlay {
-  background: linear-gradient(120deg, rgba(20, 20, 20, 0.78), rgba(40, 20, 22, 0.55));
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.5) 60%, rgba(0, 0, 0, 0.25) 100%);
 }
 .rs-page-hero-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 82% 25%, rgba(200, 22, 29, 0.25), transparent 45%);
   pointer-events: none;
 }
 .rs-page-hero-actions {
@@ -68,34 +75,30 @@ defineProps<{
   gap: 8px;
   margin-bottom: 24px;
   font-size: 13px;
-  color: var(--rs-text-light-sub);
+  color: var(--hero-sub);
 }
 .rs-page-hero-crumb a:hover,
 .rs-page-hero-crumb [aria-current] {
-  color: #fff;
+  color: var(--hero-ink);
 }
+/* 眉标：常规灰字，不用彩色下划线与加宽字距 */
 .rs-page-hero-tag {
-  display: inline-block;
-  font-size: 12px;
+  margin-bottom: 14px;
+  font-size: var(--text-fs-body-lg);
   font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--rs-text-light-sub);
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--rs-primary);
-  margin-bottom: 22px;
+  color: var(--hero-sub);
 }
 .rs-page-hero-title {
-  font-size: var(--rs-text-h1);
-  font-weight: 600;
-  color: #fff;
-  line-height: 1.2;
-  margin-bottom: 18px;
+  font-size: var(--rs-text-hero);
+  font-weight: 700;
+  color: var(--hero-ink);
+  line-height: 1.1;
+  margin-bottom: 20px;
 }
 .rs-page-hero-desc {
-  font-size: 16px;
-  line-height: 1.8;
-  color: var(--rs-text-light-sub);
+  font-size: var(--text-fs-body-lg);
+  line-height: 1.6;
+  color: var(--hero-sub);
   max-width: 48rem;
 }
 </style>

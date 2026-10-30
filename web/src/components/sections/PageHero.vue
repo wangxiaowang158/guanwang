@@ -1,5 +1,5 @@
 <template>
-  <!-- 样式一栏目页头图：左对齐标题区 + 当前位置导航；配背景图时叠深色遮罩，未配时为品牌深色底 -->
+  <!-- 样式一 / 三栏目页头图：左对齐大字标题 + 当前位置导航；配背景图时叠黑色遮罩，未配时为纯黑底 -->
   <section class="page-hero" :style="bg ? { backgroundImage: `url('${bg}')` } : undefined" :class="{ 'page-hero--img': bg || video }">
     <HeroVideoLayer :src="video" :poster="bg" />
     <div class="page-hero-overlay" aria-hidden="true"></div>
@@ -38,46 +38,44 @@ defineProps<{
 .page-hero {
   position: relative;
   overflow: hidden;
-  padding: calc(var(--nav-h) + 56px) 0 64px;
-  background-color: var(--color-navy-950);
+  padding: calc(var(--nav-h) + clamp(64px, 9vw, 120px)) 0 clamp(64px, 8vw, 112px);
+  /* 样式一（深色）与样式三（黑白交替）用本组件，页头横幅恒为纯黑底大字 */
+  background-color: #000;
   background-size: cover;
   background-position: center;
 }
-/* 无图：品牌深色 + 细网格；有图：左深右浅的遮罩，保证左侧文字可读 */
+/* 无图：纯黑底，只在底部压一层极淡的灰，把横幅与下方内容区分开；不用网格与彩色光晕 */
 .page-hero-overlay {
   position: absolute;
   inset: 0;
-  background:
-    repeating-linear-gradient(0deg, transparent, transparent 63px, rgba(148, 163, 184, 0.06) 64px),
-    repeating-linear-gradient(90deg, transparent, transparent 63px, rgba(148, 163, 184, 0.06) 64px),
-    radial-gradient(circle at 85% 20%, rgba(0, 184, 217, 0.18), transparent 45%);
+  background: linear-gradient(180deg, transparent 60%, rgba(255, 255, 255, 0.04) 100%);
 }
+/* 有图：左深右浅的黑色遮罩，保证左侧白字在任意照片上可读 */
 .page-hero--img .page-hero-overlay {
-  background: linear-gradient(90deg, rgba(7, 26, 54, 0.9) 0%, rgba(7, 26, 54, 0.65) 55%, rgba(7, 26, 54, 0.35) 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.55) 55%, rgba(0, 0, 0, 0.25) 100%);
 }
 .page-hero-crumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
   font-size: 13px;
-  color: rgba(226, 232, 240, 0.7);
+  color: rgba(255, 255, 255, 0.6);
 }
 .page-hero-crumb a { transition: color var(--dur-fast); }
 .page-hero-crumb a:hover { color: #fff; }
 .page-hero-crumb [aria-current] { color: #fff; }
 .page-hero-eyebrow {
-  margin: 0 0 12px;
-  font-size: var(--text-fs-xs);
+  margin: 0 0 14px;
+  font-size: var(--text-fs-body-lg);
   font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--color-accent);
+  color: #a1a1a6;
 }
 .page-hero-title {
   margin: 0;
-  font-size: var(--text-fs-h1);
+  font-size: var(--text-fs-display);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.1;
   color: #fff;
 }
 .page-hero-actions {
@@ -90,7 +88,7 @@ defineProps<{
   margin: 16px 0 0;
   max-width: 720px;
   font-size: var(--text-fs-body-lg);
-  line-height: 1.8;
-  color: rgba(226, 232, 240, 0.85);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
 }
 </style>

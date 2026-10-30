@@ -1,7 +1,8 @@
 <template>
   <div class="s1-home">
     <!-- 首屏：背景图/视频 + 深色遮罩，标语与两个行动入口，底部业绩数据条 -->
-    <section class="s1-hero">
+    <!-- tone-dark：首屏恒为黑底，内部的数据条等组件按深色色板取色 -->
+    <section class="s1-hero tone-dark">
       <video v-if="showHeroVideo" ref="heroVideoRef" class="s1-hero-media" :src="heroVideo" :poster="heroImage || undefined" autoplay muted loop playsinline @error="markHeroVideoFailed" />
       <img v-else-if="heroImage" :src="heroImage" alt="" class="s1-hero-media" width="1920" height="1080" fetchpriority="high" />
       <HeroVideoToggle :video="heroVideoRef" class="home-hero-toggle" />
@@ -35,11 +36,12 @@
 </template>
 
 <script setup lang="ts">
-// 首页样式一（深蓝科技风）：按框架图第三版，首屏 + 6 个板块，数据来自后台内容管理与基本信息管理
+// 首页（样式一深色、样式三黑白交替共用）：首屏 + 后台配置的板块，数据来自后台内容管理与基本信息管理
 import { ref, computed, onMounted } from 'vue'
 import { getHomeSections, recordVisit } from '@/api/home'
 import type { HomeSections } from '@/api/home'
 import { useSiteStore } from '@/stores/site'
+import { useThemeStore } from '@/stores/theme'
 import { API_SUCCESS_CODE } from '@/config'
 import { useHeroVideo } from '@/composables/useHeroVideo'
 import HeroVideoToggle from '@/components/common/HeroVideoToggle.vue'
@@ -67,7 +69,8 @@ const { openLead } = useLeadModal()
 // 首屏按钮文案：后台配了用后台，否则内置文案
 const { heroPrimaryText, heroSecondaryText } = useHomeCopy(sections, site)
 // 板块顺序与显隐按后台首页布局；首屏主按钮跳到第一个实际渲染的板块
-const { rendered, primaryAnchor } = useHomeLayout(sections, site, briefs, news, cases)
+const theme = useThemeStore()
+const { rendered, primaryAnchor } = useHomeLayout(sections, site, briefs, news, cases, () => theme.tone)
 
 // 首屏文案：主标语、副标语取自基本信息管理，描述取站点描述；未配置时用内置文案
 const heroTitle = computed(() => site.value.slogan || '让建筑更节能　让环境更舒适')

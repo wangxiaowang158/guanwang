@@ -49,24 +49,26 @@ const allOptions = computed<FilterOption[]>(() => [{ label: '全部', value: '' 
   gap: 10px;
   margin-bottom: 32px;
 }
-.filter--style2 { --filter-accent: var(--rs-primary); --filter-radius: 0; justify-content: flex-start; }
+.filter--style2 { justify-content: flex-start; }
 .filter-btn {
   height: 38px;
   padding: 0 18px;
   font-size: 14px;
   color: var(--color-ink-700);
-  background: #fff;
+  background: var(--color-canvas);
   border: 1px solid var(--color-line);
   border-radius: var(--filter-radius);
   cursor: pointer;
   transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
 }
 .filter-btn:hover:not(.is-active):not(:disabled) { color: var(--filter-accent); border-color: var(--filter-accent); }
-.filter-btn.is-active { color: #fff; background: var(--filter-accent); border-color: var(--filter-accent); font-weight: 500; }
+/* 选中态是白字实底：用按钮蓝（action），深色下 brand-600 是亮链接蓝，配白字不达标 */
+.filter-btn.is-active { color: #fff; background: var(--color-action); border-color: var(--color-action); font-weight: 500; }
 .filter-btn:disabled { cursor: progress; }
 .filter-btn:disabled:not(.is-active) { opacity: 0.6; }
 
 /* 背景图区块：一律白色描边，深色底上的品牌色描边对比度不足 */
 .filter--dark .filter-btn:not(.is-active) { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.4); }
-.filter--dark .filter-btn.is-active { color: var(--color-ink-900); background: #fff; border-color: #fff; }
+/* 白底上的字写死近黑：.tone-dark 里 ink-900 已翻成浅色，用它会白字落白底 */
+.filter--dark .filter-btn.is-active { color: #1d1d1f; background: #fff; border-color: #fff; }
 </style>
