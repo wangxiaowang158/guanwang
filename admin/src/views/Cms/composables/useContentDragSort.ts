@@ -57,9 +57,16 @@ export function useContentDragSort(opts: {
     })
 
     try {
-      await Promise.all(
+      const results = await Promise.all(
         changed.map((r) => updateContentSort(opts.channelKey(), r.id, r.sort ?? 0))
       )
+      // 后端异常走 HTTP 200 + 响应体 code（如某条正被他人编辑），须逐个看 code
+      const failed = results.find((res) => res.data.code !== 200)
+      if (failed) {
+        message.error(failed.data.message || '排序更新失败')
+        reload()
+        return
+      }
       message.success('排序已更新')
     } catch {
       message.error('排序更新失败')

@@ -42,6 +42,7 @@ const CATALOG: Record<string, OpLogMeta> = {
   'POST /mgmt/content/revision/restore': { module: '内容管理', action: '恢复内容历史版本' },
   'PUT /mgmt/content/top': { module: '内容管理', action: '设置内容置顶' },
   'PUT /mgmt/content/sort': { module: '内容管理', action: '调整内容排序' },
+  'PUT /mgmt/content/status': { module: '内容管理', action: '批量上下线内容' },
 
   'POST /mgmt/site/save': { module: '基本信息', action: '保存站点信息' },
 
@@ -49,6 +50,7 @@ const CATALOG: Record<string, OpLogMeta> = {
   'PUT /mgmt/feedback/status/:id': { module: '意见反馈', action: '修改反馈状态' },
   'DELETE /mgmt/feedback/delete/:id': { module: '意见反馈', action: '删除反馈' },
   'DELETE /mgmt/feedback/batch': { module: '意见反馈', action: '批量删除反馈' },
+  'PUT /mgmt/feedback/notify-config': { module: '意见反馈', action: '修改提醒机器人配置' },
 
   'PUT /mgmt/member/status/:id': { module: '会员管理', action: '修改会员状态' },
   'PUT /mgmt/member/unlock/:id': { module: '会员管理', action: '解除会员锁定' },

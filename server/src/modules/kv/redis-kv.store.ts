@@ -85,6 +85,29 @@ export class RedisKvStore implements KvStore, OnModuleInit, OnModuleDestroy {
     await this.exec('写入', () => this.client.set(key, value, 'PX', ttlMs))
   }
 
+  async setIfAbsent(key: string, value: string, ttlMs: number): Promise<boolean> {
+    // SET NX PX：存在即不写，返回 null；写入成功返回 'OK'
+    const res = await this.exec('条件写入', () => this.client.set(key, value, 'PX', ttlMs, 'NX'))
+    return res === 'OK'
+  }
+
+  async compareAndSet(key: string, expected: string, value: string, ttlMs: number): Promise<boolean> {
+    // 比较与写入放进同一段 Lua，Redis 单线程执行脚本，期间不会插入别的命令
+    const res = await this.exec('比较写入', () => this.client.eval(
+      "if redis.call('GET', KEYS[1]) == ARGV[1] then redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3]) return 1 end return 0",
+      1, key, expected, value, String(ttlMs),
+    ))
+    return res === 1
+  }
+
+  async compareAndDel(key: string, expected: string): Promise<boolean> {
+    const res = await this.exec('比较删除', () => this.client.eval(
+      "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0",
+      1, key, expected,
+    ))
+    return res === 1
+  }
+
   async del(key: string): Promise<void> {
     await this.exec('删除', () => this.client.del(key))
   }

@@ -57,6 +57,16 @@ export const FEEDBACK_STATUS_COLOR: Record<FeedbackStatus, string> = {
   closed: 'default',
 }
 
+/**
+ * 处理阶段（列表页签），须与后端 FEEDBACK_STAGE_STATUSES 一致
+ * 处理中仍算「待处理」：没回复也没关闭，就还没处理完
+ */
+export const FEEDBACK_STAGE_STATUSES = {
+  open: ['pending', 'processing'],
+  done: ['replied', 'closed'],
+} as const satisfies Record<string, readonly FeedbackStatus[]>
+export type FeedbackStage = keyof typeof FEEDBACK_STAGE_STATUSES
+
 /** 状态流转白名单，须与后端 FEEDBACK_STATUS_FLOW 一致；已关闭为终态 */
 export const FEEDBACK_STATUS_FLOW: Record<FeedbackStatus, FeedbackStatus[]> = {
   pending: ['processing', 'replied', 'closed'],
@@ -120,6 +130,8 @@ export interface FeedbackQuery {
   keyword?: string
   source?: FeedbackSource
   status?: FeedbackStatus
+  /** 处理阶段（列表页签） */
+  stage?: FeedbackStage
   feedbackType?: FeedbackType
   /** 线索类型；none 为普通留言（未带线索类型的提交） */
   leadType?: FeedbackLeadType | typeof LEAD_TYPE_NONE

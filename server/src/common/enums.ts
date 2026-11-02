@@ -42,6 +42,15 @@ export const FEEDBACK_STATUS_FLOW: Record<FeedbackStatus, FeedbackStatus[]> = {
   [FEEDBACK_STATUS.CLOSED]: [],
 }
 
+/**
+ * 处理阶段（后台列表页签）：处理中仍算「待处理」——没回复也没关闭，就还没处理完
+ */
+export const FEEDBACK_STAGE_STATUSES = {
+  open: [FEEDBACK_STATUS.PENDING, FEEDBACK_STATUS.PROCESSING],
+  done: [FEEDBACK_STATUS.REPLIED, FEEDBACK_STATUS.CLOSED],
+} as const satisfies Record<string, readonly FeedbackStatus[]>
+export type FeedbackStage = keyof typeof FEEDBACK_STAGE_STATUSES
+
 /** 反馈类型（业务待最终确认，见设计方案 12.3） */
 export const FEEDBACK_TYPE = {
   SUGGESTION: 'suggestion',

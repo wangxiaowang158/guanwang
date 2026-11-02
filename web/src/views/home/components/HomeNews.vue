@@ -1,10 +1,11 @@
 <template>
   <!-- 首页新闻资讯：三列卡片（配图 + 日期 + 标题 + 摘要），整卡进详情；底部「更多资讯」进新闻页；无数据整块不渲染 -->
-  <HomeBlock v-if="items.length" id="news" :eyebrow="eyebrow || '新闻资讯'" :title="title || '中瑞恒最新动态'" :style2="style2" :tone="tone || 'white'">
-    <ul class="hn-grid">
-      <li v-for="item in items" :key="item.id" class="hn-card">
+  <HomeBlock v-if="items.length" id="news" :eyebrow="eyebrow || '新闻资讯'" :title="title || '中瑞恒最新动态'" :style2="style2" :tone="tone || 'white'" :more-to="style2 ? undefined : '/news'" more-text="更多资讯">
+    <!-- 样式一：头条带大图在左，其余只列日期 + 标题在右，不再三张同样的配图并排；样式二仍是三列卡片 -->
+    <ul class="hn-grid" :class="{ 'hn-grid--lead': !style2 && items.length > 1 }" :style="{ '--hn-rows': items.length }">
+      <li v-for="(item, i) in items" :key="item.id" class="hn-card" :class="{ 'hn-card--lead': !style2 && i === 0, 'hn-card--row': !style2 && i > 0 }">
         <ItemLink :item="item" link-class="hn-link" class="hn-inner">
-          <div class="hn-media">
+          <div v-if="style2 || i === 0" class="hn-media">
             <SafeImage :src="item.image" :fallback="fallback" :alt="item.title" :width="480" :height="270" />
           </div>
           <div class="hn-body">
@@ -15,7 +16,7 @@
         </ItemLink>
       </li>
     </ul>
-    <div class="hn-more-wrap">
+    <div v-if="style2" class="hn-more-wrap">
       <RouterLink to="/news" class="hn-more">更多资讯</RouterLink>
     </div>
   </HomeBlock>
@@ -74,6 +75,18 @@ const fallback = defaultImageOf('news')
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+/* ── 样式一头条布局：左侧大图头条，右侧纯文字列表，条目之间细线分隔 ── */
+@media (min-width: 900px) {
+  .hn-grid--lead { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-auto-rows: auto; align-items: start; }
+  /* 头条比右侧条目多跨一行空行（--hn-rows = 条目总数），头条撑出的多余高度落在这行，右侧条目紧凑地排在顶部 */
+  .hn-grid--lead .hn-card--lead { grid-row: span var(--hn-rows, 2); }
+}
+.hn-card--lead .hn-title { font-size: clamp(22px, 2vw, 28px); }
+.hn-card--lead .hn-body { padding: 28px 32px 32px; }
+.hn-card--row .hn-inner { background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-line); }
+.hn-card--row .hn-body { padding: 4px 0 24px; }
+.hn-card--row .hn-title { transition: color var(--dur-fast); }
+.hn-card--row .hn-inner:hover .hn-title { color: var(--color-brand-600); }
 .hn-more-wrap { margin-top: 48px; text-align: center; }
 /* 「查看全部」用苹果式文字链：蓝字 + 箭头 */
 .hn-more {

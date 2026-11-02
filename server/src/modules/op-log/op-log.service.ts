@@ -16,6 +16,8 @@ export interface WriteOpLogInput {
   method: string
   path: string
   params: string | null
+  /** 改前改后对比，已序列化 */
+  changes?: string | null
   ip: string | null
   result: OpLogResult
   errorMessage?: string | null

@@ -8,7 +8,7 @@ import { FeedbackReply } from './feedback-reply.entity'
 import { Member } from '../member/member.entity'
 import { FeedbackNotifyService } from './feedback-notify.service'
 import {
-  FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_STATUS_FLOW, type FeedbackStatus,
+  FEEDBACK_SOURCE, FEEDBACK_STAGE_STATUSES, FEEDBACK_STATUS, FEEDBACK_STATUS_FLOW, type FeedbackStatus,
 } from '../../common/enums'
 import {
   toFeedbackDetailVo, toFeedbackListItemVo, toMemberFeedbackVo,
@@ -164,6 +164,7 @@ export class FeedbackService {
     const qb = this.repo.createQueryBuilder('f')
     if (query.source) qb.andWhere('f.source = :source', { source: query.source })
     if (query.status) qb.andWhere('f.status = :status', { status: query.status })
+    if (query.stage) qb.andWhere('f.status IN (:...stageStatuses)', { stageStatuses: FEEDBACK_STAGE_STATUSES[query.stage] })
     if (query.feedbackType) qb.andWhere('f.feedbackType = :feedbackType', { feedbackType: query.feedbackType })
     // 线索类型：none 筛「普通留言」（未带线索类型），其余按值精确匹配
     if (query.leadType === LEAD_TYPE_NONE) qb.andWhere('f.leadType IS NULL')

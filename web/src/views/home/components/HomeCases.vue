@@ -1,8 +1,9 @@
 <template>
   <!-- 首页项目案例：三列卡片（配图 + 行业/模式标签 + 标题 + 两个量化结果），整卡进详情；底部「全部案例」进案例页；无数据整块不渲染 -->
-  <HomeBlock v-if="items.length" id="case" :eyebrow="eyebrow || '项目案例'" :title="title || '用节能数据说话的标杆项目'" :style2="style2" :tone="tone || 'white'">
-    <ul class="hc-grid">
-      <li v-for="item in items" :key="item.id" class="hc-card">
+  <HomeBlock v-if="items.length" id="case" :eyebrow="eyebrow || '项目案例'" :title="title || '用节能数据说话的标杆项目'" :style2="style2" :tone="tone || 'white'" :more-to="style2 ? undefined : '/case'" more-text="查看全部案例">
+    <!-- 样式一：第一个案例做大图主推，其余在右侧叠放（不等宽拼贴）；样式二仍是等宽三列 -->
+    <ul class="hc-grid" :class="{ 'hc-grid--bento': !style2 && items.length > 1 }">
+      <li v-for="(item, i) in items" :key="item.id" class="hc-card" :class="{ 'hc-card--feature': !style2 && i === 0 }">
         <ItemLink :item="item" link-class="hc-link" class="hc-inner">
           <div class="hc-media">
             <SafeImage :src="item.image" :fallback="fallback" :alt="item.title" :width="480" :height="270" />
@@ -24,7 +25,7 @@
         </ItemLink>
       </li>
     </ul>
-    <div class="hc-more-wrap">
+    <div v-if="style2" class="hc-more-wrap">
       <RouterLink to="/case" class="hc-more">查看全部案例</RouterLink>
     </div>
   </HomeBlock>
@@ -114,6 +115,34 @@ const fallback = defaultImageOf('case')
 .hc-metric-label { font-size: 12px; color: var(--color-ink-500); }
 .hc-metric-value { margin: 4px 0 0; font-size: 28px; font-weight: 700; line-height: 1.15; color: var(--color-ink-900); }
 .hc-metric-unit { margin-left: 2px; font-size: 14px; font-weight: 500; color: var(--color-ink-500); }
+/* ── 样式一拼贴：左侧主推大图（占两行），右侧两张横向小卡 ── */
+@media (min-width: 900px) {
+  .hc-grid--bento { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-auto-rows: minmax(0, 1fr); }
+  .hc-grid--bento .hc-card--feature { grid-row: span 2; }
+  /* 右侧小卡：图左文右，图固定宽度 */
+  .hc-grid--bento .hc-card:not(.hc-card--feature) .hc-inner { flex-direction: row; }
+  .hc-grid--bento .hc-card:not(.hc-card--feature) .hc-media { flex: 0 0 42%; aspect-ratio: auto; }
+  .hc-grid--bento .hc-card:not(.hc-card--feature) .hc-body { padding: 24px; }
+  .hc-grid--bento .hc-card:not(.hc-card--feature) .hc-metric-value { font-size: 22px; }
+}
+/* 主推卡：图片铺满整卡，文字压在底部渐变上，数字放大成视觉焦点 */
+.hc-card--feature .hc-inner { position: relative; min-height: 420px; }
+.hc-card--feature .hc-media { position: absolute; inset: 0; aspect-ratio: auto; }
+.hc-card--feature .hc-media::after {
+  content: '';
+  position: absolute; inset: 0;
+  /* 缺省插画是浅色底，遮罩要压得足够深，白字才可读 */
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.6) 65%, rgba(0, 0, 0, 0.88) 100%);
+}
+/* .hc-body 带 flex: 1 会撑满整卡，内容要靠底排，才落在渐变压暗区里 */
+.hc-card--feature .hc-body { position: relative; z-index: 1; justify-content: flex-end; padding: 40px; }
+.hc-card--feature .hc-title { font-size: clamp(24px, 2.4vw, 34px); color: #f5f5f7; }
+.hc-card--feature .hc-desc { color: rgba(255, 255, 255, 0.72); }
+.hc-card--feature .hc-tag { color: #f5f5f7; background: rgba(255, 255, 255, 0.16); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.hc-card--feature .hc-metric { border-top-color: rgba(255, 255, 255, 0.24); }
+.hc-card--feature .hc-metric-label,
+.hc-card--feature .hc-metric-unit { color: rgba(255, 255, 255, 0.72); }
+.hc-card--feature .hc-metric-value { font-size: clamp(32px, 3.4vw, 48px); color: #fff; }
 .hc-more-wrap { margin-top: 48px; text-align: center; }
 /* 「查看全部」用苹果式文字链：蓝字 + 箭头，不做描边按钮 */
 .hc-more {

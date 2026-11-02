@@ -3,8 +3,8 @@ import { Transform, Type } from 'class-transformer'
 import {
   IsBoolean, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, Length, Matches, Min, MaxLength, MinLength,
 } from 'class-validator'
-import { FEEDBACK_SOURCE, FEEDBACK_STATUS, FEEDBACK_TYPE, LEAD_TYPE } from '../../../common/enums'
-import type { FeedbackSource, FeedbackStatus, FeedbackType, LeadType } from '../../../common/enums'
+import { FEEDBACK_SOURCE, FEEDBACK_STAGE_STATUSES, FEEDBACK_STATUS, FEEDBACK_TYPE, LEAD_TYPE } from '../../../common/enums'
+import type { FeedbackSource, FeedbackStage, FeedbackStatus, FeedbackType, LeadType } from '../../../common/enums'
 import { WEBHOOK_TYPES } from '../notify-webhook'
 
 /** 手机号格式：中国大陆 11 位 */
@@ -154,6 +154,11 @@ export class FeedbackQueryDto {
   @IsOptional()
   @IsEnum(FEEDBACK_STATUS, { message: '状态不合法' })
   status?: FeedbackStatus
+
+  /** 按处理阶段筛选（列表页签）：open=待处理 + 处理中，done=已回复 + 已关闭 */
+  @IsOptional()
+  @IsIn(Object.keys(FEEDBACK_STAGE_STATUSES), { message: '处理阶段不合法' })
+  stage?: FeedbackStage
 
   /** 按类型筛选 */
   @IsOptional()

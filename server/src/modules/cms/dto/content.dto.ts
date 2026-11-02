@@ -299,6 +299,13 @@ export class EditLockDto {
   @IsInt()
   @Min(1)
   id!: number
+
+  /** 编辑页实例标识：同一管理员多开标签页时区分各页，关掉一页不放掉整把锁 */
+  // 只收字母数字与连字符：它会成为锁值里的对象键，排除 __proto__ 之类的特殊键
+  @IsString()
+  @Length(8, 64)
+  @Matches(/^[A-Za-z0-9-]+$/)
+  tabId!: string
 }
 
 /** 历史版本详情 / 恢复 */

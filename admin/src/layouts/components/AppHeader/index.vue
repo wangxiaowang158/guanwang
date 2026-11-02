@@ -5,7 +5,7 @@
       <h1 class="logo">中瑞恒后台管理</h1>
     </div>
     <div class="header-right">
-      <a-space :size="28">
+      <a-space :size="6">
         <span class="nav-item" @click="goHome">
           <HomeOutlined />
           <span>主页</span>
@@ -19,7 +19,11 @@
           <span>进入网站</span>
         </span>
         <a-dropdown>
-          <span class="nav-item user">HI,{{ username }}</span>
+          <span class="user-chip">
+            <span class="user-avatar">{{ avatarText }}</span>
+            <span class="user-name">{{ username }}</span>
+            <DownOutlined class="user-caret" />
+          </span>
           <template #overlay>
             <a-menu>
               <a-menu-item key="settings" @click="$emit('openSettings')">
@@ -51,7 +55,7 @@ import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   HomeOutlined, DatabaseOutlined, GlobalOutlined,
-  SettingOutlined, LogoutOutlined, KeyOutlined
+  SettingOutlined, LogoutOutlined, KeyOutlined, DownOutlined
 } from '@ant-design/icons-vue'
 import { logout } from '@/api/auth'
 import { getSiteInfo } from '@/api/cms'
@@ -68,6 +72,8 @@ const pwdVisible = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 const username = computed(() => userStore.state.value.username || '管理员')
+// 头像取账号首字，英文转大写
+const avatarText = computed(() => username.value.slice(0, 1).toUpperCase())
 
 // 前台官网地址取自站点配置，避免写死域名
 const siteWebsite = ref('')
@@ -127,25 +133,30 @@ const handleLogout = async () => {
   align-items: center;
   padding: 0;
   background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 1px 0 #eef0f4, 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
+/* 品牌区与侧栏同色，左侧连成一整条深色竖带 */
 .header-left {
   width: 200px;
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 0 20px;
-  background: #2f7cff;
+  background: #152036;
+  /* 用同色 1px 阴影盖住 .app-header 底部浅色分隔线，避免品牌区与侧栏之间出现白线 */
+  box-shadow: 0 1px 0 #152036;
 }
 
 .logo-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: #fff;
-  color: #2f7cff;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #5b9bff 0%, #2f7cff 55%, #1d5fe0 100%);
+  box-shadow: 0 4px 10px rgba(47, 124, 255, 0.4);
+  color: #fff;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -154,8 +165,9 @@ const handleLogout = async () => {
 }
 
 .logo {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
+  letter-spacing: 0.5px;
   margin: 0;
   color: #fff;
   white-space: nowrap;
@@ -164,29 +176,69 @@ const handleLogout = async () => {
 .header-right {
   display: flex;
   align-items: center;
-  padding: 0 28px;
+  padding: 0 24px;
 }
 
 .nav-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
   cursor: pointer;
-  color: #595959;
+  color: #5b6475;
   font-size: 14px;
-  transition: color 0.15s;
+  line-height: 1;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .nav-item:hover {
   color: #2f7cff;
+  background: #f2f6ff;
 }
 
-.nav-item.user {
+/* 用户：头像 + 账号 + 下拉箭头，做成可点的胶囊 */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin-left: 10px;
+  padding: 0 10px 0 4px;
+  border: 1px solid #eef0f4;
+  border-radius: 18px;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.user-chip:hover {
+  border-color: #d6e4ff;
+  background: #f7faff;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b9bff, #2f7cff);
+  color: #fff;
+  font-size: 13px;
   font-weight: 600;
-  color: #262626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.nav-item.logout {
-  color: #8c8c8c;
+.user-name {
+  color: #262f3d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.user-caret {
+  color: #98a2b3;
+  font-size: 10px;
 }
 </style>

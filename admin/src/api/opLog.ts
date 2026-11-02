@@ -28,11 +28,36 @@ export interface OpLogItem {
   path: string
   /** 请求参数快照，密码一类字段已脱敏、超长已截断 */
   params: string | null
+  /** 改前改后对比（JSON，结构见 OpLogChanges）；新增类、无变化、早于此功能的日志为空 */
+  changes: string | null
   ip: string | null
   result: OpLogResult
   /** 失败原因，仅失败记录有值 */
   errorMessage: string | null
   createdAt: string
+}
+
+/** 一个字段的变化；值为后端转好的展示串，null 表示空 */
+export interface OpLogFieldChange {
+  field: string
+  label: string
+  before: string | null
+  after: string | null
+}
+
+/** 改前改后对比，与后端 op-log-diff 的 OpLogChanges 一致 */
+export interface OpLogChanges {
+  /** 对象类型，如「栏目」 */
+  target: string
+  records: {
+    id: number
+    title: string | null
+    /** update 逐字段对比；remove 为删除前的完整内容 */
+    mode: 'update' | 'remove'
+    fields: OpLogFieldChange[]
+  }[]
+  /** 记录数或长度超限，只保存了部分 */
+  truncated?: boolean
 }
 
 /** 操作日志查询参数 */

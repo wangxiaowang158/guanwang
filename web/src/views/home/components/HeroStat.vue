@@ -17,11 +17,15 @@ const { display } = useCountUp(elRef, props.value)
 </script>
 
 <style scoped>
-.hero-stat { padding: 24px 0; }
+.hero-stat { padding: 32px 0; }
+/* 数字是首屏的第二视觉焦点：放大并加白到浅蓝的渐变 */
 .hero-stat-value {
-  font-size: clamp(28px, 3vw, 40px);
+  font-size: clamp(36px, 4.4vw, 60px);
+  background: linear-gradient(180deg, #fff 30%, #9ccfff);
+  -webkit-background-clip: text;
+  background-clip: text;
   font-weight: 700;
-  color: #fff;
+  color: transparent;
   line-height: 1.1;
   /* 数字是拉丁字形，收紧字距；单位与标签是中文，不收 */
   letter-spacing: -0.02em;
@@ -31,6 +35,7 @@ const { display } = useCountUp(elRef, props.value)
   margin-left: 2px;
   letter-spacing: 0;
   color: rgba(255, 255, 255, 0.72);
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.72);
 }
 .hero-stat-label {
   margin-top: 6px;

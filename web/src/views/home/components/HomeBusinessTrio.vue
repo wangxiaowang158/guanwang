@@ -51,17 +51,38 @@ defineProps<{
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 36px 32px;
+  padding: 40px 36px;
   /* 苹果式卡片：不描边，靠卡片底色与板块底色错开分层 */
   background: var(--hb-card, var(--color-elevated));
   border-radius: var(--radius-xl);
 }
-.ht-index { font-size: 24px; font-weight: 700; color: var(--color-ink-400); }
-.ht-name { margin: 8px 0 12px; font-size: var(--text-fs-sm); font-weight: 600; color: var(--color-ink-500); }
-.ht-pain { margin: 0 0 16px; font-size: var(--text-fs-h3); font-weight: 700; line-height: 1.35; color: var(--color-ink-900); overflow-wrap: anywhere; }
+/* 无配图时：大号渐变序号做视觉主体，卡片右上角一团品牌色光晕，避免整卡只有小字 */
+.ht-card { position: relative; overflow: hidden; isolation: isolate; transition: transform var(--dur-base, 300ms) var(--ease-out); }
+.ht-card::before {
+  content: '';
+  position: absolute; top: -120px; right: -120px; z-index: -1;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(41, 151, 255, 0.28), transparent 70%);
+  transition: opacity var(--dur-slow) var(--ease-out);
+  opacity: 0.6;
+}
+.ht-card:hover { transform: translateY(-4px); }
+.ht-card:hover::before { opacity: 1; }
+.ht-index {
+  font-size: clamp(56px, 6vw, 88px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, var(--color-brand-600), #5ac8fa 60%, transparent 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ht-name { margin: 20px 0 8px; font-size: var(--text-fs-body); font-weight: 600; color: var(--color-brand-600); }
+.ht-pain { margin: 0 0 16px; font-size: clamp(22px, 2vw, 28px); font-weight: 700; line-height: 1.35; color: var(--color-ink-900); overflow-wrap: anywhere; }
 .ht-row { margin: 0 0 12px; font-size: var(--text-fs-sm); line-height: 1.8; color: var(--color-ink-700); overflow-wrap: anywhere; }
 /* 配图贴卡片顶边铺满：抵消卡片内边距；信息图多为白底，放进浅色作用域，深色站里也不突兀 */
-.ht-media { margin: -36px -32px 20px; overflow: hidden; background: var(--color-canvas); }
+.ht-media { margin: -40px -36px 20px; overflow: hidden; background: var(--color-canvas); }
 .ht-media .ht-img { display: block; width: 100%; height: 200px; object-fit: contain; }
 /* 说明文字最多四行，三张卡高度接近 */
 .ht-row { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }

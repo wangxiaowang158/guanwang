@@ -136,29 +136,52 @@ const handleMenuClick = ({ key }: { key: string }) => {
 </script>
 
 <style scoped>
+/* 底色与菜单配色统一由 useTheme 的 Menu token 控制，这里只管容器 */
 .app-sidebar {
-  background: #1f2a44;
+  background: #152036;
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.08);
 }
 
 .menu-scroll {
   height: 100%;
+  padding: 10px 0 16px;
   overflow-y: auto;
   overflow-x: hidden;
   /* 细滚动条，避免常驻宽滚动条破坏深色侧栏观感 */
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
-:deep(.ant-menu.ant-menu-dark) {
-  background: #1f2a44;
+/* 深色菜单配色：一级与侧栏同底，子菜单略深，文字略提亮 */
+:deep(.ant-menu.ant-menu-dark),
+:deep(.ant-menu-dark .ant-menu-sub.ant-menu-inline) {
+  background: transparent;
 }
 
-:deep(.ant-menu-dark .ant-menu-sub) {
-  background: #18233a;
+:deep(.ant-menu-dark .ant-menu-sub.ant-menu-inline) {
+  margin: 2px 0;
+  background: rgba(0, 0, 0, 0.18);
 }
 
-:deep(.ant-layout-sider-trigger) {
-  background: #1f2a44;
+:deep(.ant-menu-dark .ant-menu-item),
+:deep(.ant-menu-dark .ant-menu-submenu-title) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:deep(.ant-menu-dark .ant-menu-item:not(.ant-menu-item-selected):hover),
+:deep(.ant-menu-dark .ant-menu-submenu-title:hover) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 选中项加一层主色投影，浮出深色底 */
+:deep(.ant-menu-dark .ant-menu-item-selected) {
+  box-shadow: 0 4px 12px rgba(47, 124, 255, 0.35);
+}
+
+/* 展开的父级菜单文字提亮，标出当前所在分组 */
+:deep(.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title) {
+  color: #fff;
 }
 
 /* 菜单文字与角标同行，角标靠右 */

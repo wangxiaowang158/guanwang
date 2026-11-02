@@ -1,6 +1,6 @@
 <template>
-  <!-- 区块外观：底色 / 背景图、每行列数、标题对齐；全部留默认即沿用模板原样（白 / 浅色交替、形态自带列数） -->
-  <a-divider style="margin: 4px 0 16px">区块外观</a-divider>
+  <!-- 区块外观：底色 / 背景图、每行列数、标题对齐；全部留默认即沿用模板原样（白 / 浅色交替、形态自带列数）
+       分组标题由父组件的折叠面板提供 -->
   <a-form-item label="区块底色">
     <a-radio-group v-model:value="model.blockTone" button-style="solid">
       <a-radio-button value="auto">自动交替</a-radio-button>

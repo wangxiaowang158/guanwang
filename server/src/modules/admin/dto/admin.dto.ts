@@ -15,11 +15,17 @@ import {
 
 /** 管理员列表查询条件 */
 export class AdminListQueryDto {
-  /** 关键词：匹配账号与名称；上限与会员、反馈两处查询保持一致 */
+  /** 账号，模糊匹配；上限与会员、反馈两处查询保持一致 */
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  keyword?: string
+  account?: string
+
+  /** 姓名，模糊匹配；与账号同时填写时须同时满足 */
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  name?: string
 
   /** 页码，从 1 起。@Type 显式转数字：query 取到的都是字符串 */
   @IsOptional()

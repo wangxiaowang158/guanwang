@@ -65,13 +65,13 @@ export class MgmtContentController {
    */
   @Post('lock')
   async lock(@Body() dto: EditLockDto, @CurrentAdmin() admin: CurrentAdminInfo) {
-    return this.locks.acquire(dto.channelKey, dto.id, admin)
+    return this.locks.acquire(dto.channelKey, dto.id, admin, dto.tabId)
   }
 
   /** 解锁：离开编辑页或保存成功后调用；只释放本人的锁 */
   @Post('unlock')
   async unlock(@Body() dto: EditLockDto, @CurrentAdmin() admin: CurrentAdminInfo) {
-    await this.locks.release(dto.channelKey, dto.id, admin)
+    await this.locks.release(dto.channelKey, dto.id, admin, dto.tabId)
     return null
   }
 

@@ -3,7 +3,7 @@
 // 抽出接口而非直接用 ioredis：本地开发与单实例部署不该被迫多起一个 Redis，
 // 而业务代码也不该为「有没有 Redis」写两套分支。
 //
-// 只定义验证码场景真正需要的四个操作，不做通用缓存层：
+// 只定义验证码、登录计数、编辑锁真正用到的操作，不做通用缓存层：
 // 接口越小，内存实现与 Redis 实现的语义差异就越少，越不容易出现
 // 「本地能过、线上不行」这类只在某一实现下暴露的问题。
 
@@ -25,6 +25,33 @@ export interface KvStore {
    * @param ttlMs 存活毫秒数，到期自动消失
    */
   set(key: string, value: string, ttlMs: number): Promise<void>
+
+  /**
+   * 键不存在时才写入（原子），并设定过期时间
+   *
+   * 编辑锁抢锁必须用它而非 get + set：两人同时进入时都读到「无锁」，
+   * 各自写入后两边都以为拿到了锁
+   * @param key 键名
+   * @param value 值
+   * @param ttlMs 存活毫秒数
+   * @returns 是否写入成功；键已存在（且未过期）时返回 false
+   */
+  setIfAbsent(key: string, value: string, ttlMs: number): Promise<boolean>
+
+  /**
+   * 当前值等于 expected 时才写入（原子），并重设过期时间
+   *
+   * 编辑锁续约必须用它而非 get + set：读到本人锁之后它恰好到期、被别人抢到，
+   * 无条件 set 会把对方的锁覆盖掉
+   * @returns 是否写入；值已变（或键已不存在）时返回 false，调用方重读再试
+   */
+  compareAndSet(key: string, expected: string, value: string, ttlMs: number): Promise<boolean>
+
+  /**
+   * 当前值等于 expected 时才删除（原子）
+   * @returns 是否删除；值已变时返回 false
+   */
+  compareAndDel(key: string, expected: string): Promise<boolean>
 
   /**
    * 删除

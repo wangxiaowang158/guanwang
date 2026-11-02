@@ -24,7 +24,8 @@ const MAX_PAGE_SIZE = 100
 
 /** 后台管理员列表查询条件 */
 export interface AdminListQuery {
-  keyword?: string
+  account?: string
+  name?: string
   page?: number
   pageSize?: number
 }
@@ -147,15 +148,17 @@ export class AdminService {
   }
 
   /**
-   * 后台列表，支持账号或名称模糊匹配
+   * 后台列表，账号、名称分别模糊匹配，两项都填时须同时满足
    * 分页在服务端完成：账号数量虽通常不大，但不设上限意味着条数随时间只增不减
-   * @param query 关键字与分页参数
+   * @param query 账号、名称与分页参数
    */
   async list(query: AdminListQuery = {}): Promise<PageResult<Admin>> {
-    const keyword = query.keyword?.trim()
-    const where = keyword
-      ? [{ account: Like(`%${keyword}%`) }, { name: Like(`%${keyword}%`) }]
-      : undefined
+    const account = query.account?.trim()
+    const name = query.name?.trim()
+    const where = {
+      ...(account ? { account: Like(`%${account}%`) } : {}),
+      ...(name ? { name: Like(`%${name}%`) } : {}),
+    }
 
     const { page, pageSize, skip } = resolvePaging(query.page, query.pageSize, {
       defaultSize: DEFAULT_PAGE_SIZE,

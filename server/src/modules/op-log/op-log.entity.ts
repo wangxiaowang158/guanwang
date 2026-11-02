@@ -48,6 +48,13 @@ export class AdminOpLog {
   @Column({ type: 'text', nullable: true })
   params!: string | null
 
+  /**
+   * 改前改后对比（JSON，结构见 op-log-diff 的 OpLogChanges）
+   * 只在修改、删除类操作成功后记录；新增、无变化、未收录的接口为空
+   */
+  @Column({ type: 'text', nullable: true })
+  changes!: string | null
+
   /** 操作来源 IP */
   @Column({ type: 'varchar', length: 64, nullable: true })
   ip!: string | null

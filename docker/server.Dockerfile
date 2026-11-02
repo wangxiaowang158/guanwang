@@ -28,14 +28,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 # 固定进程时区：发布时间按「本地时间」解析并回显，库里存 UTC（timezone: 'Z'）。
 # 容器默认 UTC，与本机开发（东八区）不一致时同一条内容会差 8 小时、跨零点就差一天。
-# node:22-bookworm-slim 实测自带 zoneinfo；node:24 同为 bookworm-slim 底座，升级后未单独实测，
-# 若容器内时间仍是 UTC，在下方 apt-get 一行补装 tzdata
+# TZ 依赖 /usr/share/zoneinfo，下方显式装 tzdata：不赌基础镜像是否自带，
+# 缺了它 TZ 会被静默忽略、进程照样跑在 UTC
 ENV TZ=Asia/Shanghai
 
 # 中文字体：图片水印（sharp 渲染 SVG 文字）要用，slim 镜像不带任何 CJK 字体，
 # 缺了中文水印会渲染成一排方框。文泉驿微米黑约 4MB，比 Noto CJK（数百 MB）小两个量级
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends fonts-wqy-microhei fontconfig \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata fonts-wqy-microhei fontconfig \
     && rm -rf /var/lib/apt/lists/*
 
 # 容器内进程以非 root 运行；node 用户由基础镜像预置

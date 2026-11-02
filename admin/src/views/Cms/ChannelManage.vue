@@ -57,74 +57,76 @@
             <!-- 前台区块配置：子栏目会作为父页面的一个内容区块呈现 -->
             <template v-else-if="showBlockConfig">
               <a-divider style="margin: 4px 0 16px">前台区块</a-divider>
-              <a-form-item label="区块锚点">
-                <a-input
-                  v-model:value="form.anchor"
-                  placeholder="小写字母、数字与连字符，如 company-video"
-                  :maxlength="64"
-                />
-                <div class="field-tip">留空则该栏目内容不在前台页面上呈现</div>
-              </a-form-item>
               <a-form-item label="区块副标题">
                 <a-input v-model:value="form.subheading" placeholder="选填，显示在区块标题下方" :maxlength="300" />
               </a-form-item>
               <a-form-item label="展示形态">
                 <a-select v-model:value="form.layout" :options="layoutOptions" placeholder="默认图标卡片" allow-clear />
-                <div class="field-tip">
-                  选「视频」时，内容的视频字段作为播放源、封面图片作为播放前首帧；
-                  「图片/视频展示」每条内容一张大图或一段视频，按原比例完整显示；
-                  「品牌介绍」用副标题作口号、正文作品牌故事；
-                  痛点、流程、看板、合作模式、证言、图集这几种，数据取自内容的对应扩展字段
-                </div>
+                <div class="field-tip">{{ layoutTipOf(form.layout) }}</div>
               </a-form-item>
-              <a-form-item label="菜单分组">
-                <a-input v-model:value="form.menuGroup" placeholder="选填，如：三大业务" :maxlength="50" />
-                <div class="field-tip">前台超级下拉菜单里，同分组名的子项归为一列；留空则按单列展示</div>
-              </a-form-item>
-              <a-form-item label="菜单说明">
-                <a-input v-model:value="form.menuDesc" placeholder="选填，显示在菜单项下方的一句话" :maxlength="100" />
-              </a-form-item>
-              <BlockAppearanceFields v-model="form" />
+              <!-- 外观与锚点/菜单很少改，默认收起，标题上直接显示当前配置 -->
+              <a-collapse v-model:active-key="blockPanels" ghost class="sub-panels">
+                <a-collapse-panel key="look" :header="`区块外观：${appearanceSummary}`">
+                  <BlockAppearanceFields v-model="form" />
+                </a-collapse-panel>
+                <a-collapse-panel key="place" :header="`锚点与菜单：${placeSummary}`">
+                  <a-form-item label="区块锚点">
+                    <a-input
+                      v-model:value="form.anchor"
+                      placeholder="小写字母、数字与连字符，如 company-video"
+                      :maxlength="64"
+                    />
+                    <div class="field-tip">留空则该栏目内容不在前台页面上呈现</div>
+                  </a-form-item>
+                  <a-form-item label="菜单分组">
+                    <a-input v-model:value="form.menuGroup" placeholder="选填，如：三大业务" :maxlength="50" />
+                    <div class="field-tip">前台超级下拉菜单里，同分组名的子项归为一列；留空则按单列展示</div>
+                  </a-form-item>
+                  <a-form-item label="菜单说明">
+                    <a-input v-model:value="form.menuDesc" placeholder="选填，显示在菜单项下方的一句话" :maxlength="100" />
+                  </a-form-item>
+                </a-collapse-panel>
+              </a-collapse>
             </template>
             <!-- 官网页面：一级栏目可设为站内页面（路径 + 菜单挂靠 + 头图素材）或导航外链 -->
             <ChannelPageFields v-if="showPageFields" :key="formSeq" ref="pageFieldsRef" v-model="form" :channels="flat" />
-            <!-- 页面头图文案：走通用栏目页模板的板块可填，对应前台页面顶部 -->
-            <template v-if="showHero">
-              <a-divider style="margin: 4px 0 16px">页面头图</a-divider>
-              <a-form-item label="眉标题">
-                <a-input v-model:value="form.heroEyebrow" placeholder="选填，显示在主标题上方" :maxlength="100" />
-              </a-form-item>
-              <a-form-item label="主标题">
-                <a-input v-model:value="form.heroTitle" placeholder="留空则使用栏目名称" :maxlength="200" />
-              </a-form-item>
-              <a-form-item label="头图描述">
-                <a-textarea v-model:value="form.heroDesc" placeholder="选填，显示在主标题下方" :rows="3" :maxlength="1000" />
-              </a-form-item>
-              <div class="field-tip" style="margin: -8px 0 16px">
-                头图背景图与视频在上方「官网页面」里上传；未上传时沿用「Banner管理」里该页面的头图
-              </div>
-            </template>
-            <!-- SEO 信息（TDK）：仅顶级板块页可填，用于前台页面搜索引擎优化 -->
-            <template v-if="showSeo">
-              <a-divider style="margin: 4px 0 16px">SEO 信息（TDK）</a-divider>
-              <a-form-item label="SEO 标题">
-                <a-input v-model:value="form.seoTitle" placeholder="搜索结果标题，建议 60 字以内" :maxlength="100" />
-              </a-form-item>
-              <a-form-item label="SEO 关键词">
-                <a-input v-model:value="form.seoKeywords" placeholder="多个关键词用英文逗号分隔" :maxlength="200" />
-              </a-form-item>
-              <a-form-item label="SEO 描述">
-                <a-textarea v-model:value="form.seoDescription" placeholder="搜索结果摘要，建议 150 字以内" :rows="3" :maxlength="500" show-count />
-              </a-form-item>
-              <!-- 未填 SEO 标题时前台用网站名称，这里同口径回落，预览才与实际一致 -->
-              <SeoPreview
-                class="seo-preview-gap"
-                :title="form.seoTitle || form.name"
-                :description="form.seoDescription"
-                :image="form.heroBg"
-                :url="form.portalPath || editingPortalPath"
-              />
-            </template>
+            <!-- 页面头图文案（走通用栏目页模板的页面）与 SEO 上线前配一次，默认收起，标题上显示当前生效的值 -->
+            <a-collapse v-if="showHero || showSeo" v-model:active-key="pagePanels" ghost class="sub-panels">
+              <a-collapse-panel v-if="showHero" key="hero" :header="`页面头图文案：${form.heroTitle.trim() || form.name || '未填写'}`">
+                <a-form-item label="眉标题">
+                  <a-input v-model:value="form.heroEyebrow" placeholder="选填，显示在主标题上方" :maxlength="100" />
+                </a-form-item>
+                <a-form-item label="主标题">
+                  <a-input v-model:value="form.heroTitle" placeholder="留空则使用栏目名称" :maxlength="200" />
+                </a-form-item>
+                <a-form-item label="头图描述">
+                  <a-textarea v-model:value="form.heroDesc" placeholder="选填，显示在主标题下方" :rows="3" :maxlength="1000" />
+                </a-form-item>
+                <div class="field-tip" style="margin: -8px 0 16px">
+                  头图背景图与视频在上方「官网页面」里上传；未上传时沿用「Banner管理」里该页面的头图
+                </div>
+              </a-collapse-panel>
+              <!-- SEO 信息（TDK）：仅顶级板块页可填，用于前台页面搜索引擎优化 -->
+              <a-collapse-panel v-if="showSeo" key="seo" :header="`搜索引擎（SEO）：${seoSummary}`">
+                <a-form-item label="SEO 标题">
+                  <a-input v-model:value="form.seoTitle" placeholder="搜索结果标题，建议 60 字以内" :maxlength="100" />
+                </a-form-item>
+                <a-form-item label="SEO 关键词">
+                  <a-input v-model:value="form.seoKeywords" placeholder="多个关键词用英文逗号分隔" :maxlength="200" />
+                </a-form-item>
+                <a-form-item label="SEO 描述">
+                  <a-textarea v-model:value="form.seoDescription" placeholder="搜索结果摘要，建议 150 字以内" :rows="3" :maxlength="500" show-count />
+                </a-form-item>
+                <!-- 未填 SEO 标题时前台用网站名称，这里同口径回落，预览才与实际一致 -->
+                <SeoPreview
+                  class="seo-preview-gap"
+                  :title="form.seoTitle || form.name"
+                  :description="form.seoDescription"
+                  :image="form.heroBg"
+                  :url="form.portalPath || editingPortalPath"
+                />
+              </a-collapse-panel>
+            </a-collapse>
             <ChannelAdvancedFields :key="formSeq" v-model="form" />
             <a-form-item :wrapper-col="{ offset: 0 }" class="form-actions">
               <a-space>
@@ -151,6 +153,7 @@ import {
 import { useChannels } from '@/composables/useChannels'
 import { pruneChannelPayload } from './channelPayload'
 import { hideable } from './channelRules'
+import { layoutTipOf } from './layoutTips'
 import ChannelTree from './components/ChannelTree.vue'
 import ChannelPageFields from './components/ChannelPageFields.vue'
 import BlockAppearanceFields from './components/BlockAppearanceFields.vue'
@@ -271,6 +274,39 @@ const treeData = computed(() => {
   return toTree(null)
 })
 
+/** 区块下的折叠面板（外观 / 锚点与菜单）与页面下的折叠面板（头图文案 / SEO）当前展开项 */
+const blockPanels = ref<string[]>([])
+const pagePanels = ref<string[]>([])
+
+const TONE_LABEL: Record<BlockTone, string> = { auto: '自动交替', white: '白色', surface: '浅色', dark: '深色', image: '背景图' }
+/** 折叠标题上的外观摘要：只列改过默认的项，都没改时提示沿用模板 */
+const appearanceSummary = computed(() => {
+  const parts: string[] = []
+  if (form.blockTone !== 'auto') parts.push(`${TONE_LABEL[form.blockTone]}底`)
+  if (form.blockColumns) parts.push(`每行 ${form.blockColumns} 列`)
+  if (form.headingAlign) parts.push(form.headingAlign === 'center' ? '标题居中' : '标题左对齐')
+  return parts.length ? parts.join(' · ') : '沿用模板默认'
+})
+/** 折叠标题上的锚点摘要：没有锚点时区块不在前台呈现，直接写明 */
+const placeSummary = computed(() => {
+  const anchor = form.anchor.trim()
+  if (!anchor) return '未设锚点，前台不显示此区块'
+  return form.menuGroup.trim() ? `#${anchor} · 菜单分组「${form.menuGroup.trim()}」` : `#${anchor}`
+})
+const seoSummary = computed(() => {
+  const n = [form.seoTitle, form.seoKeywords, form.seoDescription].filter(v => v.trim()).length
+  return n ? `已填 ${n}/3 项` : '未填写'
+})
+
+/** 打开面板时决定默认展开：新建时锚点必填所以展开；外观选了背景图却没传图时展开提示补图 */
+const resetPanels = () => {
+  blockPanels.value = [
+    ...(form.blockTone === 'image' && !form.blockBg ? ['look'] : []),
+    ...(!form.id ? ['place'] : []),
+  ]
+  pagePanels.value = []
+}
+
 // 新建区块选定展示形态时，按形态自动勾选它会用到的内容字段（已建栏目不动，尊重已有配置）
 watch(() => form.layout, (layout) => {
   if (form.id || !layout) return
@@ -288,6 +324,7 @@ const openAdd = (parentId: number | null) => {
   form.parentId = parentId
   // 新建栏目还没有前台路径，不展示头图配置
   editingPortalPath.value = ''
+  resetPanels()
   editing.value = true
 }
 
@@ -326,6 +363,7 @@ const openEdit = (node: Channel) => {
     blockColumns: node.blockColumns || 0,
     headingAlign: node.headingAlign || ''
   })
+  resetPanels()
   editing.value = true
 }
 
@@ -340,6 +378,8 @@ const onSave = async () => {
   }
   const block = showBlockConfig.value && !isHomeSection.value
   if (block && form.blockTone === 'image' && !form.blockBg) {
+    // 外观面板可能收着，展开让上传框露出来
+    if (!blockPanels.value.includes('look')) blockPanels.value = [...blockPanels.value, 'look']
     message.error('区块底色选了「背景图」，请上传背景图')
     return
   }
@@ -452,5 +492,15 @@ onMounted(fetchList)
 
 .home-tip {
   margin-bottom: 16px;
+}
+
+/* 折叠分组与「高级设置」同一观感：无边框、标题顶格灰字 */
+.sub-panels {
+  margin: 0 0 8px;
+}
+
+.sub-panels :deep(.ant-collapse-header) {
+  padding-left: 0 !important;
+  color: #595959;
 }
 </style>

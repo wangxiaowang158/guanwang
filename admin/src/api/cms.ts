@@ -207,7 +207,7 @@ export interface SiteInfo {
   logo: string
   footerLogo: string
   wechatQr: string
-  /** 网站模板：'1' 样式一（深蓝科技风）| '2' 样式二（集团品牌风） */
+  /** 网站模板：'1' 样式一（深色）| '2' 样式二（浅色）| '3' 样式三（黑白交替） */
   template: string
   /** 首页 Hero 背景图地址（视频优先级高于图片） */
   heroImage?: string
@@ -414,12 +414,17 @@ export interface EditLockResult {
 }
 
 /** 加锁或续约：进入编辑页时调用，之后定时续约 */
-export const lockContent = (channelKey: string, id: number) =>
-  axios.post<ApiResult<EditLockResult>>('/api/mgmt/content/lock', { channelKey, id })
+export const lockContent = (channelKey: string, id: number, tabId: string) =>
+  axios.post<ApiResult<EditLockResult>>('/api/mgmt/content/lock', { channelKey, id, tabId })
 
-/** 解锁：只释放本人持有的锁 */
-export const unlockContent = (channelKey: string, id: number) =>
-  axios.post<ApiResult<null>>('/api/mgmt/content/unlock', { channelKey, id })
+/**
+ * 解锁：只释放本人这个编辑页（tabId）持有的份额
+ * @param keepalive 关页 / 刷新时用：走 fetch 适配器的 keepalive，页面卸载后请求仍能发完；
+ *   照常经过拦截器带鉴权头，sendBeacon 做不到这一点
+ */
+export const unlockContent = (channelKey: string, id: number, tabId: string, keepalive = false) =>
+  axios.post<ApiResult<null>>('/api/mgmt/content/unlock', { channelKey, id, tabId },
+    keepalive ? { adapter: 'fetch', fetchOptions: { keepalive: true } } : undefined)
 
 /** 恢复到某历史版本（当前值会先记成一个新版本） */
 export const restoreRevision = (channelKey: string, revisionId: number) =>

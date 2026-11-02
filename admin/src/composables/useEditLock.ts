@@ -3,7 +3,7 @@
 // 对方离开（解锁或租约到期）即自动拿到锁、重新载入最新内容并恢复可编辑，不必刷新页面；
 // 本页有未保存修改（断网 / 休眠超过租约后锁被接手）时先确认，不静默覆盖。
 // 解锁失败不处理：服务端租约 90 秒后自动释放
-import { onBeforeUnmount, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Modal } from 'ant-design-vue'
 import { lockContent, unlockContent, type EditLockHolder } from '@/api/cms'
 
@@ -39,16 +39,23 @@ export function useEditLock(onRegain?: () => Promise<void> | void, isDirty?: () 
   let held = false
   // 每次 start / stop 自增：请求在途时页面已离开或换了目标，回来的结果作废
   let epoch = 0
+  // 组件已卸载：之后再调 start（详情加载期间就离开了页面）一律不加锁、不建定时器
+  let disposed = false
+  // 页面曾进往返缓存：离开时已解锁，期间别人可能改过，回来重新拿到锁时须按「失而复得」重新载入
+  let lostOnHide = false
+  // 本编辑页实例标识：同一管理员多开标签页时，关掉一页只摘它自己，不放掉整把锁
+  // 不用 crypto.randomUUID：它只在 HTTPS / localhost 下存在，内网 http 部署会直接报错；只需互不相同，不需不可猜
+  const tabId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 
   async function tryLock(): Promise<void> {
     if (!target) return
     const my = epoch
     const { channelKey, id } = target
     try {
-      const res = await lockContent(channelKey, id)
+      const res = await lockContent(channelKey, id, tabId)
       if (my !== epoch) {
         // 请求在途时已 stop：服务端这把锁已拿到却没人续约，立即补解，免得挡别人 90 秒
-        if (res.data.code === 200 && res.data.data?.acquired) void unlockContent(channelKey, id).catch(() => {})
+        if (res.data.code === 200 && res.data.data?.acquired) void unlockContent(channelKey, id, tabId).catch(() => {})
         return
       }
       // 接口异常（非 200）按放行处理：编辑锁是协作提示，保存时服务端还会再校验
@@ -56,7 +63,11 @@ export function useEditLock(onRegain?: () => Promise<void> | void, isDirty?: () 
         lockedBy.value = null
         return
       }
-      const wasLocked = !!lockedBy.value
+      // 没拿到锁也没有占用人：服务端并发冲突判不出（本人另一标签页同时续约），保持现状等下次续约。
+      // 若在这里清掉只读 / 往返缓存标记，下次真拿到锁时就不会重新载入，页面上的旧数据会覆盖他人的保存
+      if (!res.data.data.acquired && !res.data.data.holder) return
+      const wasLocked = !!lockedBy.value || lostOnHide
+      lostOnHide = false
       held = res.data.data.acquired
       lockedBy.value = held ? null : res.data.data.holder
       // 从只读转为可编辑：对方期间可能已保存，页面上是旧数据，须重新载入再让本人改
@@ -72,7 +83,8 @@ export function useEditLock(onRegain?: () => Promise<void> | void, isDirty?: () 
    */
   async function start(channelKey: string, id: number | undefined): Promise<void> {
     stop()
-    if (!id) return
+    // 已卸载：详情接口在离开页面后才返回，此时加锁就再也没人解、没人停续约
+    if (disposed || !id) return
     const my = epoch
     target = { channelKey, id }
     await tryLock()
@@ -86,12 +98,40 @@ export function useEditLock(onRegain?: () => Promise<void> | void, isDirty?: () 
     epoch++
     if (timer) clearInterval(timer)
     timer = null
-    if (target && held) void unlockContent(target.channelKey, target.id).catch(() => {})
+    if (target && held) void unlockContent(target.channelKey, target.id, tabId).catch(() => {})
     target = null
     held = false
   }
 
-  onBeforeUnmount(stop)
+  /**
+   * 关页 / 刷新：组件不走卸载，只能在这里补解，否则锁要挂满 90 秒租约
+   * 不清 target / 定时器：页面若从往返缓存恢复，下次续约会重新拿回锁
+   */
+  function onPageHide(): void {
+    if (target && held) void unlockContent(target.channelKey, target.id, tabId, true).catch(() => {})
+  }
+
+  /**
+   * 从往返缓存恢复：离开时已解锁，本地却还当自己持锁，若干等下次续约，
+   * 最多 30 秒里页面可编辑而服务端无锁，且期间他人的保存不会被载入。立即按失锁处理并重新加锁
+   */
+  function onPageShow(e: PageTransitionEvent): void {
+    if (!e.persisted || !target) return
+    held = false
+    lostOnHide = true
+    void tryLock()
+  }
+
+  onMounted(() => {
+    window.addEventListener('pagehide', onPageHide)
+    window.addEventListener('pageshow', onPageShow)
+  })
+  onBeforeUnmount(() => {
+    disposed = true
+    window.removeEventListener('pagehide', onPageHide)
+    window.removeEventListener('pageshow', onPageShow)
+    stop()
+  })
 
   return { lockedBy, start, stop }
 }

@@ -57,6 +57,31 @@ export class MemoryKvStore implements KvStore, OnModuleDestroy {
     this.store.set(key, { value, expiresAt: Date.now() + ttlMs })
   }
 
+  // 以下三个条件写入都在同一个同步块里读判写，中间没有 await，单线程下天然原子
+  async setIfAbsent(key: string, value: string, ttlMs: number): Promise<boolean> {
+    if (this.peek(key) !== null) return false
+    this.store.set(key, { value, expiresAt: Date.now() + ttlMs })
+    return true
+  }
+
+  async compareAndSet(key: string, expected: string, value: string, ttlMs: number): Promise<boolean> {
+    if (this.peek(key) !== expected) return false
+    this.store.set(key, { value, expiresAt: Date.now() + ttlMs })
+    return true
+  }
+
+  async compareAndDel(key: string, expected: string): Promise<boolean> {
+    if (this.peek(key) !== expected) return false
+    this.store.delete(key)
+    return true
+  }
+
+  /** 同步读取未过期的值，供条件写入在同一同步块内判断 */
+  private peek(key: string): string | null {
+    const entry = this.store.get(key)
+    return entry && Date.now() <= entry.expiresAt ? entry.value : null
+  }
+
   async del(key: string): Promise<void> {
     this.store.delete(key)
   }

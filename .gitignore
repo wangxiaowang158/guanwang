@@ -35,6 +35,8 @@ pnpm-debug.log*
 
 # ============ 系统与编辑器 ============
 .DS_Store
+# 本地文档备份（SRS 改版前快照等），不入库
+.bak/
 .idea/
 .vscode/
 *.suo

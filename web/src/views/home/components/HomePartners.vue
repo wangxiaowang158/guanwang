@@ -1,10 +1,10 @@
 <template>
-  <!-- 首页战略合作：按分类（产业伙伴 / 科创伙伴 / 合作伙伴）分组，每组一行 Logo 墙；
+  <!-- 首页战略合作：按分类（产业伙伴 / 科创伙伴 / 合作伙伴）分组，每组一行 Logo 墙，只有一组时不显示组名；
        有 Logo 显示 Logo，挂了或未上传显示名称；未填分类的归入「合作伙伴」；无数据整块不渲染 -->
   <HomeBlock v-if="items.length" id="partner" :eyebrow="eyebrow || '战略合作'" :title="title || '产业伙伴 · 科创伙伴 · 合作伙伴'" :style2="style2" :tone="tone || 'surface'">
     <div class="hp-groups">
       <section v-for="g in groups" :key="g.name" class="hp-group">
-        <h3 class="hp-group-title">{{ g.name }}</h3>
+        <h3 v-if="groups.length > 1" class="hp-group-title">{{ g.name }}</h3>
         <ul class="hp-grid">
           <li v-for="p in g.items" :key="p.id">
             <component
@@ -12,7 +12,8 @@
               :href="safeExternalUrl(p.link) || undefined"
               :target="safeExternalUrl(p.link) ? '_blank' : undefined"
               :rel="safeExternalUrl(p.link) ? 'noopener noreferrer' : undefined"
-              class="hp-item tone-light"
+              class="hp-item"
+              :class="imgs.usable(p.logo) ? 'tone-light' : 'hp-item--text'"
             >
               <img v-if="imgs.usable(p.logo)" :src="p.logo" :alt="p.name" class="hp-logo" width="140" height="48" loading="lazy" @error="imgs.markBroken(p.logo)" />
               <span v-else>{{ p.name }}</span>
@@ -88,6 +89,16 @@ const imgs = useBrokenImages()
   transition: opacity var(--dur-fast);
 }
 a.hp-item:hover { opacity: 0.8; }
+/* 没有 Logo 只有名称时：不铺白底（像一排按钮），改成描边格子 + 加粗名称，跟随板块色调 */
+.hp-item--text {
+  font-size: var(--text-fs-body);
+  font-weight: 600;
+  color: var(--color-ink-700);
+  background: transparent;
+  border: 1px solid var(--color-line);
+}
+a.hp-item--text:hover { opacity: 1; color: var(--color-ink-900); border-color: var(--color-ink-500); }
+
 a.hp-item:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
 .hp-logo { max-width: 100%; max-height: 48px; object-fit: contain; }
 </style>

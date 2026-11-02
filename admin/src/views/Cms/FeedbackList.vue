@@ -3,6 +3,12 @@
     <!-- 标题跟随栏目名（与侧边栏一致），可在栏目管理里改名，如改成「留言与线索」 -->
     <div class="page-title">{{ channel?.name || '留言与线索' }}</div>
 
+    <a-tabs v-model:active-key="stageTab" class="stage-tabs" @change="onStageChange">
+      <a-tab-pane key="all" tab="全部" />
+      <a-tab-pane key="open" tab="待处理" />
+      <a-tab-pane key="done" tab="已处理" />
+    </a-tabs>
+
     <div class="toolbar">
       <a-space :size="12" wrap>
         <a-range-picker
@@ -40,7 +46,7 @@
           placeholder="全部状态"
           style="width: 130px"
           allow-clear
-          :options="statusOptions"
+          :options="stageStatusOptions"
           @change="search"
         />
         <a-input
@@ -126,15 +132,15 @@
 </template>
 <script setup lang="ts">
 // 留言与线索：访客咨询、预约线索与会员反馈合并管理；处理弹窗见 FeedbackDetailModal
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import { BellOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import {
   getFeedbackList, deleteFeedback, batchDeleteFeedback, exportFeedback,
   FEEDBACK_SOURCE_LABEL, FEEDBACK_TYPE_LABEL, FEEDBACK_STATUS_LABEL, FEEDBACK_LEAD_TYPE_LABEL,
-  FEEDBACK_STATUS_COLOR, LEAD_TYPE_NONE,
-  type FeedbackLeadType, type FeedbackListItem,
+  FEEDBACK_STATUS_COLOR, FEEDBACK_STAGE_STATUSES, LEAD_TYPE_NONE,
+  type FeedbackLeadType, type FeedbackListItem, type FeedbackStage,
   type FeedbackSource, type FeedbackStatus, type FeedbackType,
 } from '@/api/feedback'
 import { useRoute } from 'vue-router'
@@ -204,6 +210,23 @@ const feedbackType = ref<FeedbackType>()
 const status = ref<FeedbackStatus | undefined>(resolveInitialStatus())
 const dateRange = ref<[string, string]>()
 
+/** 页签：全部 / 待处理（含处理中）/ 已处理（已回复 + 已关闭）；带 status 进来时落到它所在的页签 */
+const stageOf = (s?: FeedbackStatus): FeedbackStage | 'all' =>
+  s ? ((Object.keys(FEEDBACK_STAGE_STATUSES) as FeedbackStage[]).find(k =>
+    (FEEDBACK_STAGE_STATUSES[k] as readonly FeedbackStatus[]).includes(s)) ?? 'all') : 'all'
+const stageTab = ref<FeedbackStage | 'all'>(stageOf(status.value))
+
+/** 状态下拉只列当前页签内的状态，免得选出「已处理页签 + 待处理状态」这种必然为空的组合 */
+const stageStatusOptions = computed(() => stageTab.value === 'all'
+  ? statusOptions
+  : statusOptions.filter(o => (FEEDBACK_STAGE_STATUSES[stageTab.value as FeedbackStage] as readonly string[]).includes(o.value)))
+
+/** 切页签：清掉不属于新页签的状态筛选，回第一页重查 */
+const onStageChange = () => {
+  if (status.value && stageOf(status.value) !== stageTab.value && stageTab.value !== 'all') status.value = undefined
+  search()
+}
+
 const detailOpen = ref(false)
 const detailId = ref<number | null>(null)
 const notifyOpen = ref(false)
@@ -219,6 +242,7 @@ const currentFilters = () => ({
   leadType: leadType.value,
   feedbackType: feedbackType.value,
   status: status.value,
+  stage: stageTab.value === 'all' ? undefined : stageTab.value,
   startDate: dateRange.value?.[0],
   endDate: dateRange.value?.[1],
 })
@@ -317,10 +341,20 @@ const onBatchDelete = async () => {
 }
 </script>
 <style scoped>
+.feedback-list {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+}
+
 .page-title {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   font-size: 18px;
   font-weight: 600;
+}
+
+.stage-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 12px;
 }
 
 /* 查询条件独立成浅灰区块；下方 .actions 为功能操作行，靠右，与内容列表页一致 */

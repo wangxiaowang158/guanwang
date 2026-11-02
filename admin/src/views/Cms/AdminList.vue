@@ -4,10 +4,19 @@
 
     <div class="toolbar">
       <a-input
-        v-model:value="keyword"
-        placeholder="输入账号/姓名"
-        style="width: 240px"
+        v-model:value="searchAccount"
+        placeholder="输入账号"
+        style="width: 200px"
         allow-clear
+        :maxlength="50"
+        @press-enter="search"
+      />
+      <a-input
+        v-model:value="searchName"
+        placeholder="输入姓名"
+        style="width: 200px"
+        allow-clear
+        :maxlength="50"
         @press-enter="search"
       />
       <SearchActions :loading="loading" @search="search" @reset="onResetFilters" />
@@ -169,14 +178,16 @@ const columns = [
   { title: '操作', key: 'action', width: 140 }
 ]
 
-const keyword = ref('')
+const searchAccount = ref('')
+const searchName = ref('')
 
 const {
   loading, rows, page, pageSize, total,
   fetchList, search, onPageChange, refreshAfterRemove,
 } = useServerListPage<AdminItem>((query) =>
   getAdminList({
-    keyword: keyword.value || undefined,
+    account: searchAccount.value || undefined,
+    name: searchName.value || undefined,
     page: query.page,
     pageSize: query.pageSize,
   }),
@@ -184,7 +195,8 @@ const {
 
 // 重置：清空全部筛选条件后回到首页重查
 const onResetFilters = () => {
-  keyword.value = ''
+  searchAccount.value = ''
+  searchName.value = ''
   search()
 }
 

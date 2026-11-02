@@ -60,3 +60,72 @@
     }
   }
 }
+
+// ---------- 亮色主题视觉细节（暗色交给 darkAlgorithm，不做覆盖） ----------
+body:not(.dark-theme) {
+  // 表格：表头浅灰蓝底、去掉列分隔竖线，行悬停淡蓝
+  .ant-table-wrapper {
+    .ant-table-thead > tr > th {
+      background: #f7f8fb;
+      color: #4a5568;
+      font-weight: 600;
+      border-bottom-color: #eef0f4;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    .ant-table-tbody > tr > td {
+      border-bottom-color: #f1f3f7;
+    }
+
+    .ant-table-tbody > tr.ant-table-row:hover > td {
+      background: #f5f8ff;
+    }
+  }
+
+  // 弹窗：更大的圆角与柔和投影，标题区留白加大
+  .ant-modal .ant-modal-content {
+    padding: 22px 24px;
+    border-radius: 14px;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(15, 23, 42, 0.06);
+  }
+
+  .ant-modal .ant-modal-header {
+    margin-bottom: 18px;
+  }
+
+  .ant-modal .ant-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  // 抽屉与下拉：统一的浮层投影
+  .ant-dropdown .ant-dropdown-menu {
+    padding: 6px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  }
+
+  // 主按钮：轻微投影，看得出可点
+  .ant-btn-primary:not(:disabled):not(.ant-btn-dangerous) {
+    box-shadow: 0 2px 6px rgba(47, 124, 255, 0.28);
+  }
+
+  // 分页当前页：实底主色
+  .ant-pagination .ant-pagination-item-active {
+    background: #2f7cff;
+    border-color: #2f7cff;
+
+    a {
+      color: #fff;
+    }
+  }
+
+  // 面包屑与标签：标签圆角稍大，与整体圆角一致
+  .ant-tag {
+    border-radius: 6px;
+  }
+}

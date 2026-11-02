@@ -1,11 +1,13 @@
 // 管理端操作日志拦截器 —— 统一记录后台写操作，不在各业务 service 里散落埋点
 // 只记 /mgmt/* 下的写方法，且必须已通过 AdminGuard（req.admin 存在），
 // 故登录失败一类未认证请求不会进来，也不会产生匿名噪声
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
-import { Observable, tap } from 'rxjs'
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor, Optional } from '@nestjs/common'
+import { DataSource } from 'typeorm'
+import { Observable, from, mergeMap, tap } from 'rxjs'
 import type { CurrentAdminInfo, RequestWithAdmin } from '../../common/guards/admin.guard'
 import { OP_LOG_RESULT } from '../../common/enums'
-import { lookupOpLogMeta } from './op-log-catalog'
+import { lookupOpLogMeta, normalizePath } from './op-log-catalog'
+import { buildChanges, planDiff, serializeChanges, takeSnapshot, type DiffPlan, type Snapshot } from './op-log-diff'
 import { OpLogService } from './op-log.service'
 
 /** 需要记录的写方法 */
@@ -34,6 +36,8 @@ const SKIP_PATHS = new Set(['POST /mgmt/auth/logout'])
 const REDACT_KEYS = new Set([
   'password', 'oldpassword', 'newpassword', 'confirmpassword',
   'passwordhash', 'token', 'accesstoken', 'refreshtoken', 'secret', 'code', 'captcha', 'smscode',
+  // 钉钉/企微机器人地址自带 access_token，拿到即可冒充机器人发消息；与 op-log-diff 的 SECRET 保持一致
+  'webhookurl',
 ])
 
 /** 脱敏后的占位串 */
@@ -123,9 +127,23 @@ function buildParams(req: RequestWithAdmin): string | null {
   }
 }
 
+/** 改前快照：计划与快照成对，任一缺失就不做对比 */
+interface BeforeState {
+  plan: DiffPlan
+  snapshot: Snapshot
+}
+
 @Injectable()
 export class OpLogInterceptor implements NestInterceptor {
-  constructor(private readonly opLog: OpLogService) {}
+  private readonly logger = new Logger(OpLogInterceptor.name)
+
+  /**
+   * @param dataSource 读改前改后快照用；缺省（如单测）时只记请求参数，不做对比
+   */
+  constructor(
+    private readonly opLog: OpLogService,
+    @Optional() private readonly dataSource?: DataSource,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     // 非 HTTP 上下文（如定时任务）直接放过
@@ -148,25 +166,63 @@ export class OpLogInterceptor implements NestInterceptor {
     const params = buildParams(req)
     const ip = req.ip ?? null
 
-    return next.handle().pipe(
-      tap({
-        next: (value: unknown) => {
-          const bizError = businessError(value)
-          void this.record(
-            admin, method, path, params, ip,
-            bizError ? OP_LOG_RESULT.FAILURE : OP_LOG_RESULT.SUCCESS,
-            bizError ? cut(bizError, ERROR_LIMIT) : null,
-          )
-        },
-        error: (err: unknown) => {
-          const message = err instanceof Error ? err.message : String(err)
-          void this.record(
-            admin, method, path, params, ip,
-            OP_LOG_RESULT.FAILURE, cut(message, ERROR_LIMIT),
-          )
-        },
-      }),
+    // 改前快照必须在处理器执行前读完，故先等它再放行
+    return from(this.loadBefore(req, method, path)).pipe(
+      mergeMap(before => next.handle().pipe(
+        tap({
+          next: (value: unknown) => {
+            const bizError = businessError(value)
+            if (bizError) {
+              void this.record(admin, method, path, params, ip, OP_LOG_RESULT.FAILURE, cut(bizError, ERROR_LIMIT))
+              return
+            }
+            // 失败的操作没改动数据，只有成功才读改后快照
+            void this.loadChanges(before).then(changes =>
+              this.record(admin, method, path, params, ip, OP_LOG_RESULT.SUCCESS, null, changes))
+          },
+          error: (err: unknown) => {
+            const message = err instanceof Error ? err.message : String(err)
+            void this.record(
+              admin, method, path, params, ip,
+              OP_LOG_RESULT.FAILURE, cut(message, ERROR_LIMIT),
+            )
+          },
+        }),
+      )),
     )
+  }
+
+  /**
+   * 读改前快照
+   * 审计不能挡住业务：读失败只记 warn，本次日志不带对比
+   */
+  private async loadBefore(req: RequestWithAdmin, method: string, path: string): Promise<BeforeState | null> {
+    if (!this.dataSource || !req.admin) return null
+    try {
+      const plan = await planDiff(`${method} ${normalizePath(path)}`, {
+        body: req.body,
+        query: (req.query ?? {}) as Record<string, unknown>,
+        params: (req.params ?? {}) as Record<string, unknown>,
+        adminId: req.admin.id,
+      }, this.dataSource)
+      if (!plan) return null
+      return { plan, snapshot: await takeSnapshot(plan, this.dataSource) }
+    } catch (e) {
+      this.logger.warn(`操作日志改前快照读取失败：${e instanceof Error ? e.message : String(e)}`)
+      return null
+    }
+  }
+
+  /** 读改后快照并比出差异；无对比或读失败时为 null */
+  private async loadChanges(before: BeforeState | null): Promise<string | null> {
+    if (!before || !this.dataSource) return null
+    try {
+      const after = await takeSnapshot(before.plan, this.dataSource)
+      return serializeChanges(buildChanges(before.plan, before.snapshot, after))
+    } catch (e) {
+      this.logger.warn(`操作日志改后快照读取失败：${e instanceof Error ? e.message : String(e)}`)
+      return null
+    }
   }
 
   /**
@@ -181,6 +237,7 @@ export class OpLogInterceptor implements NestInterceptor {
     ip: string | null,
     result: typeof OP_LOG_RESULT[keyof typeof OP_LOG_RESULT],
     errorMessage: string | null,
+    changes: string | null = null,
   ): Promise<void> {
     const meta = lookupOpLogMeta(method, path)
     return this.opLog.write({
@@ -194,6 +251,7 @@ export class OpLogInterceptor implements NestInterceptor {
       method,
       path: cut(path, PATH_LIMIT),
       params,
+      changes,
       ip,
       result,
       errorMessage,

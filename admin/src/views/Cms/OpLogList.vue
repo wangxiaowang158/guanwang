@@ -96,7 +96,7 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:open="detailOpen" title="操作日志详情" :footer="null" width="640px">
+    <a-modal v-model:open="detailOpen" title="操作日志详情" :footer="null" width="760px">
       <div v-if="detail" class="detail">
         <dl class="detail-list">
           <div class="detail-row">
@@ -140,6 +140,39 @@
           </div>
         </dl>
 
+        <!-- 变更内容：改前改后逐字段对比；删除类列出删除前的内容 -->
+        <section v-if="changes" class="panel">
+          <div class="panel-title"><span>变更内容</span></div>
+          <div v-for="rec in changes.records" :key="rec.id" class="change-record">
+            <div class="change-head">
+              <span>{{ changes.target }}</span>
+              <span v-if="rec.title" class="change-title">{{ rec.title }}</span>
+              <span class="change-id">ID {{ rec.id }}</span>
+              <a-tag v-if="rec.mode === 'remove'" color="red">已删除</a-tag>
+            </div>
+            <a-table
+              :columns="rec.mode === 'remove' ? removeColumns : changeColumns"
+              :data-source="rec.fields"
+              row-key="field"
+              size="small"
+              :pagination="false"
+            >
+              <template #bodyCell="{ column, record }">
+                <span v-if="column.key === 'label'" class="field-name">{{ record.label }}</span>
+                <span v-else-if="column.key === 'before'" class="field-value before">{{ record.before ?? '（空）' }}</span>
+                <span v-else class="field-value after">{{ record.after ?? '（空）' }}</span>
+              </template>
+            </a-table>
+          </div>
+          <div v-if="!changes.records.length" class="change-empty">变更内容过长，未能保存明细</div>
+          <div v-else-if="changes.truncated" class="change-empty">涉及记录较多，仅显示部分</div>
+          <!-- 改前改后是两次快照，中间不加锁：同一时刻别人改了同一条，差异会算进本条 -->
+          <div class="change-empty">对比基于操作前后的数据快照，若同一时刻有他人修改同一条记录，其改动也会显示在此</div>
+        </section>
+        <div v-else-if="detail.result === 'success'" class="change-none">
+          本条操作没有改前改后对比（新增类操作、内容未变化，或为本功能上线前的记录）
+        </div>
+
         <!-- 请求参数：能解析成对象就拆成字段表，截断或非 JSON 时回退为原文 -->
         <section class="panel">
           <div class="panel-title"><span>请求参数</span></div>
@@ -170,7 +203,7 @@ import SearchActions from '@/components/SearchActions/index.vue'
 import { message } from 'ant-design-vue'
 import {
   getOpLogList, getOpLogModules, clearOpLog,
-  OP_LOG_RESULT_LABEL, type OpLogItem, type OpLogResult,
+  OP_LOG_RESULT_LABEL, type OpLogChanges, type OpLogItem, type OpLogResult,
 } from '@/api/opLog'
 import { useServerListPage } from '@/composables/useServerListPage'
 
@@ -258,6 +291,28 @@ const flattenParams = (raw: string | null): ParamRow[] => {
 
 const paramRows = computed(() => flattenParams(detail.value?.params ?? null))
 
+const changeColumns = [
+  { title: '字段', key: 'label', width: 140 },
+  { title: '修改前', key: 'before' },
+  { title: '修改后', key: 'after' },
+]
+const removeColumns = [
+  { title: '字段', key: 'label', width: 140 },
+  { title: '删除前内容', key: 'before' },
+]
+
+/** 解析改前改后对比；结构异常时当作没有，退回只看请求参数 */
+const changes = computed<OpLogChanges | null>(() => {
+  const raw = detail.value?.changes
+  if (!raw) return null
+  try {
+    const data = JSON.parse(raw) as OpLogChanges
+    return data && Array.isArray(data.records) ? data : null
+  } catch {
+    return null
+  }
+})
+
 const {
   loading, rows, page, pageSize, total,
   search, onPageChange,
@@ -338,6 +393,12 @@ const onClear = async () => {
 </script>
 
 <style scoped>
+.op-log-list {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+}
+
 .page-title {
   margin-bottom: 16px;
   font-size: 18px;
@@ -414,6 +475,43 @@ const onClear = async () => {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   word-break: break-all;
+}
+
+/* 变更内容：改前标红删除线、改后标绿，一眼看出差异 */
+.panel + .panel,
+.change-none + .panel {
+  margin-top: 12px;
+}
+.change-record + .change-record {
+  margin-top: 14px;
+}
+.change-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #595959;
+}
+.change-title {
+  color: #262626;
+  font-weight: 500;
+}
+.change-id {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+.field-value.before { color: #cf1322; }
+.field-value.after { color: #389e0d; }
+.change-empty {
+  margin-top: 8px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+.change-none {
+  margin-bottom: 12px;
+  color: #8c8c8c;
+  font-size: 12px;
 }
 
 /* 参数无法拆成字段时的原文，限高滚动而非撑开弹窗 */

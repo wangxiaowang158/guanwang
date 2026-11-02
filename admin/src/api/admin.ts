@@ -56,8 +56,8 @@ export interface AdminListResult {
   pageSize: number
 }
 
-/** 获取管理员列表（支持关键字筛选，分页由后端完成） */
-export const getAdminList = (params: { keyword?: string; page?: number; pageSize?: number }) =>
+/** 获取管理员列表（账号、姓名分别筛选，分页由后端完成） */
+export const getAdminList = (params: { account?: string; name?: string; page?: number; pageSize?: number }) =>
   axios.get<ApiResult<AdminListResult>>('/api/mgmt/admin/list', { params })
 
 /** 获取管理员详情 */

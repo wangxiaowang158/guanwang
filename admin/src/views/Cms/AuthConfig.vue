@@ -119,6 +119,12 @@ const onSave = async () => {
 onMounted(load)
 </script>
 <style scoped>
+.auth-config {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+}
+
 .page-title {
   margin-bottom: 16px;
   font-size: 18px;

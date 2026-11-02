@@ -3,7 +3,7 @@
   <div class="hl">
     <p class="hl-tip">
       首屏固定在最上方。下列板块从上到下即官网首页顺序；板块没有内容时自动不显示。
-      标题留空时显示输入框里灰色提示的文字。
+      每行灰字是官网当前显示的标题与底色，点「编辑」可修改。
     </p>
     <ul class="hl-list">
       <li v-for="(s, i) in list" :key="s.key" class="hl-row" :class="{ 'is-off': !s.visible }">
@@ -12,6 +12,9 @@
           <span class="hl-name">{{ META[s.key].name }}</span>
           <span class="hl-source">{{ META[s.key].source }}</span>
           <a-space class="hl-ops">
+            <a-button v-if="s.visible" size="small" type="link" :aria-expanded="openKeys.includes(s.key)" @click="toggle(s.key)">
+              {{ openKeys.includes(s.key) ? '收起' : '编辑' }}
+            </a-button>
             <a-switch v-model:checked="s.visible" checked-children="显示" un-checked-children="隐藏" :aria-label="`显示 ${META[s.key].name}`" />
             <a-button size="small" :disabled="i === 0" :aria-label="`上移 ${META[s.key].name}`" @click="move(i, -1)">
               <template #icon><ArrowUpOutlined /></template>
@@ -21,7 +24,9 @@
             </a-button>
           </a-space>
         </div>
-        <div v-if="s.visible" class="hl-body">
+        <!-- 收起时只显示当前生效的标题与底色，要改再展开 -->
+        <p v-if="s.visible && !openKeys.includes(s.key)" class="hl-summary">{{ summaryOf(s) }}</p>
+        <div v-if="s.visible && openKeys.includes(s.key)" class="hl-body">
           <a-input v-model:value="s.eyebrow" :maxlength="100" :placeholder="`小标题，留空显示「${fallbackOf(s.key).eyebrow}」`" />
           <a-input v-model:value="s.title" :maxlength="100" :placeholder="`主标题，留空显示「${fallbackOf(s.key).title}」`" />
           <a-select v-model:value="s.tone" :options="toneOptions(s.key)" class="hl-tone" />
@@ -133,6 +138,19 @@ const fromValue = (v?: HomeSectionConfig[] | null): HomeSectionConfig[] => {
 const list = ref<HomeSectionConfig[]>(fromValue(props.value))
 watch(() => props.value, (v) => { list.value = fromValue(v) })
 
+/** 展开编辑的板块 */
+const openKeys = ref<HomeSectionKey[]>([])
+const toggle = (key: HomeSectionKey) => {
+  openKeys.value = openKeys.value.includes(key) ? openKeys.value.filter(k => k !== key) : [...openKeys.value, key]
+}
+
+/** 收起时的摘要：填了用填的，留空用前台实际回落的文字，底色取下拉里的名称 */
+const summaryOf = (s: HomeSectionConfig) => {
+  const fb = fallbackOf(s.key)
+  const tone = toneOptions(s.key).find(o => o.value === s.tone)?.label ?? toneOptions(s.key)[0].label
+  return `${s.eyebrow?.trim() || fb.eyebrow} ｜ ${s.title?.trim() || fb.title} ｜ ${tone}`
+}
+
 const move = (i: number, step: -1 | 1) => {
   const j = i + step
   if (j < 0 || j >= list.value.length) return
@@ -141,7 +159,10 @@ const move = (i: number, step: -1 | 1) => {
   list.value = next
 }
 
-const onReset = () => { list.value = defaults() }
+const onReset = () => {
+  list.value = defaults()
+  openKeys.value = []
+}
 
 const saving = ref(false)
 const onSave = async () => {
@@ -176,6 +197,7 @@ const onSave = async () => {
 .hl-name { font-weight: 600; }
 .hl-source { font-size: 12px; color: #8c8c8c; }
 .hl-ops { margin-left: auto; }
+.hl-summary { margin: 6px 0 0 34px; overflow: hidden; font-size: 13px; color: #8c8c8c; text-overflow: ellipsis; white-space: nowrap; }
 .hl-body { display: grid; grid-template-columns: 1fr 1.6fr 180px; gap: 8px; margin-top: 10px; }
 @media (max-width: 900px) { .hl-body { grid-template-columns: 1fr; } }
 .hl-tone { width: 100%; }

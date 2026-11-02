@@ -26,6 +26,7 @@ import { AddHeroStatsNote1790000020000 } from './1790000020000-AddHeroStatsNote'
 import { AddTrashRevisionExt1790000021000 } from './1790000021000-AddTrashRevisionExt'
 import { AddRedirectAndRole1790000022000 } from './1790000022000-AddRedirectAndRole'
 import { AddJobsBlock1790000023000 } from './1790000023000-AddJobsBlock'
+import { AddOpLogChanges1790000024000 } from './1790000024000-AddOpLogChanges'
 
 /**
  * 全部迁移，按执行顺序排列
@@ -56,4 +57,5 @@ export const MIGRATIONS = [
   AddTrashRevisionExt1790000021000,
   AddRedirectAndRole1790000022000,
   AddJobsBlock1790000023000,
+  AddOpLogChanges1790000024000,
 ]
